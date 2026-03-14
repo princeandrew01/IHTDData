@@ -1,9 +1,11 @@
 {
   "label": "Spells",
   "costFormula": "spell",
-  "formulaNote": "Regular upgrades cost energy: base * multCost^(level+1), then x2 if level>=3, x6 if level>=6 (except noBreakpointMult spells). Base by level range: baseCost (0-9), baseCost*2 (10-14), base15 (16-19), base20 (21-24). Level 15 and 20 are one-time tier unlock costs in a separate currency (see tier2Unlock, tier3Unlock).",
+  "formulaNote": "cost = base * multCost^(level+1), where level is the ABSOLUTE level (0-24, never reset per tier). base changes by tier: baseCost (levels 0-9), baseCost*2 (10-14), base15 (15-19), base20 (20-24). Breakpoints (except killEnergy/noBreakpointMult): x2 if level>=3, then x3 additionally if level>=6 (total x6). Levels 15 and 20 are one-time tier unlock costs in a different currency (see tier2Unlock, tier3Unlock) — NOT energy, and NOT part of the exponent formula. Level 0 is the unlock cost (= baseCost, no exponent).",
   "canCalculateCost": true,
   "isTree": false,
+  "menuOrder": 2,
+  "parentMenuName": "Upgrades",
   "menuIcon": "_energy.png",
   "groups": {
     "Combat": [

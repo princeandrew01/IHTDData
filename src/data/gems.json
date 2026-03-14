@@ -4,6 +4,8 @@
   "formulaNote": "cost = baseCost (same every level)",
   "canCalculateCost": true,
   "isTree": false,
+  "menuOrder": 4,
+  "parentMenuName": "Upgrades",
   "menuIcon": "_gem_2.png",
   "groups": {
     "Combat": [

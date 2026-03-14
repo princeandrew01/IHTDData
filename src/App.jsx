@@ -10,6 +10,7 @@ function useIsMobile() {
   return isMobile;
 }
 
+import heroesData     from "./data/heroes.json";
 import researchData   from "./data/research.json";
 import spellsData     from "./data/spells.json";
 import powerupsData   from "./data/powerups.json";
@@ -71,7 +72,8 @@ const NAV_GROUPS = [
   {
     label: "Hero Data",
     items: [
-      { key: "rankExp", label: "Rank Exp", menuIcon: "_killExp.png" },
+      { key: "allHeroes", label: "All Heroes", menuIcon: "_heroHelm.png" },
+      { key: "rankExp",   label: "Rank Exp",   menuIcon: "_killExp.png" },
     ],
   },
 ];
@@ -149,10 +151,10 @@ function spellCostEntry(level, item) {
     tierIdx = level - 1;       // 0-14 within tier 1
     base = tierIdx < 10 ? baseCost : baseCost * 2;
   } else if (level >= 17 && level <= 20) {
-    tierIdx = level - 17;      // 0-3 within tier 2
+    tierIdx = level - 1;      // 0-3 within tier 2
     base = base15;
   } else {
-    tierIdx = level - 22;      // 0-3 within tier 3
+    tierIdx = level - 1;      // 0-3 within tier 3
     base = base20;
   }
 
@@ -727,19 +729,24 @@ function ItemCard({ item, sectionFormula, canCalculateCost, onOpen }) {
 }
 
 function GroupCard({ title, items, sectionFormula, canCalculateCost, onOpen }) {
+  // Use rarity colours if the group name matches a known rarity tier
+  const baseRarity = Object.keys(RARITY_COLORS).find(r => title === r || title.startsWith(r + " "));
+  const rc = baseRarity ? RARITY_COLORS[baseRarity] : null;
+
   return (
     <div style={{ marginBottom: 32 }}>
-      {/* Banner-style group header matching the in-game section headers */}
       <div style={{
-        background: `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`,
-        border: `1px solid #4a7ec0`,
+        background: rc
+          ? `linear-gradient(180deg, ${rc.bg}cc 0%, ${rc.bg}88 100%)`
+          : `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`,
+        border: `1px solid ${rc ? rc.border : "#4a7ec0"}`,
         borderRadius: 8,
         padding: "8px 20px",
         marginBottom: 14,
         textAlign: "center",
         boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
       }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: colors.bannerText, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: rc ? rc.text : colors.bannerText, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
           {title}
         </span>
       </div>
@@ -847,6 +854,333 @@ function RankExpView() {
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// ALL HEROES VIEW
+// ─────────────────────────────────────────────
+const RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Supreme"];
+
+const RARITY_COLORS = {
+  Common:    { bg: "#3a3a3a", border: "#c0bfc0", text: "#d8d8d8" },
+  Uncommon:  { bg: "#1a3a1a", border: "#4dd44d", text: "#80e880" },
+  Rare:      { bg: "#1a3535", border: "#33d4d5", text: "#66e0e1" },
+  Epic:      { bg: "#1a2e50", border: "#5090d8", text: "#80b4f0" },
+  Legendary: { bg: "#1a2240", border: "#4a7acc", text: "#80aaee" },
+  Mythic:    { bg: "#4a2a10", border: "#f09040", text: "#ffbe80" },
+  Supreme:   { bg: "#7a2020", border: "#ff8080", text: "#ffc4c4" },
+};
+
+const TIER_COLORS = {
+  I:   { bg: "#1a3a1a", border: "#4dd44d", text: "#80e880" },
+  II:  { bg: "#1a3535", border: "#33d4d5", text: "#66e0e1" },
+  III: { bg: "#1a2e50", border: "#5090d8", text: "#80b4f0" },
+  IV:  { bg: "#3a1a5a", border: "#a060e0", text: "#c090ff" },
+  V:   { bg: "#4a2a10", border: "#f09040", text: "#ffbe80" },
+  VI:  { bg: "#5a1a1a", border: "#ff6060", text: "#ffaaaa" },
+};
+
+function HeroModal({ hero, onClose }) {
+  const [tab, setTab] = useState("milestones");
+  const rc = RARITY_COLORS[hero.rarity] ?? RARITY_COLORS.Common;
+
+  const tabStyle = (key) => ({
+    flex: 1, padding: "10px 0", background: "none", border: "none",
+    borderBottom: tab === key ? `2px solid ${colors.accent}` : `2px solid transparent`,
+    color: tab === key ? colors.accent : colors.muted,
+    fontFamily: "inherit", fontWeight: tab === key ? 700 : 500,
+    fontSize: 13, letterSpacing: "0.06em", textTransform: "uppercase",
+    cursor: "pointer", transition: "color 0.15s",
+  });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.75)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}>
+      <div style={{
+        background: colors.bg, border: `1px solid ${rc.border}`,
+        borderRadius: 12, width: "100%", maxWidth: 680,
+        maxHeight: "88vh", display: "flex", flexDirection: "column",
+        boxShadow: `0 8px 40px rgba(0,0,0,0.7), 0 0 0 1px ${rc.border}22`,
+      }}>
+
+        {/* ── Hero Header ── */}
+        <div style={{ padding: "18px 20px 14px", borderBottom: `1px solid ${colors.border}`, display: "flex", gap: 16, alignItems: "flex-start" }}>
+          <div style={{
+            width: 64, height: 64, flexShrink: 0, borderRadius: 10,
+            background: rc.bg, border: `2px solid ${rc.border}`,
+            display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+          }}>
+            {hero.heroIcon
+              ? <img src={getIconUrl(hero.heroIcon)} alt={hero.name} style={{ width: 60, height: 60, objectFit: "contain" }} />
+              : <span style={{ fontSize: 24, fontWeight: 800, color: "#ffffff99" }}>{hero.name.charAt(0)}</span>
+            }
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+              <span style={{ fontSize: 20, fontWeight: 900, color: colors.text, letterSpacing: "0.04em" }}>{hero.name}</span>
+              <Badge color={rc.border}>{hero.rarity}</Badge>
+            </div>
+            <div style={{ display: "flex", gap: 8, alignItems: "center", marginBottom: hero.baseStats ? 6 : 0 }}>
+              <span style={{ fontSize: 12, color: colors.muted, textTransform: "capitalize", fontWeight: 600 }}>{hero.class}</span>
+            </div>
+            {hero.baseStats && (
+              <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+                {[
+                  { label: "Damage",    value: hero.baseStats.damage },
+                  { label: "DPS",       value: hero.baseStats.dps },
+                  { label: "Atk Speed", value: hero.baseStats.attackSpeed !== undefined ? `${hero.baseStats.attackSpeed}s` : undefined },
+                  { label: "Range",     value: hero.baseStats.range },
+                ].filter(s => s.value !== undefined).map(s => (
+                  <div key={s.label} style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 6, padding: "3px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 10, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{s.label}</div>
+                    <div style={{ fontSize: 14, fontWeight: 700, color: colors.gold }}>{s.value}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: colors.muted, fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 4px", flexShrink: 0 }}>✕</button>
+        </div>
+
+        {/* ── Skill Block ── */}
+        {hero.skill && (
+          <div style={{ padding: "14px 20px", borderBottom: `1px solid ${colors.border}`, background: colors.panel + "88" }}>
+            <div style={{ fontSize: 10, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: 8, fontWeight: 700 }}>Skill</div>
+            <div style={{ display: "flex", gap: 12, alignItems: "flex-start" }}>
+              {hero.skill.icon && (
+                <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: "#0f2640", border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                  <img src={getIconUrl(hero.skill.icon)} alt="" style={{ width: 40, height: 40, objectFit: "contain" }} />
+                </div>
+              )}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+                  <span style={{ color: colors.accent, fontWeight: 800, fontSize: 15 }}>{hero.skill.name}</span>
+                  <span style={{ fontSize: 12, color: colors.muted, background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 4, padding: "1px 8px" }}>
+                    {hero.skill.cooldown}s cooldown
+                  </span>
+                </div>
+                <div style={{ fontSize: 13, color: colors.text, lineHeight: 1.5, marginBottom: 6 }}>{hero.skill.description}</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {hero.skill.powerDescription && (
+                    <div style={{ fontSize: 12, color: colors.muted }}>
+                      <span style={{ color: colors.positive, fontWeight: 600 }}>Power: </span>{hero.skill.powerDescription}
+                    </div>
+                  )}
+                  {hero.skill.durationDescription && (
+                    <div style={{ fontSize: 12, color: colors.muted }}>
+                      <span style={{ color: colors.gold, fontWeight: 600 }}>Duration: </span>{hero.skill.durationDescription}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ── Mastery Block ── */}
+        {hero.masteryDescription && (
+          <div style={{ padding: "10px 20px", borderBottom: `1px solid ${colors.border}` }}>
+            <span style={{ fontSize: 10, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.1em", fontWeight: 700, marginRight: 8 }}>Mastery</span>
+            <span style={{ fontSize: 13, color: colors.text, lineHeight: 1.5 }}>{hero.masteryDescription}</span>
+          </div>
+        )}
+
+        {/* ── Tabs ── */}
+        <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, flexShrink: 0, padding: "0 20px" }}>
+          <button style={tabStyle("milestones")} onClick={() => setTab("milestones")}>
+            Milestones <span style={{ fontSize: 11, opacity: 0.7 }}>({hero.milestones?.length ?? 0})</span>
+          </button>
+          <button style={tabStyle("synergies")} onClick={() => setTab("synergies")}>
+            Synergies <span style={{ fontSize: 11, opacity: 0.7 }}>({hero.synergies?.length ?? 0})</span>
+          </button>
+        </div>
+
+        {/* ── Tab Content ── */}
+        <div style={{ overflowY: "auto", flex: 1 }}>
+
+          {tab === "milestones" && (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead style={{ position: "sticky", top: 0, background: colors.panel }}>
+                <tr>
+                  {["#", "Req Level", "Bonus", "Scope"].map(h => (
+                    <th key={h} style={{ padding: "8px 14px", color: colors.muted, fontWeight: 700, fontSize: 11, textAlign: "left", borderBottom: `1px solid ${colors.border}`, letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(hero.milestones ?? []).map((m, i) => (
+                  <tr key={m.milestone} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
+                    <td style={{ padding: "8px 14px", color: colors.accent, fontWeight: 700, fontSize: 14 }}>{m.milestone}</td>
+                    <td style={{ padding: "8px 14px", color: colors.gold, fontWeight: 600 }}>{m.requirement.toLocaleString()}</td>
+                    <td style={{ padding: "8px 14px" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                        <div style={{ width: 28, height: 28, borderRadius: 6, background: m.bgColor + "44", border: `1px solid ${m.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                          <img src={getIconUrl(m.icon)} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />
+                        </div>
+                        <span style={{ color: colors.text }}>{m.description}</span>
+                      </div>
+                    </td>
+                    <td style={{ padding: "8px 14px" }}>
+                      <Badge color={m.scope === "global" ? colors.positive : colors.accent}>{m.scope}</Badge>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+
+          {tab === "synergies" && (
+            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+              <thead style={{ position: "sticky", top: 0, background: colors.panel }}>
+                <tr>
+                  {["Tier", "Rank Req", "Required Heroes", "Bonus", "Scope"].map(h => (
+                    <th key={h} style={{ padding: "8px 14px", color: colors.muted, fontWeight: 700, fontSize: 11, textAlign: "left", borderBottom: `1px solid ${colors.border}`, letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {(hero.synergies ?? []).map((s, i) => {
+                  const tc = TIER_COLORS[s.tier] ?? TIER_COLORS.I;
+                  const partners = [s.hero1, s.hero2, s.hero3].filter(Boolean);
+                  return (
+                    <tr key={s.synergyLevel} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
+                      <td style={{ padding: "8px 14px" }}>
+                        <span style={{ background: tc.bg, border: `1px solid ${tc.border}`, color: tc.text, borderRadius: 4, padding: "2px 8px", fontSize: 12, fontWeight: 700 }}>{s.tier}</span>
+                      </td>
+                      <td style={{ padding: "8px 14px", color: colors.gold, fontWeight: 600 }}>{s.rankRequired > 0 ? s.rankRequired : "—"}</td>
+                      <td style={{ padding: "8px 14px" }}>
+                        <div style={{ display: "flex", gap: 4, flexWrap: "wrap" }}>
+                          {partners.map(p => (
+                            <span key={p} style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 4, padding: "1px 7px", fontSize: 11, color: colors.text, textTransform: "capitalize" }}>{p}</span>
+                          ))}
+                        </div>
+                      </td>
+                      <td style={{ padding: "8px 14px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 6, background: s.bgColor + "44", border: `1px solid ${s.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
+                            <img src={getIconUrl(s.icon)} alt="" style={{ width: 22, height: 22, objectFit: "contain" }} />
+                          </div>
+                          <span style={{ color: colors.text }}>{s.description}</span>
+                        </div>
+                      </td>
+                      <td style={{ padding: "8px 14px" }}>
+                        <Badge color={s.scope === "global" ? colors.positive : colors.accent}>{s.scope}</Badge>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
+
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroCard({ hero, onClick }) {
+  const rc = RARITY_COLORS[hero.rarity] ?? RARITY_COLORS.Common;
+  return (
+    <div onClick={onClick} style={{
+      background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
+      border: `1px solid ${colors.border}`,
+      borderRadius: 8,
+      padding: 12,
+      boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+      display: "flex",
+      gap: 12,
+      alignItems: "center",
+      cursor: "pointer",
+      transition: "border-color 0.15s",
+    }}
+      onMouseEnter={e => e.currentTarget.style.borderColor = rc.border}
+      onMouseLeave={e => e.currentTarget.style.borderColor = colors.border}
+    >
+      {/* Hero icon */}
+      <div style={{
+        width: 52, height: 52, flexShrink: 0, borderRadius: 8,
+        background: rc.bg, border: `2px solid ${rc.border}`,
+        display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden",
+      }}>
+        {hero.heroIcon
+          ? <img src={getIconUrl(hero.heroIcon)} alt={hero.name} style={{ width: 48, height: 48, objectFit: "contain" }} />
+          : <span style={{ fontSize: 20, fontWeight: 800, color: "#ffffff99", textTransform: "uppercase", userSelect: "none" }}>{hero.name.charAt(0)}</span>
+        }
+      </div>
+
+      {/* Info */}
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 4 }}>
+          <span style={{ color: colors.text, fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>{hero.name}</span>
+          <Badge color={rc.border}>{hero.rarity}</Badge>
+        </div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 4 }}>
+          <span style={{ fontSize: 12, color: colors.muted, textTransform: "capitalize" }}>{hero.class}</span>
+        </div>
+        {hero.skill && (
+          <div style={{ fontSize: 12, color: colors.muted }}>
+            <span style={{ color: colors.accent, fontWeight: 600 }}>{hero.skill.name}</span>
+            <span style={{ marginLeft: 6 }}>· {hero.skill.cooldown}s CD</span>
+          </div>
+        )}
+        {hero.baseStats && (
+          <div style={{ display: "flex", gap: 10, marginTop: 5, flexWrap: "wrap" }}>
+            {hero.baseStats.damage   !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>DMG <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.damage}</span></span>}
+            {hero.baseStats.attackSpeed !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>SPD <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.attackSpeed}s</span></span>}
+            {hero.baseStats.range    !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>RNG <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.range}</span></span>}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function AllHeroesView() {
+  const [selectedHero, setSelectedHero] = useState(null);
+  const heroes = heroesData.heroes ?? [];
+
+  // Group by rarity, preserving RARITY_ORDER
+  const grouped = RARITY_ORDER.reduce((acc, r) => {
+    const list = heroes.filter(h => h.rarity === r).sort((a, b) => a.order - b.order);
+    if (list.length) acc[r] = list;
+    return acc;
+  }, {});
+
+  // Any rarities not in RARITY_ORDER go at the end
+  heroes.forEach(h => {
+    if (!RARITY_ORDER.includes(h.rarity) && !grouped[h.rarity]) {
+      grouped[h.rarity] = heroes.filter(x => x.rarity === h.rarity).sort((a, b) => a.order - b.order);
+    }
+  });
+
+  return (
+    <div>
+      {Object.entries(grouped).map(([rarity, list]) => {
+        const rc = RARITY_COLORS[rarity] ?? RARITY_COLORS.Common;
+        return (
+          <div key={rarity} style={{ marginBottom: 32 }}>
+            <div style={{
+              background: `linear-gradient(180deg, ${rc.bg}cc 0%, ${rc.bg}88 100%)`,
+              border: `1px solid ${rc.border}`,
+              borderRadius: 8,
+              padding: "8px 20px",
+              marginBottom: 14,
+              textAlign: "center",
+              boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+            }}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: rc.text, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
+                {rarity}
+              </span>
+            </div>
+            <div className="hero-grid">
+              {list.map(hero => <HeroCard key={hero.id} hero={hero} onClick={() => setSelectedHero(hero)} />)}
+            </div>
+          </div>
+        );
+      })}
+      {selectedHero && <HeroModal hero={selectedHero} onClose={() => setSelectedHero(null)} />}
     </div>
   );
 }
@@ -982,6 +1316,7 @@ export default function App() {
               onOpen={item => openModal(item, activeSection.data.costFormula)}
             />
           )}
+          {activeKey === "allHeroes" && <AllHeroesView />}
           {activeKey === "rankExp" && <RankExpView />}
         </div>
 

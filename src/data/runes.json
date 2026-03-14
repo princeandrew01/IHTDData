@@ -4,6 +4,8 @@
   "formulaNote": "Runes have no gold cost — cost is paid in rune types.",
   "canCalculateCost": false,
   "isTree": false,
+  "menuOrder": 3,
+  "parentMenuName": "Upgrades",
   "menuIcon": "_rune_2.png",
   "groups": {
     "Common": [
@@ -14,8 +16,8 @@
         "statAmt": 5,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#BDCEFF",
-        "borderColor": "#8293D7"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "kill_gold_i",
@@ -24,8 +26,8 @@
         "statAmt": 5,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#BDCEFF",
-        "borderColor": "#8293D7"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "attack_speed",
@@ -34,8 +36,8 @@
         "statAmt": 3,
         "maxLevel": 15,
         "icon": "_attSpeed.png",
-        "bgColor": "#BDCEFF",
-        "borderColor": "#8293D7"
+        "bgColor": "#009B00",
+        "borderColor": "#00FF00"
       },
       {
         "id": "crit_damage",
@@ -44,8 +46,8 @@
         "statAmt": 5,
         "maxLevel": 15,
         "icon": "_critDmg_2.png",
-        "bgColor": "#BDCEFF",
-        "borderColor": "#8293D7"
+        "bgColor": "#994B00",
+        "borderColor": "#FF8000"
       },
       {
         "id": "enemy_hp",
@@ -54,8 +56,8 @@
         "statAmt": 3,
         "maxLevel": 15,
         "icon": "_enemyHp.png",
-        "bgColor": "#BDCEFF",
-        "borderColor": "#8293D7"
+        "bgColor": "#4C0000",
+        "borderColor": "#800000"
       }
     ],
     "Uncommon": [
@@ -66,8 +68,8 @@
         "statAmt": 10,
         "maxLevel": 999999999,
         "icon": "_planet.png",
-        "bgColor": "#18C9FF",
-        "borderColor": "#007CFE"
+        "bgColor": "#6E00A2",
+        "borderColor": "#AF00FF"
       },
       {
         "id": "rank_exp_i",
@@ -76,8 +78,8 @@
         "statAmt": 1,
         "maxLevel": 25,
         "icon": "_exp.png",
-        "bgColor": "#18C9FF",
-        "borderColor": "#007CFE"
+        "bgColor": "#0A6899",
+        "borderColor": "#19AFFF"
       },
       {
         "id": "crit_chance",
@@ -86,8 +88,8 @@
         "statAmt": 1,
         "maxLevel": 25,
         "icon": "_critChance2.png",
-        "bgColor": "#18C9FF",
-        "borderColor": "#007CFE"
+        "bgColor": "#994B00",
+        "borderColor": "#FF8000"
       },
       {
         "id": "super_gold_amount",
@@ -96,8 +98,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_goldSuper.png",
-        "bgColor": "#18C9FF",
-        "borderColor": "#007CFE"
+        "bgColor": "#8E8D04",
+        "borderColor": "#E9E90C"
       },
       {
         "id": "training_dummy_cooldown",
@@ -106,8 +108,8 @@
         "statAmt": 2,
         "maxLevel": 15,
         "icon": "_skillCd.png",
-        "bgColor": "#18C9FF",
-        "borderColor": "#007CFE"
+        "bgColor": "#7C7B7C",
+        "borderColor": "#C8C8C8"
       }
     ],
     "Rare": [
@@ -118,8 +120,8 @@
         "statAmt": 15,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#73EE05",
-        "borderColor": "#007929"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "kill_gold_ii",
@@ -128,8 +130,8 @@
         "statAmt": 15,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#73EE05",
-        "borderColor": "#007929"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "range",
@@ -138,8 +140,8 @@
         "statAmt": 2,
         "maxLevel": 10,
         "icon": "_range_2.png",
-        "bgColor": "#73EE05",
-        "borderColor": "#007929"
+        "bgColor": "#9F9E00",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "skill_cooldown",
@@ -148,8 +150,8 @@
         "statAmt": 2,
         "maxLevel": 15,
         "icon": "_skillCd.png",
-        "bgColor": "#73EE05",
-        "borderColor": "#007929"
+        "bgColor": "#009F9F",
+        "borderColor": "#00FFFF"
       },
       {
         "id": "super_exp_amount",
@@ -158,8 +160,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_expSuper.png",
-        "bgColor": "#73EE05",
-        "borderColor": "#007929"
+        "bgColor": "#0B5F8C",
+        "borderColor": "#199FE7"
       }
     ],
     "Epic": [
@@ -170,8 +172,8 @@
         "statAmt": 25,
         "maxLevel": 999999999,
         "icon": "_planet.png",
-        "bgColor": "#FF9D00",
-        "borderColor": "#EF5408"
+        "bgColor": "#6E00A2",
+        "borderColor": "#AF00FF"
       },
       {
         "id": "rank_exp_ii",
@@ -180,8 +182,8 @@
         "statAmt": 2,
         "maxLevel": 25,
         "icon": "_exp.png",
-        "bgColor": "#FF9D00",
-        "borderColor": "#EF5408"
+        "bgColor": "#0A6899",
+        "borderColor": "#19AFFF"
       },
       {
         "id": "super_crit_damage",
@@ -190,8 +192,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_critDmgSuper.png",
-        "bgColor": "#FF9D00",
-        "borderColor": "#EF5408"
+        "bgColor": "#843800",
+        "borderColor": "#E16400"
       },
       {
         "id": "spell_duration",
@@ -200,8 +202,8 @@
         "statAmt": 1,
         "maxLevel": 5,
         "icon": "_skillDuration.png",
-        "bgColor": "#FF9D00",
-        "borderColor": "#EF5408"
+        "bgColor": "#007575",
+        "borderColor": "#00C8C8"
       },
       {
         "id": "goblin_hoarder_spawns",
@@ -210,8 +212,8 @@
         "statAmt": 1,
         "maxLevel": 3,
         "icon": "_boss.png",
-        "bgColor": "#FF9D00",
-        "borderColor": "#EF5408"
+        "bgColor": "#868500",
+        "borderColor": "#DEDE00"
       }
     ],
     "Legendary": [
@@ -222,8 +224,8 @@
         "statAmt": 50,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#FF251E",
-        "borderColor": "#BC1823"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "kill_gold_iii",
@@ -232,8 +234,8 @@
         "statAmt": 50,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#FF251E",
-        "borderColor": "#BC1823"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "super_crit_chance",
@@ -242,8 +244,8 @@
         "statAmt": 1,
         "maxLevel": 10,
         "icon": "_critChanceSuper.png",
-        "bgColor": "#FF251E",
-        "borderColor": "#BC1823"
+        "bgColor": "#843800",
+        "borderColor": "#E16400"
       },
       {
         "id": "super_energy_amount",
@@ -252,8 +254,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_energy_2.png",
-        "bgColor": "#FF251E",
-        "borderColor": "#BC1823"
+        "bgColor": "#048B04",
+        "borderColor": "#0CE70C"
       },
       {
         "id": "power_mage_spawns",
@@ -262,8 +264,8 @@
         "statAmt": 1,
         "maxLevel": 2,
         "icon": "_boss.png",
-        "bgColor": "#FF251E",
-        "borderColor": "#BC1823"
+        "bgColor": "#691A1A",
+        "borderColor": "#AF3232"
       }
     ],
     "Mythic": [
@@ -274,8 +276,8 @@
         "statAmt": 100,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#BD1CFF",
-        "borderColor": "#3904D0"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "kill_gold_iv",
@@ -284,8 +286,8 @@
         "statAmt": 100,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#BD1CFF",
-        "borderColor": "#3904D0"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "energy_income_i",
@@ -294,8 +296,8 @@
         "statAmt": 1,
         "maxLevel": 8,
         "icon": "_energy2.png",
-        "bgColor": "#BD1CFF",
-        "borderColor": "#3904D0"
+        "bgColor": "#00A300",
+        "borderColor": "#00FF00"
       },
       {
         "id": "battlepass_exp",
@@ -304,8 +306,8 @@
         "statAmt": 1,
         "maxLevel": 5,
         "icon": "_battlepassExp.png",
-        "bgColor": "#BD1CFF",
-        "borderColor": "#3904D0"
+        "bgColor": "#007700",
+        "borderColor": "#00C800"
       },
       {
         "id": "exotic_alien_tech",
@@ -314,8 +316,8 @@
         "statAmt": 1,
         "maxLevel": 5,
         "icon": "_techPts.png",
-        "bgColor": "#BD1CFF",
-        "borderColor": "#3904D0"
+        "bgColor": "#4A3B79",
+        "borderColor": "#7D64C8"
       }
     ],
     "Supreme": [
@@ -326,8 +328,8 @@
         "statAmt": 125,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "kill_gold_v",
@@ -336,8 +338,8 @@
         "statAmt": 125,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "progressive_rank_exp_i",
@@ -346,8 +348,8 @@
         "statAmt": 2,
         "maxLevel": 999,
         "icon": "_exp.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#0B6B9F",
+        "borderColor": "#19AFFF"
       },
       {
         "id": "prestige_power_iii",
@@ -356,8 +358,8 @@
         "statAmt": 50,
         "maxLevel": 999999999,
         "icon": "_planet.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#6E00A2",
+        "borderColor": "#AF00FF"
       },
       {
         "id": "energy_income_ii",
@@ -366,8 +368,8 @@
         "statAmt": 2,
         "maxLevel": 10,
         "icon": "_energy2.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#00A300",
+        "borderColor": "#00FF00"
       },
       {
         "id": "hero_level_cost",
@@ -376,8 +378,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_star.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#A09F00",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "map_perks",
@@ -386,8 +388,8 @@
         "statAmt": 2,
         "maxLevel": 15,
         "icon": "_castle.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#009600",
+        "borderColor": "#00FF00"
       },
       {
         "id": "wave_perk_waves",
@@ -396,8 +398,8 @@
         "statAmt": 2,
         "maxLevel": 10,
         "icon": "icon_arrow_shaped_26.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#00244C",
+        "borderColor": "#004080"
       },
       {
         "id": "wave_perk_effect",
@@ -406,8 +408,8 @@
         "statAmt": 2,
         "maxLevel": 10,
         "icon": "_archmage.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#002249",
+        "borderColor": "#004080"
       },
       {
         "id": "active_play_reward",
@@ -416,8 +418,8 @@
         "statAmt": 5,
         "maxLevel": 10,
         "icon": "_chest1.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#9F009F",
+        "borderColor": "#FF00FF"
       }
     ],
     "Supreme II (Combat)": [
@@ -428,8 +430,8 @@
         "statAmt": 150,
         "maxLevel": 999999999,
         "icon": "_dps.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
       },
       {
         "id": "ultra_crit_damage",
@@ -438,8 +440,8 @@
         "statAmt": 100,
         "maxLevel": 25,
         "icon": "_critDmgUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#770000",
+        "borderColor": "#C80000"
       },
       {
         "id": "ultra_crit_chance",
@@ -448,8 +450,8 @@
         "statAmt": 5,
         "maxLevel": 25,
         "icon": "_critChanceUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#770000",
+        "borderColor": "#C80000"
       },
       {
         "id": "progressive_rank_exp_ii",
@@ -458,8 +460,8 @@
         "statAmt": 4,
         "maxLevel": 999,
         "icon": "_exp.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#0B6B9F",
+        "borderColor": "#19AFFF"
       },
       {
         "id": "ultra_exp_chance",
@@ -468,8 +470,8 @@
         "statAmt": 5,
         "maxLevel": 25,
         "icon": "_expUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#00517F",
+        "borderColor": "#008DD9"
       }
     ],
     "Supreme II (Resource)": [
@@ -480,8 +482,8 @@
         "statAmt": 150,
         "maxLevel": 999999999,
         "icon": "_coin.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
       },
       {
         "id": "ultra_gold_amount",
@@ -490,8 +492,8 @@
         "statAmt": 100,
         "maxLevel": 25,
         "icon": "_goldUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#848305",
+        "borderColor": "#DDDD10"
       },
       {
         "id": "ultra_gold_chance",
@@ -500,8 +502,8 @@
         "statAmt": 5,
         "maxLevel": 25,
         "icon": "_goldUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#848305",
+        "borderColor": "#DDDD10"
       },
       {
         "id": "energy_income_iii",
@@ -510,8 +512,8 @@
         "statAmt": 3,
         "maxLevel": 25,
         "icon": "_energy2.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#00A300",
+        "borderColor": "#00FF00"
       },
       {
         "id": "ultra_energy_chance",
@@ -520,8 +522,8 @@
         "statAmt": 5,
         "maxLevel": 25,
         "icon": "_energyUltra.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#037D03",
+        "borderColor": "#09D109"
       }
     ],
     "Supreme II (Progress)": [
@@ -532,8 +534,8 @@
         "statAmt": 75,
         "maxLevel": 999999999,
         "icon": "_planet.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#6E00A2",
+        "borderColor": "#AF00FF"
       },
       {
         "id": "weekly_tickets",
@@ -542,8 +544,8 @@
         "statAmt": 2,
         "maxLevel": 25,
         "icon": "_mission.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#952C2A",
+        "borderColor": "#FFD344"
       },
       {
         "id": "free_hero_level_chance",
@@ -552,8 +554,8 @@
         "statAmt": 5,
         "maxLevel": 25,
         "icon": "_star.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#969600",
+        "borderColor": "#FFFE00"
       },
       {
         "id": "enemy_hp_skip_chance",
@@ -562,8 +564,8 @@
         "statAmt": 1,
         "maxLevel": 25,
         "icon": "_enemyHp.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#4C0000",
+        "borderColor": "#800000"
       },
       {
         "id": "auto_upgrade_times",
@@ -572,8 +574,8 @@
         "statAmt": 1,
         "maxLevel": 25,
         "icon": "_skillCd.png",
-        "bgColor": "#A10D26",
-        "borderColor": "#A10D26"
+        "bgColor": "#009F9F",
+        "borderColor": "#00FFFF"
       }
     ]
   }

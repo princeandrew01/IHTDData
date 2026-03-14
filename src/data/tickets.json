@@ -4,6 +4,8 @@
   "formulaNote": "cost = baseCost (same every level)",
   "canCalculateCost": true,
   "isTree": false,
+  "menuOrder": 8,
+  "parentMenuName": "Upgrades",
   "menuIcon": "_ticket.png",
   "groups": {
     "Combat": [

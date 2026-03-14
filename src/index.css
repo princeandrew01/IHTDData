@@ -13,6 +13,19 @@ body { margin: 0; padding: 0; }
   .card-grid { grid-template-columns: 1fr; }
 }
 
+/* Hero grid — 3 col desktop, 1 col mobile */
+.hero-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+@media (max-width: 900px) {
+  .hero-grid { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .hero-grid { grid-template-columns: 1fr; }
+}
+
 /* Modal box — fixed size so content changes don't resize it */
 .modal-box {
   width: 100%;

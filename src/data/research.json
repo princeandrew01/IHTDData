@@ -4,6 +4,8 @@
   "formulaNote": "cost = baseCost * pow(level + 1, multCost)",
   "canCalculateCost": true,
   "isTree": false,
+  "menuOrder": 1,
+  "parentMenuName": "Upgrades",
   "menuIcon": "_energy.png",
   "groups": {
     "Combat": [
