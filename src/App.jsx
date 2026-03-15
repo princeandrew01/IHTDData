@@ -26,6 +26,7 @@ import heroAttributesData       from "./data/hero_attributes.json";
 import tournamentBracketsData   from "./data/tournament_brackets.json";
 import combatStylesData         from "./data/combat_styles.json";
 import enemyHpData              from "./data/enemy_hp.json";
+import battpassExpData          from "./data/battlepass_exp.json";
 import STAT_UNITS          from "./data/stat_units.json";
 import techTreeDisplayData  from "./data/tech_tree_display.json";
 
@@ -104,6 +105,12 @@ const NAV_GROUPS = [
     items: [
       { key: "rankRequired", label: "Rank Required",    menuIcon: "_attributePoints_0.png" },
       { key: "enemyHp",      label: "Enemy HP",         menuIcon: "_bosses.png" },
+    ],
+  },
+  {
+    label: "Battlepass",
+    items: [
+      { key: "battpassExp", label: "Battlepass Exp", menuIcon: "_battlepass.png" },
     ],
   },
 ];
@@ -953,6 +960,111 @@ function RankExpView() {
                 <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
                 <td style={{ padding: "8px 16px", color: r.pointsGained === 0 ? colors.muted : colors.gold, fontWeight: r.pointsGained > 0 ? 600 : 400 }}>{r.pointsGained === 0 ? "—" : `+${r.pointsGained}`}</td>
                 <td style={{ padding: "8px 16px", color: colors.gold, fontFamily: "monospace" }}>{r.cumulativePoints.toLocaleString()}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// BATTLEPASS EXP FORMULA
+// base = 50 * level²; scaling thresholds applied cumulatively with round-half-up
+// ─────────────────────────────────────────────
+function battpassExpForLevel(lvl) {
+  const roundHalfUp = v => Math.floor(v + 0.5);
+  let base = 50 * lvl * lvl;
+  if (lvl > 35)  base = roundHalfUp(base * (1 + (lvl - 35)  * 0.05));
+  if (lvl > 50)  base = roundHalfUp(base * (1 + (lvl - 50)  * 0.05));
+  if (lvl > 75)  base = roundHalfUp(base * (1 + (lvl - 75)  * 0.05));
+  if (lvl > 100) base = roundHalfUp(base * (1 + (lvl - 100) * 0.05));
+  return base;
+}
+
+function BattlepassExpView() {
+  const fmt = useFmt();
+  const [startInput, setStartInput] = useState("1");
+  const [endInput,   setEndInput]   = useState("150");
+  const [range, setRange] = useState({ start: 1, end: 150 });
+
+  function applyRange() {
+    const s = Math.max(1, parseInt(startInput) || 1);
+    const e = Math.max(s, parseInt(endInput)   || s);
+    setStartInput(String(s));
+    setEndInput(String(e));
+    setRange({ start: s, end: e });
+  }
+
+  function handleKeyDown(evt) {
+    if (evt.key === "Enter") applyRange();
+  }
+
+  const { rows, totalExp } = useMemo(() => {
+    const out = [];
+    let cumulative = 0;
+    for (let i = range.start; i <= range.end; i++) {
+      const required = battpassExpForLevel(i);
+      cumulative += required;
+      out.push({ level: i, required, cumulative });
+    }
+    const totalExp = out.reduce((s, r) => s + r.required, 0);
+    return { rows: out, totalExp };
+  }, [range]);
+
+  const inputStyle = {
+    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
+    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
+    width: 90, textAlign: "center", outline: "none",
+  };
+
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        <span style={{ color: colors.muted, fontSize: 13 }}>From level</span>
+        <input
+          type="number" value={startInput} min={1}
+          onChange={e => setStartInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          style={inputStyle}
+        />
+        <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
+        <input
+          type="number" value={endInput} min={1}
+          onChange={e => setEndInput(e.target.value)}
+          onKeyDown={handleKeyDown}
+          style={inputStyle}
+        />
+        <button onClick={applyRange} style={{
+          background: colors.accent, color: "#000", border: "none", borderRadius: 6,
+          padding: "6px 18px", cursor: "pointer", fontWeight: 700, fontSize: 13,
+          fontFamily: "inherit",
+        }}>
+          Apply
+        </button>
+      </div>
+      <div style={{ marginBottom: 16 }}>
+        <div style={{ display: "inline-block", background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "10px 16px" }}>
+          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Total EXP (Levels {range.start}–{range.end})</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: colors.positive, fontFamily: "monospace" }}>{fmt(totalExp)}</div>
+        </div>
+      </div>
+      <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ background: colors.panel }}>
+              {["Level", "EXP Required", "Cumulative EXP"].map(h => (
+                <th key={h} style={{ padding: "10px 16px", color: colors.muted, fontWeight: 600, textAlign: "left", borderBottom: `1px solid ${colors.border}`, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={r.level} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
+                <td style={{ padding: "8px 16px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
+                <td style={{ padding: "8px 16px", color: colors.text, fontFamily: "monospace" }}>{fmt(r.required)}</td>
+                <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
               </tr>
             ))}
           </tbody>
@@ -2490,6 +2602,13 @@ const HOME_SECTIONS = [
       { key: "enemyHp",      label: "Enemy HP",      icon: "_bosses.png",            desc: "Enemy HP by wave with player reductions" },
     ],
   },
+  {
+    group: "Battlepass",
+    color: "#f5c842",
+    items: [
+      { key: "battpassExp", label: "Battlepass Exp", icon: "_battlepass.png", desc: "EXP required per battlepass level" },
+    ],
+  },
 ];
 
 const STORE_LINKS = [
@@ -2792,7 +2911,7 @@ function HomeView({ onNavigate }) {
         <div style={{ fontSize: 16, fontWeight: 700, color: colors.text, marginBottom: 4 }}>Game Data Reference</div>
         <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>by Asingh · Game Version 15.04</div>
         <p style={{ fontSize: 14, color: colors.muted, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 12px" }}>
-          A comprehensive reference tool for Idle Hero TD — covering upgrade costs, hero stats, synergies, milestones, mastery exp, map perks, and tournament brackets. Use the sidebar to navigate between sections.
+          A comprehensive reference tool for Idle Hero TD — covering upgrade costs, hero stats, synergies, milestones, mastery exp, map perks, tournament brackets, and battlepass exp. Use the sidebar to navigate between sections.
         </p>
         <p style={{ fontSize: 13, color: colors.muted, lineHeight: 1.6, maxWidth: 560, margin: "0 auto 24px", padding: "10px 16px", background: colors.header, borderRadius: 8, border: `1px solid ${colors.border}` }}>
           Found an error or something looks off? Please message <span style={{ color: colors.accent, fontWeight: 700 }}>Asingh</span> or any of the mods on the Discord server.
@@ -3675,6 +3794,7 @@ export default function App() {
           {activeKey === "brackets"   && <BracketsView />}
           {activeKey === "allMaps"    && <AllMapsView />}
           {activeKey === "mapPerks"   && <MapPerksView />}
+          {activeKey === "battpassExp" && <BattlepassExpView />}
         </div>
 
       </div>
