@@ -75,9 +75,10 @@ const NAV_GROUPS = [
     label: "Hero Data",
     items: [
       { key: "allHeroes",    label: "All Heroes",    menuIcon: "_heroHelm.png" },
-      { key: "synergies",    label: "Synergies",  menuIcon: "_synergy.png",      iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
-      { key: "milestones",   label: "Milestones", menuIcon: "_star 3610.png" },
+      { key: "synergies",    label: "Synergies",     menuIcon: "_synergy.png", iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
+      { key: "milestones",   label: "Milestones",    menuIcon: "_star 3610.png" },
       { key: "rankExp",      label: "Rank Exp",      menuIcon: "_killExp.png" },
+      { key: "attributes",   label: "Attributes",    menuIcon: "_attributePoints_0.png" },
     ],
   },
   {
@@ -201,6 +202,19 @@ function computeTotalCost(item, sectionFormula) {
     return total;
   }
 
+  if (formula === "hero_attr") {
+    const bp1 = Math.round(maxLevel * 0.5);
+    const bp2 = Math.round(maxLevel * 0.8);
+    // Closed-form: sum(L=a..b) floor(bc * L * mult) ≈ mult * bc * (b-a+1)*(a+b)/2
+    // Error ≤ number of terms — negligible for display at any scale
+    const sumRange = (a, b) => b >= a ? (b - a + 1) * (a + b) / 2 : 0;
+    return Math.round(
+      baseCost       * sumRange(1,     bp1 - 1) +
+      1.25  * baseCost * sumRange(bp1,   bp2 - 1) +
+      1.875 * baseCost * sumRange(bp2,   maxLevel)
+    );
+  }
+
   // Use BigInt arithmetic when all inputs are integers for exact results
   const intInputs = Number.isInteger(baseCost) &&
     (multiCost === undefined || Number.isInteger(multiCost));
@@ -213,6 +227,10 @@ function computeTotalCost(item, sectionFormula) {
     switch (formula) {
       case "flat":
         return bc * n;
+
+      // rank_linear: cost(level) = baseCost × level → total = baseCost × n×(n+1)/2
+      case "rank_linear":
+        return bc * n * (n + 1n) / 2n;
 
       case "power": {
         // cost(i) = baseCost × (i+1)^multiCost  for i = 0..maxLevel-1
@@ -256,6 +274,9 @@ function computeTotalCost(item, sectionFormula) {
   switch (formula) {
     case "flat":
       return baseCost * maxLevel;
+
+    case "rank_linear":
+      return baseCost * maxLevel * (maxLevel + 1) / 2;
 
     case "power": {
       if (!multiCost || multiCost === 1) return baseCost * maxLevel * (maxLevel + 1) / 2;
@@ -380,6 +401,14 @@ function costAtLevel(level, item, sectionFormula) {
   if (formula === "spell") {
     const entry = spellCostEntry(level, item);
     return entry.type === "energy" ? entry.cost : 0n;
+  }
+
+  if (formula === "hero_attr") {
+    const ml  = item.maxLevel ?? 999999;
+    const bp1 = Math.round(ml * 0.5);
+    const bp2 = Math.round(ml * 0.8);
+    const mult = level >= bp2 ? 1.875 : level >= bp1 ? 1.25 : 1.0;
+    return Math.floor(baseCost * level * mult);
   }
 
   const intInputs = Number.isInteger(baseCost) &&
@@ -1537,6 +1566,122 @@ function AllHeroesView() {
 }
 
 // ─────────────────────────────────────────────
+// ATTRIBUTES VIEW
+// ─────────────────────────────────────────────
+function AttributesView() {
+  const fmt = useFmt();
+  const isMobile = useIsMobile();
+  const [modalAttr, setModalAttr] = useState(null);
+
+  const groups = [
+    { key: "personal", label: "Attributes (Personal)", desc: "Applies to the individual hero only." },
+    { key: "global",   label: "Attributes (Global)",   desc: "Affects all heroes globally." },
+  ];
+
+  return (
+    <div>
+      {/* Header */}
+      <div style={{ marginBottom: 28, display: "flex", alignItems: "center", gap: 12 }}>
+        <img src={getIconUrl("_attributePoints_0.png")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
+        <div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Attributes</div>
+          <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>Attribute point upgrades per hero</div>
+        </div>
+      </div>
+
+      {groups.map(group => (
+        <div key={group.key} style={{ marginBottom: 36 }}>
+          {/* Group header */}
+          <div style={{
+            background: `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`,
+            border: `1px solid #4a7ec0`,
+            borderRadius: 8, padding: "8px 20px", marginBottom: 14,
+            textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
+          }}>
+            <div style={{ fontSize: 14, fontWeight: 800, color: colors.bannerText, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>{group.label}</div>
+            <div style={{ fontSize: 12, color: "rgba(255,255,255,0.65)", marginTop: 2 }}>{group.desc}</div>
+          </div>
+
+          {/* Attribute cards — 2 col desktop, 1 col mobile */}
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 8 }}>
+            {(heroAttributesData[group.key] ?? []).map(attr => {
+              const statLine   = attr.statAmt !== undefined && attr.statKey ? formatStat(attr.statAmt, attr.statKey) : null;
+              const maxLvl     = attr.maxLevel;
+              const totalCost  = maxLvl != null ? fmt(computeTotalCost(attr, "hero_attr")) : null;
+              const maxBenefit = maxLvl != null && attr.statAmt !== undefined && attr.statKey
+                ? formatStatTotal(attr.statAmt * maxLvl, attr.statKey, fmt) : null;
+              const iconBg     = attr.bgColor     ?? "#1a4a8a";
+              const iconBorder = attr.borderColor ?? colors.border;
+
+              return (
+                <div key={attr.id} onClick={() => setModalAttr(attr)}
+                  style={{
+                    background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
+                    border: `1px solid ${colors.border}`,
+                    borderRadius: 8, padding: 12,
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                    display: "flex", gap: 12, alignItems: "center",
+                    cursor: "pointer", transition: "border-color 0.15s",
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.borderColor = colors.accent}
+                  onMouseLeave={e => e.currentTarget.style.borderColor = colors.border}
+                >
+                  {/* Icon box */}
+                  <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, background: iconBg, border: `2px solid ${iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                    {attr.icon
+                      ? <img src={getIconUrl(attr.icon)} alt="" style={{ width: 36, height: 36, objectFit: "contain" }} />
+                      : <span style={{ fontSize: 20, fontWeight: 800, color: "#ffffff99", textTransform: "uppercase", userSelect: "none" }}>{attr.name.charAt(0)}</span>
+                    }
+                  </div>
+
+                  {/* Content */}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {/* Row 1: name + rank badge */}
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
+                      <span style={{ color: colors.text, fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>{attr.name}</span>
+                      {attr.rankReq > 0 && (
+                        <span style={{
+                          fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
+                          background: "#0f2640", border: `1px solid #2a5a8a`,
+                          color: "#7aaacf", whiteSpace: "nowrap", flexShrink: 0,
+                        }}>Rank {attr.rankReq.toLocaleString()}+</span>
+                      )}
+                    </div>
+
+                    {/* Row 2: stat per level */}
+                    {statLine && (
+                      <div style={{ color: colors.positive, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{statLine} per level</div>
+                    )}
+
+                    {/* Row 3: cost info */}
+                    <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
+                      <span style={{ fontSize: 13, color: colors.muted }}>Base <span style={{ color: colors.gold, fontWeight: 700 }}>{attr.baseCost.toLocaleString()} × lvl</span></span>
+                      {totalCost != null && (
+                        <span style={{ fontSize: 13, color: colors.muted }}>Total <span style={{ color: colors.gold, fontWeight: 700 }}>{totalCost}</span></span>
+                      )}
+                      {maxBenefit && (
+                        <span style={{ fontSize: 13, color: colors.muted }}>Max <span style={{ color: colors.positive, fontWeight: 700 }}>{maxBenefit}</span></span>
+                      )}
+                      {maxLvl == null && (
+                        <span style={{ fontSize: 13, color: colors.muted }}>Levels <span style={{ color: colors.accent, fontWeight: 700 }}>∞</span></span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      ))}
+
+      {modalAttr && (
+        <CostModal item={modalAttr} sectionFormula="hero_attr" onClose={() => setModalAttr(null)} />
+      )}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // MAPS VIEW
 // ─────────────────────────────────────────────
 function perkMaxCost(perk) {
@@ -1762,7 +1907,7 @@ function MapModal({ map, onClose }) {
   );
 }
 
-function MapCard({ map, onClick }) {
+function MapCard({ map, onClick, isMobile }) {
   const isLocked = map.waveRequirement > 0;
   const iconUrl = getIconUrl(map.icon);
   const hasVariants = map.astralVariants?.length > 0;
@@ -1787,12 +1932,12 @@ function MapCard({ map, onClick }) {
       {/* Dark overlay so text stays readable */}
       <div style={{ position: "absolute", inset: 0, background: "rgba(10,25,45,0.72)", pointerEvents: "none" }} />
 
-      {/* Content sits above overlay */}
-      <div style={{ position: "relative", zIndex: 1, padding: "16px", display: "flex", gap: 16, flex: 1 }}>
+      {/* Content sits above overlay — stacked on mobile, side-by-side on desktop */}
+      <div style={{ position: "relative", zIndex: 1, padding: "16px", display: "flex", flexDirection: isMobile ? "column" : "row", gap: 16, flex: 1 }}>
 
-        {/* Left: name + unlock requirements */}
-        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "0 0 160px" }}>
-          <div style={{ fontWeight: 900, fontSize: 21, color: colors.text, lineHeight: 1.2 }}>{map.name}</div>
+        {/* Header block: name + unlock requirements */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: isMobile ? "none" : "0 0 160px" }}>
+          <div style={{ fontWeight: 900, fontSize: isMobile ? 18 : 21, color: colors.text, lineHeight: 1.2 }}>{map.name}</div>
           {isLocked
             ? <>
                 <Badge color={colors.accent}>Wave: {map.waveRequirement.toLocaleString()}</Badge>
@@ -1803,10 +1948,13 @@ function MapCard({ map, onClick }) {
           {hasVariants && <Badge color="#b47aff">Perks rotate Mon &amp; Thurs</Badge>}
         </div>
 
-        {/* Divider */}
-        <div style={{ width: 1, background: `${colors.border}60`, flexShrink: 0 }} />
+        {/* Divider — horizontal on mobile, vertical on desktop */}
+        <div style={isMobile
+          ? { height: 1, background: `${colors.border}60` }
+          : { width: 1, background: `${colors.border}60`, flexShrink: 0 }
+        } />
 
-        {/* Right: default perks or astral variants */}
+        {/* Perks / variants */}
         <div style={{ flex: 1, minWidth: 0 }}>
           {hasVariants ? (() => {
             const variant = map.astralVariants[variantIdx];
@@ -1884,14 +2032,15 @@ function MapCard({ map, onClick }) {
 
 function AllMapsView() {
   const [selectedMap, setSelectedMap] = useState(null);
+  const isMobile = useIsMobile();
   return (
     <div>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>All Maps</div>
         <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Click a map to see full perk details</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(230px, auto)" }}>
-        {mapsData.maps.map(map => <MapCard key={map.id} map={map} onClick={() => setSelectedMap(map)} />)}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(200px, auto)" }}>
+        {mapsData.maps.map(map => <MapCard key={map.id} map={map} isMobile={isMobile} onClick={() => setSelectedMap(map)} />)}
       </div>
       {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} />}
     </div>
@@ -2035,6 +2184,7 @@ export default function App() {
           {activeKey === "synergies"  && <AllSynergiesView />}
           {activeKey === "milestones" && <AllMilestonesView />}
           {activeKey === "rankExp"    && <RankExpView />}
+          {activeKey === "attributes" && <AttributesView />}
           {activeKey === "allMaps"    && <AllMapsView />}
         </div>
 
