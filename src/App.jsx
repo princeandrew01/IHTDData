@@ -11,6 +11,7 @@ function useIsMobile() {
 }
 
 import heroesData     from "./data/heroes.json";
+import mapsData       from "./data/maps.json";
 import researchData   from "./data/research.json";
 import spellsData     from "./data/spells.json";
 import powerupsData   from "./data/powerups.json";
@@ -20,8 +21,9 @@ import techData       from "./data/tech.json";
 import ticketsData    from "./data/tickets.json";
 import tournamentData from "./data/tournament.json";
 import ultimusData    from "./data/ultimus.json";
-import runesData      from "./data/runes.json";
-import STAT_UNITS     from "./data/stat_units.json";
+import runesData           from "./data/runes.json";
+import heroAttributesData  from "./data/hero_attributes.json";
+import STAT_UNITS          from "./data/stat_units.json";
 
 // ─────────────────────────────────────────────
 // NORMALIZE  — rename multCost → multiCost for
@@ -76,6 +78,12 @@ const NAV_GROUPS = [
       { key: "synergies",    label: "Synergies",  menuIcon: "_synergy.png",      iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
       { key: "milestones",   label: "Milestones", menuIcon: "_star 3610.png" },
       { key: "rankExp",      label: "Rank Exp",      menuIcon: "_killExp.png" },
+    ],
+  },
+  {
+    label: "Maps",
+    items: [
+      { key: "allMaps", label: "All Maps", menuIcon: "Icon_Map_0.png" },
     ],
   },
 ];
@@ -349,6 +357,16 @@ const colors = {
   gold:      "#ffd040",   // gold / currency colour
 };
 
+const ASTRAL_COLORS = {
+  damage:  "#e05555",
+  gold:    "#ffd040",
+  exp:     "#4488ee",
+  energy:  "#2ecc71",
+  boss:    "#aa2020",
+  skills:  "#33cccc",
+  misc:    "#1a8c1a",
+};
+
 // ─────────────────────────────────────────────
 // COST AT A SINGLE LEVEL  (1-indexed)
 // ─────────────────────────────────────────────
@@ -373,6 +391,7 @@ function costAtLevel(level, item, sectionFormula) {
     const lv = BigInt(level);
     switch (formula) {
       case "flat":           return bc;
+      case "rank_linear":    return bc * lv;
       case "power":          return bc * lv ** mc;
       case "exponential":
       case "exponential_endgame": return bc * mc ** (lv - 1n);
@@ -388,6 +407,7 @@ function costAtLevel(level, item, sectionFormula) {
   const i = level - 1;
   switch (formula) {
     case "flat":           return baseCost;
+    case "rank_linear":    return baseCost * level;
     case "power":          return baseCost * Math.pow(level, multiCost ?? 1);
     case "exponential":
     case "exponential_endgame": return baseCost * Math.pow(multiCost ?? 1, i);
@@ -653,6 +673,12 @@ function CostModal({ item, sectionFormula, onClose }) {
 
 function getIconUrl(filename) {
   return new URL(`./images/Icons/${filename}`, import.meta.url).href;
+}
+
+function getPerkUnit(name) {
+  if (name.includes("%")) return "%";
+  if (/chance|synergy|speed|cooldown|bonus|effect|group|damage|power|exp|gold|energy|active play/i.test(name)) return "%";
+  return "";
 }
 
 function ItemCard({ item, sectionFormula, canCalculateCost, onOpen }) {
@@ -1511,10 +1537,372 @@ function AllHeroesView() {
 }
 
 // ─────────────────────────────────────────────
+// MAPS VIEW
+// ─────────────────────────────────────────────
+function perkMaxCost(perk) {
+  const bp = 5;
+  const uc = perk.upgradeCost ?? perk.baseCost;
+  const low  = uc * Math.min(perk.maxLevel, bp);
+  const high = uc * 2 * Math.max(0, perk.maxLevel - bp);
+  return (perk.unlockCost ?? 0) + low + high;
+}
+
+function MapModal({ map, onClose }) {
+  const hasVariants = map.astralVariants?.length > 0;
+  const [tab, setTab] = useState("perks");
+  const [variantIdx, setVariantIdx] = useState(0);
+  const totalUnlock      = map.perks.reduce((sum, p) => sum + (p.unlockCost ?? 0), 0);
+  const totalUpgrades    = map.perks.reduce((sum, p) => {
+    const bp = 5, uc = p.upgradeCost ?? p.baseCost;
+    return sum + uc * Math.min(p.maxLevel, bp) + uc * 2 * Math.max(0, p.maxLevel - bp);
+  }, 0);
+  const grandTotal       = totalUnlock + totalUpgrades;
+  const totalPlacement   = (mapsData.placementBonuses ?? []).reduce((sum, b) =>
+    sum + b.baseCost * b.breakpoint + b.upgradeCostHigh * (b.maxLevel - b.breakpoint), 0);
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", zIndex: 300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={e => e.stopPropagation()} style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 12, width: "100%", maxWidth: 560, height: "85vh", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+
+        {/* Modal header */}
+        <div style={{ borderBottom: `1px solid ${colors.border}`, padding: "16px 20px", display: "flex", alignItems: "center", gap: 14, flexShrink: 0, position: "relative", backgroundImage: `url(${getIconUrl(map.icon)})`, backgroundSize: "cover", backgroundPosition: "center" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(10,25,45,0.82)", pointerEvents: "none" }} />
+          <div style={{ flex: 1, position: "relative", zIndex: 1 }}>
+            <div style={{ fontWeight: 900, fontSize: 18, color: colors.text }}>{map.name}</div>
+            {map.waveRequirement > 0
+              ? <div style={{ fontSize: 12, color: colors.muted, marginTop: 3 }}>Wave {map.waveRequirement.toLocaleString()} · {map.gemsToUnlock.toLocaleString()} Gems to unlock</div>
+              : <div style={{ fontSize: 12, color: colors.positive, marginTop: 3 }}>Available from start</div>
+            }
+            <div style={{ display: "flex", gap: 16, marginTop: 8, flexWrap: "wrap" }}>
+              {[
+                { label: "Map Perks",  value: grandTotal },
+                { label: "Placement",  value: totalPlacement },
+                { label: "Total",      value: grandTotal + totalPlacement, highlight: true },
+              ].map(({ label, value, highlight }) => (
+                <div key={label}>
+                  <div style={{ fontSize: 10, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{label}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700, color: highlight ? colors.accent : colors.gold }}>{value.toLocaleString()}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: colors.muted, fontSize: 20, cursor: "pointer", lineHeight: 1, padding: 4 }}>✕</button>
+        </div>
+
+        {/* Tabs */}
+        <div style={{ display: "flex", borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
+          {[{ key: "perks", label: "Map Perks" }, { key: "placement", label: "Placement" }, ...(hasVariants ? [{ key: "variants", label: "Variants" }] : [])].map(t => (
+            <button key={t.key} onClick={() => setTab(t.key)} style={{
+              flex: 1, background: "none", border: "none", borderBottom: tab === t.key ? `2px solid ${colors.accent}` : "2px solid transparent",
+              color: tab === t.key ? colors.accent : colors.muted, fontFamily: "inherit", fontWeight: 700,
+              fontSize: 13, padding: "10px 0", cursor: "pointer", transition: "color 0.15s",
+            }}>{t.label}</button>
+          ))}
+        </div>
+
+        {/* Tab content */}
+        <div style={{ overflowY: "auto", padding: "16px 20px", display: "flex", flexDirection: "column", gap: 0 }}>
+          {tab === "perks" && <>
+            {/* Perk list */}
+            {map.perks.map(perk => {
+              const unit = getPerkUnit(perk.name);
+              const bp = 5;
+              const uc = perk.upgradeCost ?? perk.baseCost;
+              const rows = [];
+              rows.push({ level: "Unlock", cost: perk.unlockCost ?? null, cumulative: perk.unlockCost ?? 0, bonus: perk.baseAmt });
+              let cum = perk.unlockCost ?? 0;
+              for (let lvl = 1; lvl <= perk.maxLevel; lvl++) {
+                const stepCost = lvl <= bp ? uc : uc * 2;
+                cum += stepCost;
+                rows.push({ level: lvl, cost: stepCost, cumulative: cum, bonus: perk.baseAmt + perk.statAmt * lvl });
+              }
+              const thStyle = { padding: "5px 8px", color: colors.muted, fontWeight: 700, fontSize: 12, borderBottom: `1px solid ${colors.border}`, letterSpacing: "0.05em", textTransform: "uppercase" };
+              return (
+                <div key={perk.id} style={{ paddingBottom: 16, marginBottom: 16, borderBottom: `1px solid ${colors.border}40` }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{perk.name}</span>
+                      {perk.isDefault && <Badge color={colors.positive}>Default</Badge>}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+                      {perk.waveReq > 0 && <Badge color={colors.accent}>Wave {(perk.waveReq / 1000).toFixed(0)}K</Badge>}
+                      <Badge color={colors.muted}>Max Lv {perk.maxLevel}</Badge>
+                    </div>
+                  </div>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                    <thead>
+                      <tr style={{ background: colors.panel }}>
+                        <th style={{ ...thStyle, textAlign: "left"  }}>Level</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>Total Cost</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>Bonus</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r, i) => (
+                        <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "50" }}>
+                          <td style={{ padding: "4px 8px", color: r.level === "Unlock" ? colors.muted : colors.accent, fontWeight: 600 }}>{r.level}</td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", color: r.cost ? colors.gold : colors.muted, fontFamily: "monospace" }}>{r.cost ?? "—"}</td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{r.cumulative}</td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.positive, fontWeight: 600 }}>{r.bonus}{unit}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
+            {map.negativePerk && (() => {
+              const np = map.negativePerk;
+              const unit = getPerkUnit(np.name);
+              return (
+                <div style={{ paddingTop: 14, marginTop: 4, borderTop: `1px solid #e0555533` }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                    <span style={{ fontWeight: 700, fontSize: 14, color: "#e05555" }}>{np.name}</span>
+                    <Badge color="#e05555">Penalty</Badge>
+                  </div>
+                  <div style={{ fontSize: 12, color: colors.muted }}>
+                    Per level <span style={{ color: "#e05555", fontWeight: 600 }}>{np.statAmt}{unit}</span>
+                  </div>
+                </div>
+              );
+            })()}
+          </>}
+
+          {tab === "variants" && hasVariants && (() => {
+            const variant = map.astralVariants[variantIdx];
+            return (
+              <>
+                {/* Variant pill switcher */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
+                  {map.astralVariants.map((v, i) => {
+                    const c = ASTRAL_COLORS[v.enumName] ?? "#b47aff";
+                    const active = i === variantIdx;
+                    return (
+                      <button key={v.enumValue} onClick={() => setVariantIdx(i)} style={{
+                        padding: "5px 12px", borderRadius: 20,
+                        border: `1px solid ${active ? c : c + "44"}`,
+                        background: active ? c + "55" : c + "11",
+                        color: active ? "#fff" : c + "99",
+                        fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer", transition: "all 0.15s",
+                      }}>{v.displayName.replace(/ Day$/i, "")}</button>
+                    );
+                  })}
+                </div>
+                {/* Selected variant effects */}
+                <div style={{ padding: "12px 14px", background: colors.header, borderRadius: 8, border: `1px solid ${colors.border}` }}>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: ASTRAL_COLORS[variant.enumName] ?? "#b47aff", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{variant.displayName.replace(/ Day$/i, "")}</div>
+                  {variant.effects.map((ef, i) => {
+                    const negativIsGood = new Set(["skillCooldown", "spellCooldown"]);
+                    const isDebuff = negativIsGood.has(ef.statKey) ? ef.amount > 0 : ef.amount < 0;
+                    const sign = ef.amount > 0 ? "+" : "";
+                    const unitStr = ef.unit === "pct" ? "%" : "";
+                    return (
+                      <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: i < variant.effects.length - 1 ? `1px solid ${colors.border}30` : "none" }}>
+                        <span style={{ fontSize: 13, color: colors.muted }}>{ef.statLabel}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: isDebuff ? "#e05555" : colors.positive }}>{sign}{ef.amount}{unitStr}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ marginTop: 10, fontSize: 11, color: colors.muted, fontStyle: "italic" }}>Active variant is set server-side and rotates daily.</div>
+              </>
+            );
+          })()}
+
+          {tab === "placement" && (() => {
+            const bonuses = mapsData.placementBonuses ?? [];
+            const thStyle = { padding: "4px 8px", color: colors.muted, fontWeight: 700, fontSize: 11, borderBottom: `1px solid ${colors.border}`, letterSpacing: "0.05em", textTransform: "uppercase" };
+            return (
+              <>
+                {bonuses.map(b => {
+                  const unit = getPerkUnit(b.name);
+                  const rows = [];
+                  let cum = 0;
+                  for (let lvl = 1; lvl <= b.maxLevel; lvl++) {
+                    const stepCost = lvl <= b.breakpoint ? b.baseCost : b.upgradeCostHigh;
+                    cum += stepCost;
+                    rows.push({ level: lvl, cost: stepCost, cumulative: cum, bonus: b.statAmt * lvl });
+                  }
+                  return (
+                    <div key={b.id} style={{ paddingBottom: 16, marginBottom: 16, borderBottom: `1px solid ${colors.border}40` }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                        <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>{b.name}</span>
+                        <Badge color={colors.muted}>Max Lv {b.maxLevel}</Badge>
+                      </div>
+                      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                        <thead>
+                          <tr style={{ background: colors.panel }}>
+                            <th style={{ ...thStyle, textAlign: "left"  }}>Level</th>
+                            <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
+                            <th style={{ ...thStyle, textAlign: "right" }}>Total Cost</th>
+                            <th style={{ ...thStyle, textAlign: "right" }}>Bonus</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {rows.map((r, i) => (
+                            <tr key={r.level} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "50" }}>
+                              <td style={{ padding: "4px 8px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
+                              <td style={{ padding: "4px 8px", textAlign: "right", color: colors.gold, fontFamily: "monospace" }}>{r.cost}</td>
+                              <td style={{ padding: "4px 8px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{r.cumulative}</td>
+                              <td style={{ padding: "4px 8px", textAlign: "right", color: b.statAmt < 0 ? "#e05555" : colors.positive, fontWeight: 600 }}>{b.statAmt < 0 ? "" : "+"}{r.bonus}{unit}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })()}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MapCard({ map, onClick }) {
+  const isLocked = map.waveRequirement > 0;
+  const iconUrl = getIconUrl(map.icon);
+  const hasVariants = map.astralVariants?.length > 0;
+  const [variantIdx, setVariantIdx] = useState(0);
+
+  const negativeIsGood = new Set(["skillCooldown", "spellCooldown"]);
+
+  return (
+    <div onClick={onClick} style={{
+      border: `1px solid ${colors.border}`, borderRadius: 10, overflow: "hidden", cursor: "pointer",
+      transition: "border-color 0.15s, box-shadow 0.15s",
+      backgroundImage: `url(${iconUrl})`,
+      backgroundSize: "cover",
+      backgroundPosition: "center",
+      backgroundRepeat: "no-repeat",
+      position: "relative",
+      display: "flex", flexDirection: "column",
+    }}
+      onMouseEnter={e => { e.currentTarget.style.borderColor = colors.accent; e.currentTarget.style.boxShadow = `0 0 14px ${colors.accent}33`; }}
+      onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.boxShadow = "none"; }}
+    >
+      {/* Dark overlay so text stays readable */}
+      <div style={{ position: "absolute", inset: 0, background: "rgba(10,25,45,0.72)", pointerEvents: "none" }} />
+
+      {/* Content sits above overlay */}
+      <div style={{ position: "relative", zIndex: 1, padding: "16px", display: "flex", gap: 16, flex: 1 }}>
+
+        {/* Left: name + unlock requirements */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 8, flex: "0 0 160px" }}>
+          <div style={{ fontWeight: 900, fontSize: 21, color: colors.text, lineHeight: 1.2 }}>{map.name}</div>
+          {isLocked
+            ? <>
+                <Badge color={colors.accent}>Wave: {map.waveRequirement.toLocaleString()}</Badge>
+                <Badge color="#e06aaa">Gems: {map.gemsToUnlock.toLocaleString()}</Badge>
+              </>
+            : <Badge color={colors.positive}>Available from start</Badge>
+          }
+          {hasVariants && <Badge color="#b47aff">Perks rotate Mon &amp; Thurs</Badge>}
+        </div>
+
+        {/* Divider */}
+        <div style={{ width: 1, background: `${colors.border}60`, flexShrink: 0 }} />
+
+        {/* Right: default perks or astral variants */}
+        <div style={{ flex: 1, minWidth: 0 }}>
+          {hasVariants ? (() => {
+            const variant = map.astralVariants[variantIdx];
+            return (
+              <>
+                {/* Pill switcher */}
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 4, marginBottom: 10 }} onClick={e => e.stopPropagation()}>
+                  {map.astralVariants.map((v, i) => {
+                    const c = ASTRAL_COLORS[v.enumName] ?? "#b47aff";
+                    const active = i === variantIdx;
+                    return (
+                      <button key={v.enumValue} onClick={() => setVariantIdx(i)} style={{
+                        padding: "4px 10px", borderRadius: 20,
+                        border: `1px solid ${active ? c : c + "44"}`,
+                        background: active ? c + "55" : c + "11",
+                        color: active ? "#fff" : c + "99",
+                        fontFamily: "inherit", fontWeight: 700, fontSize: 13, cursor: "pointer", lineHeight: 1.4,
+                      }}>{v.displayName.replace(/ Day$/i, "")}</button>
+                    );
+                  })}
+                </div>
+                {/* Effects */}
+                {variant.effects.map((ef, i) => {
+                  const isLast = i === variant.effects.length - 1;
+                  const sign = ef.amount > 0 ? "+" : "";
+                  const unitStr = ef.unit === "pct" ? "%" : "";
+                  const col = isLast ? "#e05555" : colors.positive;
+                  return (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 5 }}>
+                      <span style={{ fontSize: 15, color: col }}>{ef.statLabel}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: col, flexShrink: 0 }}>{sign}{ef.amount}{unitStr}</span>
+                    </div>
+                  );
+                })}
+              </>
+            );
+          })() : (() => {
+            const defaults = map.perks.filter(p => p.isDefault);
+            return (
+              <>
+                <div style={{ fontSize: 13, fontWeight: 800, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 8 }}>Default Perks</div>
+                {defaults.length === 0
+                  ? <span style={{ fontSize: 15, color: colors.muted, fontStyle: "italic" }}>None</span>
+                  : defaults.map(perk => {
+                      const unit = getPerkUnit(perk.name);
+                      return (
+                        <div key={perk.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                          <span style={{ fontSize: 15, color: colors.positive }}>{perk.name}</span>
+                          <span style={{ fontSize: 15, color: colors.positive, fontWeight: 700, flexShrink: 0 }}>{perk.baseAmt}{unit}</span>
+                        </div>
+                      );
+                    })
+                }
+                {map.negativePerk && (() => {
+                  const unit = getPerkUnit(map.negativePerk.name);
+                  return (
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 6 }}>
+                      <span style={{ fontSize: 15, color: "#e05555" }}>{map.negativePerk.name}</span>
+                      <span style={{ fontSize: 15, color: "#e05555", fontWeight: 700, flexShrink: 0 }}>{map.negativePerk.statAmt}{unit}</span>
+                    </div>
+                  );
+                })()}
+              </>
+            );
+          })()}
+        </div>
+
+      </div>
+      <div style={{ position: "relative", zIndex: 1, borderTop: `1px solid ${colors.border}40`, padding: "6px 16px", textAlign: "center" }}>
+        <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.05em" }}>Click for details</span>
+      </div>
+    </div>
+  );
+}
+
+function AllMapsView() {
+  const [selectedMap, setSelectedMap] = useState(null);
+  return (
+    <div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>All Maps</div>
+        <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Click a map to see full perk details</div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(230px, auto)" }}>
+        {mapsData.maps.map(map => <MapCard key={map.id} map={map} onClick={() => setSelectedMap(map)} />)}
+      </div>
+      {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} />}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
 // SIDEBAR
 // ─────────────────────────────────────────────
 function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
-  const [open, setOpen] = useState({ Upgrades: true, "Hero Data": true });
+  const [open, setOpen] = useState({ Upgrades: true, "Hero Data": true, Maps: true });
 
   function toggleGroup(label) {
     setOpen(prev => ({ ...prev, [label]: !prev[label] }));
@@ -1647,6 +2035,7 @@ export default function App() {
           {activeKey === "synergies"  && <AllSynergiesView />}
           {activeKey === "milestones" && <AllMilestonesView />}
           {activeKey === "rankExp"    && <RankExpView />}
+          {activeKey === "allMaps"    && <AllMapsView />}
         </div>
 
       </div>

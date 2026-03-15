@@ -1,0 +1,1262 @@
+{
+  "menuOrder": 11,
+  "parentMenuName": "Maps",
+  "menuIcon": "Icon_Map_0.png",
+  "label": "Maps",
+  "placementCostFormula": {
+    "breakpoint": 5,
+    "highMult": 2
+  },
+  "placementBonuses": [
+    {
+      "id": "damage",
+      "name": "Damage",
+      "statKey": "damage",
+      "statAmt": 25,
+      "baseCost": 1,
+      "upgradeCostHigh": 2,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "kill_gold",
+      "name": "Kill Gold",
+      "statKey": "killGold",
+      "statAmt": 25,
+      "baseCost": 2,
+      "upgradeCostHigh": 4,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "attack_speed",
+      "name": "Attack Speed",
+      "statKey": "attSpeed",
+      "statAmt": 3,
+      "baseCost": 2,
+      "upgradeCostHigh": 4,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "range",
+      "name": "Range",
+      "statKey": "range",
+      "statAmt": 5,
+      "baseCost": 2,
+      "upgradeCostHigh": 4,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "skill_cooldown",
+      "name": "Skill Cooldown",
+      "statKey": "skillCd",
+      "statAmt": -3,
+      "baseCost": 3,
+      "upgradeCostHigh": 6,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "skill_power_pct",
+      "name": "Skill Power (%)",
+      "statKey": "skillPowerPct",
+      "statAmt": 2,
+      "baseCost": 5,
+      "upgradeCostHigh": 10,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "rank_exp_pct",
+      "name": "Rank Exp (%)",
+      "statKey": "killExpPct",
+      "statAmt": 2,
+      "baseCost": 5,
+      "upgradeCostHigh": 10,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "milestone_effects",
+      "name": "Milestone Effects",
+      "statKey": "milestoneBonus",
+      "statAmt": 2,
+      "baseCost": 5,
+      "upgradeCostHigh": 10,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "synergy_effects",
+      "name": "Synergy Effects",
+      "statKey": "synergyBonus",
+      "statAmt": 1,
+      "baseCost": 10,
+      "upgradeCostHigh": 20,
+      "breakpoint": 5,
+      "maxLevel": 10
+    },
+    {
+      "id": "mastery_2x_exp_chance",
+      "name": "2x Mastery Exp Chance",
+      "statKey": "mastery2xExpChance",
+      "statAmt": 2,
+      "baseCost": 10,
+      "upgradeCostHigh": 20,
+      "breakpoint": 5,
+      "maxLevel": 10
+    }
+  ],
+  "maps": [
+    {
+      "id": "island_hideout",
+      "name": "Island Hideout",
+      "mapId": 0,
+      "icon": "icon_islands.png",
+      "waveRequirement": 0,
+      "gemsToUnlock": 0,
+      "negativePerk": null,
+      "perks": [
+        {
+          "id": "map0_range",
+          "perkEnum": 0,
+          "name": "Range",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 20,
+          "statAmt": 2,
+          "waveReq": 0,
+          "unlockCost": 3
+        },
+        {
+          "id": "map0_tier_1_2_synergy",
+          "perkEnum": 1,
+          "name": "Tier 1+2 Synergy",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 25,
+          "statAmt": 5,
+          "waveReq": 0,
+          "unlockCost": 3
+        },
+        {
+          "id": "map0_tier_3_4_synergy",
+          "perkEnum": 2,
+          "name": "Tier 3+4 Synergy",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 2,
+          "upgradeCost": 2,
+          "maxLevel": 10,
+          "baseAmt": 20,
+          "statAmt": 5,
+          "waveReq": 0,
+          "unlockCost": 6
+        },
+        {
+          "id": "map0_instant_skill_chance",
+          "perkEnum": 3,
+          "name": "Instant Skill Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 3,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map0_skill_power_pct",
+          "perkEnum": 4,
+          "name": "Skill Power %",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 3,
+          "upgradeCost": 3,
+          "maxLevel": 10,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 9
+        },
+        {
+          "id": "map0_double_shot_chance",
+          "perkEnum": 5,
+          "name": "Double Shot Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 6,
+          "upgradeCost": 6,
+          "maxLevel": 5,
+          "baseAmt": 2,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 18
+        },
+        {
+          "id": "map0_mastery_skill_power",
+          "perkEnum": 7,
+          "name": "Mastery Skill Power",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 10,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 30
+        },
+        {
+          "id": "map0_2x_mastery_exp_chance_range",
+          "perkEnum": 6,
+          "name": "2x Mastery Exp Chance (Range)",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 25,
+          "upgradeCost": 25,
+          "maxLevel": 5,
+          "baseAmt": 10,
+          "statAmt": 2,
+          "waveReq": 45000,
+          "unlockCost": 75
+        }
+      ]
+    },
+    {
+      "id": "snow_fort",
+      "name": "Snow Fort",
+      "mapId": 1,
+      "icon": "icon_snow.png",
+      "waveRequirement": 0,
+      "gemsToUnlock": 0,
+      "negativePerk": {
+        "name": "Attack Speed",
+        "statKey": "attSpeed",
+        "statAmt": -20
+      },
+      "perks": [
+        {
+          "id": "map1_enemy_move_speed",
+          "perkEnum": 8,
+          "name": "Enemy Move Speed",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 20,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map1_tier_5_6_synergy",
+          "perkEnum": 9,
+          "name": "Tier 5+6 Synergy",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 2,
+          "upgradeCost": 2,
+          "maxLevel": 10,
+          "baseAmt": 15,
+          "statAmt": 3,
+          "waveReq": 0,
+          "unlockCost": 6
+        },
+        {
+          "id": "map1_tier_7_8_synergy",
+          "perkEnum": 10,
+          "name": "Tier 7+8 Synergy",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 2,
+          "upgradeCost": 2,
+          "maxLevel": 10,
+          "baseAmt": 10,
+          "statAmt": 2,
+          "waveReq": 0,
+          "unlockCost": 6
+        },
+        {
+          "id": "map1_instant_spell_chance",
+          "perkEnum": 11,
+          "name": "Instant Spell Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 3,
+          "baseAmt": 1,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map1_active_play_bonus",
+          "perkEnum": 12,
+          "name": "Active Play Bonus",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 6,
+          "upgradeCost": 6,
+          "maxLevel": 10,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 18
+        },
+        {
+          "id": "map1_wave_perk_effect",
+          "perkEnum": 13,
+          "name": "Wave Perk Effect",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 5,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map1_mastery_skill_power",
+          "perkEnum": 14,
+          "name": "Mastery Skill Power",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 10,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 30
+        },
+        {
+          "id": "map1_2x_mastery_exp_chance_mage",
+          "perkEnum": 15,
+          "name": "2x Mastery Exp Chance (Mage)",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 25,
+          "upgradeCost": 25,
+          "maxLevel": 5,
+          "baseAmt": 10,
+          "statAmt": 2,
+          "waveReq": 45000,
+          "unlockCost": 75
+        }
+      ]
+    },
+    {
+      "id": "barren_desert",
+      "name": "Barren Desert",
+      "mapId": 2,
+      "icon": "icon_desert.png",
+      "waveRequirement": 400,
+      "gemsToUnlock": 250,
+      "negativePerk": {
+        "name": "Kill Gold",
+        "statKey": "killGold",
+        "statAmt": -35
+      },
+      "perks": [
+        {
+          "id": "map2_range",
+          "perkEnum": 16,
+          "name": "Range",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 30,
+          "statAmt": 2,
+          "waveReq": 0
+        },
+        {
+          "id": "map2_rank_exp_pct",
+          "perkEnum": 17,
+          "name": "Rank Exp (%)",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 3,
+          "upgradeCost": 3,
+          "maxLevel": 10,
+          "baseAmt": 25,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map2_trainer_spawns",
+          "perkEnum": 18,
+          "name": "Trainer Spawns",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 50,
+          "upgradeCost": 50,
+          "maxLevel": 1,
+          "baseAmt": 1,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map2_super_exp_chance",
+          "perkEnum": 19,
+          "name": "Super Exp Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 10,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map2_super_exp_amount",
+          "perkEnum": 20,
+          "name": "Super Exp Amount",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 10,
+          "baseAmt": 25,
+          "statAmt": 5,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map2_extra_boss_chance",
+          "perkEnum": 21,
+          "name": "Extra Boss Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 5,
+          "baseAmt": 10,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map2_mimic_boss_chance",
+          "perkEnum": 22,
+          "name": "Mimic Boss Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 5,
+          "baseAmt": 2,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 30
+        },
+        {
+          "id": "map2_milestone_bonus",
+          "perkEnum": 23,
+          "name": "Milestone Bonus",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 15,
+          "upgradeCost": 15,
+          "maxLevel": 10,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 45000,
+          "unlockCost": 45
+        }
+      ]
+    },
+    {
+      "id": "haunted_cemetery",
+      "name": "Haunted Cemetery",
+      "mapId": 3,
+      "icon": "icon_cemetery.png",
+      "waveRequirement": 800,
+      "gemsToUnlock": 500,
+      "negativePerk": {
+        "name": "Rank Exp",
+        "statKey": "killExpPct",
+        "statAmt": -35
+      },
+      "perks": [
+        {
+          "id": "map3_skill_cooldown",
+          "perkEnum": 24,
+          "name": "Skill Cooldown",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 25,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map3_prestige_power",
+          "perkEnum": 25,
+          "name": "Prestige Power",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 1,
+          "upgradeCost": 1,
+          "maxLevel": 10,
+          "baseAmt": 100,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map3_battlepass_exp",
+          "perkEnum": 26,
+          "name": "Battlepass Exp",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 5,
+          "baseAmt": 25,
+          "statAmt": 3,
+          "waveReq": 0
+        },
+        {
+          "id": "map3_range",
+          "perkEnum": 27,
+          "name": "Range",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 2,
+          "upgradeCost": 2,
+          "maxLevel": 10,
+          "baseAmt": 15,
+          "statAmt": 2,
+          "waveReq": 0,
+          "unlockCost": 6
+        },
+        {
+          "id": "map3_wave_perk_waves",
+          "perkEnum": 28,
+          "name": "Wave Perk Waves",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 5,
+          "baseAmt": 3,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 24
+        },
+        {
+          "id": "map3_boss_rush_skip",
+          "perkEnum": 29,
+          "name": "Boss Rush Skip",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 15,
+          "upgradeCost": 15,
+          "maxLevel": 4,
+          "baseAmt": 1,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 45
+        },
+        {
+          "id": "map3_enemy_spawn_speed",
+          "perkEnum": 30,
+          "name": "Enemy Spawn Speed",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 15,
+          "upgradeCost": 15,
+          "maxLevel": 5,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 45
+        },
+        {
+          "id": "map3_2x_mastery_exp_chance_melee",
+          "perkEnum": 31,
+          "name": "2x Mastery Exp Chance (Melee)",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 25,
+          "upgradeCost": 25,
+          "maxLevel": 5,
+          "baseAmt": 10,
+          "statAmt": 2,
+          "waveReq": 45000,
+          "unlockCost": 75
+        }
+      ]
+    },
+    {
+      "id": "lava_dungeon",
+      "name": "Lava Dungeon",
+      "mapId": 4,
+      "icon": "icon_dungeon.png",
+      "waveRequirement": 2000,
+      "gemsToUnlock": 1000,
+      "negativePerk": {
+        "name": "Rank Exp",
+        "statKey": "killExpPct",
+        "statAmt": -50
+      },
+      "perks": [
+        {
+          "id": "map4_damage",
+          "perkEnum": 32,
+          "name": "Damage",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 3,
+          "upgradeCost": 3,
+          "maxLevel": 10,
+          "baseAmt": 75,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map4_kill_gold",
+          "perkEnum": 33,
+          "name": "Kill Gold",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 3,
+          "upgradeCost": 3,
+          "maxLevel": 10,
+          "baseAmt": 50,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map4_attack_speed",
+          "perkEnum": 34,
+          "name": "Attack Speed",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 5,
+          "baseAmt": 15,
+          "statAmt": 2,
+          "waveReq": 0
+        },
+        {
+          "id": "map4_splash_damage",
+          "perkEnum": 35,
+          "name": "Splash Damage",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 5,
+          "baseAmt": 10,
+          "statAmt": 2,
+          "waveReq": 0
+        },
+        {
+          "id": "map4_super_crit_chance",
+          "perkEnum": 36,
+          "name": "Super Crit Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 10,
+          "baseAmt": 15,
+          "statAmt": 3,
+          "waveReq": 0,
+          "unlockCost": 24
+        },
+        {
+          "id": "map4_super_crit_damage",
+          "perkEnum": 37,
+          "name": "Super Crit Damage",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 10,
+          "baseAmt": 75,
+          "statAmt": 15,
+          "waveReq": 0,
+          "unlockCost": 24
+        },
+        {
+          "id": "map4_super_gold_chance",
+          "perkEnum": 38,
+          "name": "Super Gold Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 10,
+          "baseAmt": 15,
+          "statAmt": 3,
+          "waveReq": 0,
+          "unlockCost": 24
+        },
+        {
+          "id": "map4_super_gold_amount",
+          "perkEnum": 39,
+          "name": "Super Gold Amount",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 10,
+          "baseAmt": 75,
+          "statAmt": 15,
+          "waveReq": 0,
+          "unlockCost": 24
+        }
+      ]
+    },
+    {
+      "id": "sunny_farm",
+      "name": "Sunny Farm",
+      "mapId": 5,
+      "icon": "icon_farm.png",
+      "waveRequirement": 3500,
+      "gemsToUnlock": 2500,
+      "negativePerk": {
+        "name": "Damage",
+        "statKey": "damage",
+        "statAmt": -50
+      },
+      "perks": [
+        {
+          "id": "map5_energy_income",
+          "perkEnum": 40,
+          "name": "Energy Income",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 3,
+          "upgradeCost": 3,
+          "maxLevel": 5,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map5_super_energy_chance",
+          "perkEnum": 41,
+          "name": "Super Energy Chance",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 10,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map5_super_energy_amount",
+          "perkEnum": 42,
+          "name": "Super Energy Amount",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 10,
+          "baseAmt": 10,
+          "statAmt": 5,
+          "waveReq": 0
+        },
+        {
+          "id": "map5_spell_cooldown",
+          "perkEnum": 43,
+          "name": "Spell Cooldown",
+          "costFormula": "default",
+          "isDefault": true,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 10,
+          "baseAmt": 15,
+          "statAmt": 1,
+          "waveReq": 0
+        },
+        {
+          "id": "map5_power_mage_spawns",
+          "perkEnum": 44,
+          "name": "Power Mage Spawns",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 8,
+          "maxLevel": 3,
+          "baseAmt": 1,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 24
+        },
+        {
+          "id": "map5_power_mage_cooldown",
+          "perkEnum": 45,
+          "name": "Power Mage Cooldown",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 5,
+          "upgradeCost": 5,
+          "maxLevel": 10,
+          "baseAmt": 5,
+          "statAmt": 1,
+          "waveReq": 0,
+          "unlockCost": 15
+        },
+        {
+          "id": "map5_power_mage_golden_chance",
+          "perkEnum": 46,
+          "name": "Power Mage Golden Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 10,
+          "maxLevel": 5,
+          "baseAmt": 2,
+          "statAmt": 1,
+          "waveReq": 35000,
+          "unlockCost": 30
+        },
+        {
+          "id": "map5_instant_spell_chance",
+          "perkEnum": 47,
+          "name": "Instant Spell Chance",
+          "costFormula": "standard",
+          "isDefault": false,
+          "baseCost": 15,
+          "upgradeCost": 15,
+          "maxLevel": 5,
+          "baseAmt": 2,
+          "statAmt": 1,
+          "waveReq": 45000,
+          "unlockCost": 45
+        }
+      ]
+    },
+    {
+      "id": "astral_battleground",
+      "name": "Astral Battleground",
+      "mapId": 6,
+      "icon": "icon_astral.png",
+      "waveRequirement": 12500,
+      "gemsToUnlock": 7500,
+      "negativePerk": null,
+      "perks": [
+        {
+          "id": "map6_damage_group",
+          "perkEnum": 48,
+          "name": "Damage Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 6,
+          "upgradeCost": 48,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_gold_group",
+          "perkEnum": 49,
+          "name": "Gold Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 64,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_exp_group",
+          "perkEnum": 50,
+          "name": "Exp Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 80,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_energy_group",
+          "perkEnum": 51,
+          "name": "Energy Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 80,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_boss_group",
+          "perkEnum": 52,
+          "name": "Boss Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 80,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_skill_group",
+          "perkEnum": 53,
+          "name": "Skill Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 8,
+          "upgradeCost": 64,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        },
+        {
+          "id": "map6_synergy_group",
+          "perkEnum": 54,
+          "name": "Synergy Group",
+          "costFormula": "astral",
+          "isDefault": false,
+          "baseCost": 10,
+          "upgradeCost": 80,
+          "maxLevel": 10,
+          "baseAmt": 0,
+          "statAmt": 10,
+          "waveReq": 0
+        }
+      ],
+      "astralVariants": [
+        {
+          "enumValue": 0,
+          "enumName": "damage",
+          "displayName": "Damage Day",
+          "effects": [
+            {
+              "statKey": "damage",
+              "statLabel": "Damage",
+              "amount": 100,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superCritChance",
+              "statLabel": "Super Crit Chance",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superCritDmg",
+              "statLabel": "Super Crit Damage",
+              "amount": 50,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraCritChance",
+              "statLabel": "Ultra Crit Chance",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraCritDmg",
+              "statLabel": "Ultra Crit Damage",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "energyIncome",
+              "statLabel": "Energy Income",
+              "amount": -75,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 1,
+          "enumName": "gold",
+          "displayName": "Gold Day",
+          "effects": [
+            {
+              "statKey": "killGold",
+              "statLabel": "Kill Gold",
+              "amount": 100,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superGoldChance",
+              "statLabel": "Super Gold Chance",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superGoldAmt",
+              "statLabel": "Super Gold Amount",
+              "amount": 50,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraGoldChance",
+              "statLabel": "Ultra Gold Chance",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraGoldAmt",
+              "statLabel": "Ultra Gold Amount",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "rankExp",
+              "statLabel": "Rank Exp",
+              "amount": -75,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 2,
+          "enumName": "exp",
+          "displayName": "Exp Day",
+          "effects": [
+            {
+              "statKey": "rankExp",
+              "statLabel": "Rank Exp",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superExpChance",
+              "statLabel": "Super Exp Chance",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superExpAmt",
+              "statLabel": "Super Exp Amount",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraExpChance",
+              "statLabel": "Ultra Exp Chance",
+              "amount": 2,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraExpAmt",
+              "statLabel": "Ultra Exp Amount",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "killGold",
+              "statLabel": "Kill Gold",
+              "amount": -99.99,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 3,
+          "enumName": "energy",
+          "displayName": "Energy Day",
+          "effects": [
+            {
+              "statKey": "energyIncome",
+              "statLabel": "Energy Income",
+              "amount": 10,
+              "unit": "flat"
+            },
+            {
+              "statKey": "superEnergyChance",
+              "statLabel": "Super Energy Chance",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "superEnergyAmt",
+              "statLabel": "Super Energy Amount",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraEnergyChance",
+              "statLabel": "Ultra Energy Chance",
+              "amount": 2,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraEnergyAmt",
+              "statLabel": "Ultra Energy Amount",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "damage",
+              "statLabel": "Damage",
+              "amount": -99.99,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 4,
+          "enumName": "boss",
+          "displayName": "Boss Day",
+          "effects": [
+            {
+              "statKey": "bossGold",
+              "statLabel": "Boss Gold",
+              "amount": 50,
+              "unit": "pct"
+            },
+            {
+              "statKey": "bossExp",
+              "statLabel": "Boss Exp",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "extraBossChance",
+              "statLabel": "Extra Boss Chance",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "mimicBossChance",
+              "statLabel": "Mimic Chest Boss Chance",
+              "amount": 3,
+              "unit": "pct"
+            },
+            {
+              "statKey": "ultraBossCdSpeed",
+              "statLabel": "Ultra Boss Cooldown Speed",
+              "amount": 10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "prestigePower",
+              "statLabel": "Prestige Power",
+              "amount": -99.99,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 5,
+          "enumName": "skills",
+          "displayName": "Skills Day",
+          "effects": [
+            {
+              "statKey": "skillPower",
+              "statLabel": "Skill Power",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "skillCooldown",
+              "statLabel": "Skill Cooldown",
+              "amount": -25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "spellCooldown",
+              "statLabel": "Spell Cooldown",
+              "amount": -10,
+              "unit": "pct"
+            },
+            {
+              "statKey": "instantSkillChance",
+              "statLabel": "Instant Skill Chance",
+              "amount": 5,
+              "unit": "pct"
+            },
+            {
+              "statKey": "instantSpellChance",
+              "statLabel": "Instant Spell Chance",
+              "amount": 3,
+              "unit": "pct"
+            },
+            {
+              "statKey": "battlpassExp",
+              "statLabel": "Battlepass Exp",
+              "amount": -75,
+              "unit": "pct"
+            }
+          ]
+        },
+        {
+          "enumValue": 6,
+          "enumName": "misc",
+          "displayName": "Synergy Day",
+          "effects": [
+            {
+              "statKey": "attackSpeed",
+              "statLabel": "Attack Speed",
+              "amount": 20,
+              "unit": "pct"
+            },
+            {
+              "statKey": "range",
+              "statLabel": "Range",
+              "amount": 20,
+              "unit": "pct"
+            },
+            {
+              "statKey": "synergyBonus",
+              "statLabel": "Synergy Bonus",
+              "amount": 3,
+              "unit": "pct"
+            },
+            {
+              "statKey": "milestoneBonus",
+              "statLabel": "Level Milestone Bonus",
+              "amount": 3,
+              "unit": "pct"
+            },
+            {
+              "statKey": "battlpassExp",
+              "statLabel": "Battlepass Exp",
+              "amount": 25,
+              "unit": "pct"
+            },
+            {
+              "statKey": "skillPower",
+              "statLabel": "Skill Power",
+              "amount": -75,
+              "unit": "pct"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
