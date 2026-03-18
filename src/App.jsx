@@ -50,6 +50,7 @@ function normalizeSection(data) {
     groups[groupName] = items.map(item => ({
       ...item,
       multiCost: item.multCost ?? item.multiCost,
+      hasLinearMult: item.hasLinearMult ?? data.hasLinearMult ?? false,
     }));
   }
   return { ...data, groups };
@@ -282,11 +283,12 @@ function computeTotalCost(item, sectionFormula) {
   const intInputs = Number.isInteger(baseCost) &&
     (multiCost === undefined || Number.isInteger(multiCost));
 
+
   if (intInputs) {
     const bc = BigInt(baseCost);
     const mc = multiCost !== undefined ? BigInt(multiCost) : 1n;
     const n  = BigInt(maxLevel);
-
+    const formula_overide = "power"
     switch (formula) {
       case "flat":
         return bc * n;
@@ -296,30 +298,50 @@ function computeTotalCost(item, sectionFormula) {
         return bc * n * (n + 1n) / 2n;
 
       case "power": {
-        // cost(i) = baseCost × (i+1)^multiCost  for i = 0..maxLevel-1
-        // multCost === 1 → sum(1..n) = n*(n+1)/2  (exact closed form)
-        if (!multiCost || multiCost === 1) return bc * n * (n + 1n) / 2n;
-        if (maxLevel > 10000) {
-          // Integral approximation for very large n — float is sufficient here
-          const approx = baseCost * Math.pow(maxLevel, multiCost + 1) / (multiCost + 1);
-          return isFinite(approx) ? approx : Infinity;
+        // cost(level) = baseCost × level^multiCost × mult
+        // mult = 8 if level > 80% maxLevel, 3 if >= 50%, else 1
+        // linearMult requires float — fall through if item uses it
+        if (item.hasLinearMult) break;
+        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
+        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        const sumRange = (a, b) => b >= a ? (b - a + 1n) * (a + b) / 2n : 0n;
+        if (!multiCost || multiCost === 1) {
+          return bc * (
+            sumRange(1n, bp1 - 1n) +
+            3n * sumRange(bp1, bp2 - 1n) +
+            24n * sumRange(bp2, n)
+          );
         }
         let total = 0n;
-        for (let i = 1n; i <= n; i++) total += bc * i ** mc;
+        for (let i = 1n; i <= n; i++) {
+          const mult = i >= bp2 ? 24n : i >= bp1 ? 3n : 1n;
+          total += bc * i ** mc * mult;
+        }
         return total;
       }
 
       case "exponential":
       case "exponential_endgame": {
-        // cost(i) = baseCost × multiCost^i  for i = 0..maxLevel-1
-        if (!multiCost || multiCost === 1) return bc * n;
-        // Guard against astronomical BigInt computation (e.g. 2^999999)
-        if (mc >= 2n && n > 1000n) {
-          const approx = baseCost * (Math.pow(multiCost, maxLevel) - 1) / (multiCost - 1);
-          return isFinite(approx) ? approx : Infinity;
+        // cost(level) = baseCost × multiCost^(level-1) × bpMult
+        // linearMult requires float — fall through if item uses it
+        if (item.hasLinearMult) break;
+        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
+        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        if (!multiCost || multiCost === 1) {
+          const c1 = bp1 > 1n ? bp1 - 1n : 0n;
+          const c2 = bp2 > bp1 ? bp2 - bp1 : 0n;
+          const c3 = n >= bp2 ? n - bp2 + 1n : 0n;
+          return bc * (c1 + 3n * c2 + 24n * c3);
         }
-        // Geometric series: bc * (mc^n - 1) / (mc - 1)  — exact integer division
-        return bc * (mc ** n - 1n) / (mc - 1n);
+        // Segmented geometric series (exact BigInt)
+        // sum(level=a..b) mc^(level-1) = mc^(a-1) * (mc^(b-a+1) - 1) / (mc-1)
+        const geo = (a, b) => b < a ? 0n : mc ** (a - 1n) * (mc ** (b - a + 1n) - 1n) / (mc - 1n);
+        try {
+          return bc * (geo(1n, bp1-1n) + 3n * geo(bp1, bp2-1n) + 24n * geo(bp2, n));
+        } catch {
+          // BigInt too large — fall through to float path below
+          break;
+        }
       }
 
       case "capped_linear": {
@@ -342,21 +364,49 @@ function computeTotalCost(item, sectionFormula) {
       return baseCost * maxLevel * (maxLevel + 1) / 2;
 
     case "power": {
-      if (!multiCost || multiCost === 1) return baseCost * maxLevel * (maxLevel + 1) / 2;
+      const bp1f = maxLevel * 0.5;
+      const bp2f = maxLevel * 0.8;
+      const mc = multiCost ?? 1;
       if (maxLevel > 10000) {
-        const approx = baseCost * Math.pow(maxLevel, multiCost + 1) / (multiCost + 1);
-        return isFinite(approx) ? approx : Infinity;
+        // Integral approximation including linearMult = (1 + L*0.001) for L > 1
+        // ∫ L^mc * (1 + L*0.001) dL = L^(mc+1)/(mc+1) + 0.001*L^(mc+2)/(mc+2)
+        const intPow = (a, b) => {
+          const t1 = (Math.pow(b, mc + 1) - Math.pow(a, mc + 1)) / (mc + 1);
+          const t2 = 0.001 * (Math.pow(b, mc + 2) - Math.pow(a, mc + 2)) / (mc + 2);
+          return t1 + t2;
+        };
+        return baseCost * (intPow(0, bp1f) + 3 * intPow(bp1f, bp2f) + 24 * intPow(bp2f, maxLevel));
       }
       let total = 0;
-      for (let i = 0; i < maxLevel; i++) total += baseCost * Math.pow(i + 1, multiCost);
+      for (let i = 0; i < maxLevel; i++) {
+        const lv = i + 1;
+        const mult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
+        const linMult = (item.hasLinearMult && lv > 1) ? (1 + lv * 0.001) : 1;
+        total += baseCost * Math.pow(lv, mc) * mult * linMult;
+      }
       return total;
     }
 
     case "exponential":
     case "exponential_endgame": {
-      if (!multiCost || multiCost === 1) return baseCost * maxLevel;
-      const total = baseCost * (Math.pow(multiCost, maxLevel) - 1) / (multiCost - 1);
-      return isFinite(total) ? total : Infinity;
+      const bp1f = Math.ceil(maxLevel * 0.5);
+      const bp2f = Math.ceil(maxLevel * 0.8);
+      if (item.hasLinearMult) {
+        // linearMult applies — sum level by level
+        let total = 0;
+        for (let lv = 1; lv <= maxLevel; lv++) {
+          const bpMult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
+          const linMult = lv > 1 ? (1 + lv * 0.001) : 1;
+          total += baseCost * Math.pow(multiCost ?? 1, lv - 1) * bpMult * linMult;
+        }
+        return total;
+      }
+      const geoSum = (a, b) => {
+        if (b < a) return 0;
+        if (!multiCost || multiCost === 1) return b - a + 1;
+        return Math.pow(multiCost, a - 1) * (Math.pow(multiCost, b - a + 1) - 1) / (multiCost - 1);
+      };
+      return baseCost * (geoSum(1, bp1f-1) + 3*geoSum(bp1f, bp2f-1) + 24*geoSum(bp2f, maxLevel));
     }
 
     case "capped_linear": {
@@ -484,9 +534,23 @@ function costAtLevel(level, item, sectionFormula) {
     switch (formula) {
       case "flat":           return bc;
       case "rank_linear":    return bc * lv;
-      case "power":          return bc * lv ** mc;
+      case "power": {
+        const ml = item.maxLevel ?? 999999;
+        if (item.hasLinearMult) break; // linearMult requires float path
+        const bp1 = BigInt(Math.ceil(ml * 0.5));
+        const bp2 = BigInt(Math.ceil(ml * 0.8));
+        const mult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
+        return bc * lv ** mc * mult;
+      }
       case "exponential":
-      case "exponential_endgame": return bc * mc ** (lv - 1n);
+      case "exponential_endgame": {
+        const ml = item.maxLevel ?? 999999;
+        if (item.hasLinearMult) break; // linearMult requires float path
+        const bp1 = BigInt(Math.ceil(ml * 0.5));
+        const bp2 = BigInt(Math.ceil(ml * 0.8));
+        const bpMult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
+        return bc * mc ** (lv - 1n) * bpMult;
+      }
       case "capped_linear": {
         const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : lv;
         return bc * (lv < cap ? lv : cap);
@@ -500,9 +564,23 @@ function costAtLevel(level, item, sectionFormula) {
   switch (formula) {
     case "flat":           return baseCost;
     case "rank_linear":    return baseCost * level;
-    case "power":          return baseCost * Math.pow(level, multiCost ?? 1);
+    case "power": {
+      const ml   = item.maxLevel ?? 999999;
+      const bp1f = ml * 0.5;
+      const bp2f = ml * 0.8;
+      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
+      const linMult = (item.hasLinearMult && level > 1) ? (1 + level * 0.001) : 1;
+      return baseCost * Math.pow(level, multiCost ?? 1) * bpMult * linMult;
+    }
     case "exponential":
-    case "exponential_endgame": return baseCost * Math.pow(multiCost ?? 1, i);
+    case "exponential_endgame": {
+      const ml   = item.maxLevel ?? 999999;
+      const bp1f = ml * 0.5;
+      const bp2f = ml * 0.8;
+      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
+      const linMult = (item.hasLinearMult && level > 1) ? (1 + level * 0.001) : 1;
+      return baseCost * Math.pow(multiCost ?? 1, i) * bpMult * linMult;
+    }
     case "capped_linear":  return baseCost * Math.min(level, stopCostIncreaseAt ?? level);
     default:               return baseCost;
   }
@@ -1869,10 +1947,18 @@ function perkMaxCost(perk) {
   return (perk.unlockCost ?? 0) + low + high;
 }
 
-function MapModal({ map, onClose }) {
+function MapModal({ map, onClose, mapPerkMult = 1 }) {
   const hasVariants = map.astralVariants?.length > 0;
   const [tab, setTab] = useState("perks");
   const [variantIdx, setVariantIdx] = useState(0);
+  const [groupLevels, setGroupLevels] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("astral_group_levels") ?? "{}"); } catch { return {}; }
+  });
+  const setGroupLevel = (enumName, val) => {
+    const next = { ...groupLevels, [enumName]: val };
+    setGroupLevels(next);
+    localStorage.setItem("astral_group_levels", JSON.stringify(next));
+  };
   const totalUnlock      = map.perks.reduce((sum, p) => sum + (p.unlockCost ?? 0), 0);
   const totalUpgrades    = map.perks.reduce((sum, p) => {
     const bp = 5, uc = p.upgradeCost ?? p.baseCost;
@@ -1957,18 +2043,26 @@ function MapModal({ map, onClose }) {
                         <th style={{ ...thStyle, textAlign: "left"  }}>Level</th>
                         <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
                         <th style={{ ...thStyle, textAlign: "right" }}>Total Cost</th>
-                        <th style={{ ...thStyle, textAlign: "right" }}>Bonus</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>
+                          Bonus{mapPerkMult > 1.0001 ? <span style={{ color: colors.positive, fontWeight: 400 }}> ×{mapPerkMult.toFixed(2)}</span> : ""}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((r, i) => (
+                      {rows.map((r, i) => {
+                        const boosted = r.bonus * mapPerkMult;
+                        const boostedStr = Number.isInteger(Math.round(boosted * 10) / 10)
+                          ? String(Math.round(boosted))
+                          : boosted.toFixed(1);
+                        return (
                         <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "50" }}>
                           <td style={{ padding: "4px 8px", color: r.level === "Unlock" ? colors.muted : colors.accent, fontWeight: 600 }}>{r.level}</td>
                           <td style={{ padding: "4px 8px", textAlign: "right", color: r.cost ? colors.gold : colors.muted, fontFamily: "monospace" }}>{r.cost ?? "—"}</td>
                           <td style={{ padding: "4px 8px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{r.cumulative}</td>
-                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.positive, fontWeight: 600 }}>{r.bonus}{unit}</td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.positive, fontWeight: 600 }}>{boostedStr}{unit}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1993,6 +2087,12 @@ function MapModal({ map, onClose }) {
 
           {tab === "variants" && hasVariants && (() => {
             const variant = map.astralVariants[variantIdx];
+            const accentColor = ASTRAL_COLORS[variant.enumName] ?? "#b47aff";
+            const groupPerk = map.perks.find(p => p.id.includes(variant.enumName));
+            const rawGroupLv = parseInt(groupLevels[variant.enumName]) || 0;
+            const groupLv = groupPerk ? Math.min(Math.max(0, rawGroupLv), groupPerk.maxLevel) : 0;
+            const groupMult = groupPerk ? (1 + groupLv * groupPerk.statAmt / 100) : 1;
+            const groupBonus = groupPerk ? groupLv * groupPerk.statAmt : 0;
             return (
               <>
                 {/* Variant pill switcher */}
@@ -2013,16 +2113,39 @@ function MapModal({ map, onClose }) {
                 </div>
                 {/* Selected variant effects */}
                 <div style={{ padding: "12px 14px", background: colors.header, borderRadius: 8, border: `1px solid ${colors.border}` }}>
-                  <div style={{ fontSize: 12, fontWeight: 800, color: ASTRAL_COLORS[variant.enumName] ?? "#b47aff", letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{variant.displayName.replace(/ Day$/i, "")}</div>
+                  <div style={{ fontSize: 12, fontWeight: 800, color: accentColor, letterSpacing: "0.08em", textTransform: "uppercase", marginBottom: 10 }}>{variant.displayName.replace(/ Day$/i, "")}</div>
+                  {/* Group perk level input */}
+                  {groupPerk && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, paddingBottom: 10, borderBottom: `1px solid ${colors.border}40` }}>
+                      <span style={{ fontSize: 12, color: colors.muted, flex: 1 }}>{groupPerk.name} Level</span>
+                      <input
+                        type="number"
+                        min={0}
+                        max={groupPerk.maxLevel}
+                        value={groupLevels[variant.enumName] ?? ""}
+                        onChange={e => setGroupLevel(variant.enumName, e.target.value)}
+                        style={{
+                          width: 52, background: colors.panel, border: `1px solid ${rawGroupLv > groupPerk.maxLevel ? "#e05555" : colors.border}`,
+                          borderRadius: 6, color: colors.text, fontFamily: "inherit", fontSize: 13, padding: "3px 6px", textAlign: "center",
+                        }}
+                      />
+                      <span style={{ fontSize: 12, color: colors.muted }}>/ {groupPerk.maxLevel}</span>
+                      <span style={{ fontSize: 12, fontWeight: 700, color: groupBonus > 0 ? accentColor : colors.muted, minWidth: 52, textAlign: "right" }}>
+                        {groupBonus > 0 ? `+${groupBonus}% all` : "no bonus"}
+                      </span>
+                    </div>
+                  )}
                   {variant.effects.map((ef, i) => {
                     const negativIsGood = new Set(["skillCooldown", "spellCooldown"]);
                     const isDebuff = negativIsGood.has(ef.statKey) ? ef.amount > 0 : ef.amount < 0;
                     const sign = ef.amount > 0 ? "+" : "";
                     const unitStr = ef.unit === "pct" ? "%" : "";
+                    const rawAmt = isDebuff ? ef.amount : ef.amount * mapPerkMult * groupMult;
+                    const displayAmt = Number.isInteger(Math.round(rawAmt * 10) / 10) ? Math.round(rawAmt) : parseFloat(rawAmt.toFixed(1));
                     return (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: i < variant.effects.length - 1 ? `1px solid ${colors.border}30` : "none" }}>
                         <span style={{ fontSize: 13, color: colors.muted }}>{ef.statLabel}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: isDebuff ? "#e05555" : colors.positive }}>{sign}{ef.amount}{unitStr}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: isDebuff ? "#e05555" : colors.positive }}>{sign}{displayAmt}{unitStr}</span>
                       </div>
                     );
                   })}
@@ -2084,7 +2207,7 @@ function MapModal({ map, onClose }) {
   );
 }
 
-function MapCard({ map, onClick, isMobile }) {
+function MapCard({ map, onClick, isMobile, mapPerkMult = 1 }) {
   const isLocked = map.waveRequirement > 0;
   const iconUrl = getIconUrl(map.icon);
   const hasVariants = map.astralVariants?.length > 0;
@@ -2159,10 +2282,12 @@ function MapCard({ map, onClick, isMobile }) {
                   const sign = ef.amount > 0 ? "+" : "";
                   const unitStr = ef.unit === "pct" ? "%" : "";
                   const col = isLast ? "#e05555" : colors.positive;
+                  const rawAmt = isLast ? ef.amount : ef.amount * mapPerkMult;
+                  const displayAmt = Number.isInteger(Math.round(rawAmt * 10) / 10) ? Math.round(rawAmt) : parseFloat(rawAmt.toFixed(1));
                   return (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 5 }}>
                       <span style={{ fontSize: 15, color: col }}>{ef.statLabel}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: col, flexShrink: 0 }}>{sign}{ef.amount}{unitStr}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: col, flexShrink: 0 }}>{sign}{displayAmt}{unitStr}</span>
                     </div>
                   );
                 })}
@@ -2177,10 +2302,12 @@ function MapCard({ map, onClick, isMobile }) {
                   ? <span style={{ fontSize: 15, color: colors.muted, fontStyle: "italic" }}>None</span>
                   : defaults.map(perk => {
                       const unit = getPerkUnit(perk.name);
+                      const boosted = perk.baseAmt * mapPerkMult;
+                      const boostedStr = Number.isInteger(Math.round(boosted * 10) / 10) ? String(Math.round(boosted)) : boosted.toFixed(1);
                       return (
                         <div key={perk.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 6 }}>
                           <span style={{ fontSize: 15, color: colors.positive }}>{perk.name}</span>
-                          <span style={{ fontSize: 15, color: colors.positive, fontWeight: 700, flexShrink: 0 }}>{perk.baseAmt}{unit}</span>
+                          <span style={{ fontSize: 15, color: colors.positive, fontWeight: 700, flexShrink: 0 }}>{boostedStr}{unit}</span>
                         </div>
                       );
                     })
@@ -2264,19 +2391,135 @@ function CombatStylesView() {
   );
 }
 
+const MAP_PERK_UPGRADE_SOURCES = [
+  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15  },
+  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5   },
+  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15  },
+];
+
 function AllMapsView() {
   const [selectedMap, setSelectedMap] = useState(null);
   const isMobile = useIsMobile();
+
+  const [mpLevels, setMpLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
+      if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
+    } catch {}
+    return { runes: "", mastery: "", ultimus: "" };
+  });
+
+  function setMpLevel(id, val) {
+    setMpLevels(prev => {
+      const next = { ...prev, [id]: val };
+      localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function setAllMax() {
+    const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, String(u.maxLevel)]));
+    localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+    setMpLevels(next);
+  }
+
+  function isOverMax(id) {
+    const src = MAP_PERK_UPGRADE_SOURCES.find(u => u.id === id);
+    const n = parseInt(mpLevels[id]);
+    return !isNaN(n) && mpLevels[id] !== "" && n > src.maxLevel;
+  }
+
+  const [wave35k, setWave35k] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mapPerkWave35k")) ?? false; } catch { return false; }
+  });
+
+  function toggleWave35k(val) {
+    setWave35k(val);
+    localStorage.setItem("mapPerkWave35k", JSON.stringify(val));
+  }
+
+  const mapPerkMult = MAP_PERK_UPGRADE_SOURCES.reduce((acc, upg) => {
+    const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+    return acc * (1 + upg.statAmt * lv / 100);
+  }, 1) * (wave35k ? 1.10 : 1);
+
+  const hasBoost = mapPerkMult > 1.0001;
+  const multDisplay = `+${((mapPerkMult - 1) * 100).toFixed(2)}%`;
+
+  const smallInput = {
+    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
+    color: colors.text, padding: "5px 8px", fontSize: 13, fontFamily: "inherit",
+    width: 68, textAlign: "center", outline: "none",
+  };
+
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>All Maps</div>
         <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Click a map to see full perk details</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(200px, auto)" }}>
-        {mapsData.maps.map(map => <MapCard key={map.id} map={map} isMobile={isMobile} onClick={() => setSelectedMap(map)} />)}
+
+      {/* Map Perk Upgrade Sources */}
+      <div style={{ marginBottom: 20, display: "inline-block", minWidth: isMobile ? "100%" : 320 }}>
+        <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>Map Perk Upgrades</span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={setAllMax} style={{
+                background: colors.accent + "22", border: `1px solid ${colors.accent}44`,
+                color: colors.accent, borderRadius: 6, padding: "2px 12px",
+                fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer",
+              }}>Max</button>
+              <button onClick={() => { const z = { runes: "", mastery: "", ultimus: "" }; setMpLevels(z); localStorage.setItem("mapPerkUpgrades", JSON.stringify(z)); toggleWave35k(false); }} style={{
+                background: "transparent", border: `1px solid ${colors.border}`,
+                color: colors.muted, borderRadius: 6, padding: "2px 12px",
+                fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer",
+              }}>Clear</button>
+            </div>
+          </div>
+
+          {MAP_PERK_UPGRADE_SOURCES.map(upg => {
+            const over = isOverMax(upg.id);
+            const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+            const pct = upg.statAmt * lv;
+            return (
+              <div key={upg.id} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 13, color: colors.muted, minWidth: 70 }}>{upg.label}</span>
+                  <input type="number" min={0} max={upg.maxLevel}
+                    value={mpLevels[upg.id]}
+                    onChange={e => setMpLevel(upg.id, e.target.value)}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }}
+                  />
+                  <span style={{ fontSize: 12, color: colors.muted }}>/ {upg.maxLevel}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>+{pct}%</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 78 }}>Max is {upg.maxLevel}</div>}
+              </div>
+            );
+          })}
+
+          {/* Wave 35k checkbox */}
+          <div style={{ marginBottom: 7 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={wave35k} onChange={e => toggleWave35k(e.target.checked)}
+                style={{ width: 15, height: 15, cursor: "pointer", accentColor: colors.accent }} />
+              <span style={{ fontSize: 13, color: colors.muted }}>Wave 35k+ Challenge on all 7 Maps</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: wave35k ? colors.positive : colors.muted, marginLeft: "auto" }}>+10%</span>
+            </label>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+            <span style={{ fontSize: 13, color: colors.muted }}>Total bonus: </span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: hasBoost ? colors.positive : colors.muted }}>{multDisplay}</span>
+          </div>
+        </div>
       </div>
-      {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} />}
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(200px, auto)" }}>
+        {mapsData.maps.map(map => <MapCard key={map.id} map={map} isMobile={isMobile} mapPerkMult={mapPerkMult} onClick={() => setSelectedMap(map)} />)}
+      </div>
+      {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} mapPerkMult={mapPerkMult} />}
     </div>
   );
 }
