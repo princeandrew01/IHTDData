@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
+import { Suspense, lazy, useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -10,8 +10,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-import heroesData     from "./data/heroes.json";
-import mapsData       from "./data/maps.json";
+import { heroesData, mapsData, getInitialMapSpotsById, mergeMapsWithSpots, normalizeMapSpots, parseMapSpotsByIdFromJsonText } from "./lib/gameData";
 import researchData   from "./data/research.json";
 import spellsData     from "./data/spells.json";
 import powerupsData   from "./data/powerups.json";
@@ -29,6 +28,17 @@ import enemyHpData              from "./data/enemy_hp.json";
 import battpassExpData          from "./data/battlepass_exp.json";
 import STAT_UNITS          from "./data/stat_units.json";
 import techTreeDisplayData  from "./data/tech_tree_display.json";
+import { applyAppSavePayload, buildAppSavePayload } from "./lib/loadoutBuilderSave";
+
+const loadSecondaryViews = () => import("./views/secondaryViews.jsx");
+const HomeView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.HomeView })));
+const BracketsView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BracketsView })));
+const BattlepassExpView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BattlepassExpView })));
+const MapPerksView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.MapPerksView })));
+const loadBuilderViews = () => import("./views/loadoutBuilderViews.jsx");
+const LoadoutBuilderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.LoadoutBuilderView })));
+const StatsLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.StatsLoadoutView })));
+const CoordFinderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.CoordFinderView })));
 
 // ─────────────────────────────────────────────
 // NORMALIZE  — rename multCost → multiCost for
@@ -101,6 +111,13 @@ const NAV_GROUPS = [
     ],
   },
   {
+    label: "Loadout",
+    items: [
+      { key: "loadoutBuilder", label: "Map Loadouts", menuIcon: "tower2.png" },
+      { key: "statsLoadout", label: "Stats Loadout", menuIcon: "_attributePoints_0.png" },
+    ],
+  },
+  {
     label: "Battlepass",
     items: [
       { key: "battpassExp", label: "Battlepass Exp", menuIcon: "_battlepass.png" },
@@ -111,6 +128,12 @@ const NAV_GROUPS = [
     items: [
       { key: "rankRequired", label: "Rank Required",    menuIcon: "_attributePoints_0.png" },
       { key: "enemyHp",      label: "Enemy HP",         menuIcon: "_bosses.png" },
+    ],
+  },
+  {
+    label: "Admin",
+    items: [
+      { key: "coordFinder", label: "Coord Finder", menuIcon: "_edit.png" },
     ],
   },
 ];
@@ -974,111 +997,6 @@ function RankExpView() {
                 <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
                 <td style={{ padding: "8px 16px", color: r.pointsGained === 0 ? colors.muted : colors.gold, fontWeight: r.pointsGained > 0 ? 600 : 400 }}>{r.pointsGained === 0 ? "—" : `+${r.pointsGained}`}</td>
                 <td style={{ padding: "8px 16px", color: colors.gold, fontFamily: "monospace" }}>{r.cumulativePoints.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// BATTLEPASS EXP FORMULA
-// base = 50 * level²; scaling thresholds applied cumulatively with round-half-up
-// ─────────────────────────────────────────────
-function battpassExpForLevel(lvl) {
-  const roundHalfUp = v => Math.floor(v + 0.5);
-  let base = 50 * lvl * lvl;
-  if (lvl > 35)  base = roundHalfUp(base * (1 + (lvl - 35)  * 0.05));
-  if (lvl > 50)  base = roundHalfUp(base * (1 + (lvl - 50)  * 0.05));
-  if (lvl > 75)  base = roundHalfUp(base * (1 + (lvl - 75)  * 0.05));
-  if (lvl > 100) base = roundHalfUp(base * (1 + (lvl - 100) * 0.05));
-  return base;
-}
-
-function BattlepassExpView() {
-  const fmt = useFmt();
-  const [startInput, setStartInput] = useState("1");
-  const [endInput,   setEndInput]   = useState("150");
-  const [range, setRange] = useState({ start: 1, end: 150 });
-
-  function applyRange() {
-    const s = Math.max(1, parseInt(startInput) || 1);
-    const e = Math.max(s, parseInt(endInput)   || s);
-    setStartInput(String(s));
-    setEndInput(String(e));
-    setRange({ start: s, end: e });
-  }
-
-  function handleKeyDown(evt) {
-    if (evt.key === "Enter") applyRange();
-  }
-
-  const { rows, totalExp } = useMemo(() => {
-    const out = [];
-    let cumulative = 0;
-    for (let i = range.start; i <= range.end; i++) {
-      const required = battpassExpForLevel(i);
-      cumulative += required;
-      out.push({ level: i, required, cumulative });
-    }
-    const totalExp = out.reduce((s, r) => s + r.required, 0);
-    return { rows: out, totalExp };
-  }, [range]);
-
-  const inputStyle = {
-    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
-    width: 90, textAlign: "center", outline: "none",
-  };
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <span style={{ color: colors.muted, fontSize: 13 }}>From level</span>
-        <input
-          type="number" value={startInput} min={1}
-          onChange={e => setStartInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
-        <input
-          type="number" value={endInput} min={1}
-          onChange={e => setEndInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <button onClick={applyRange} style={{
-          background: colors.accent, color: "#000", border: "none", borderRadius: 6,
-          padding: "6px 18px", cursor: "pointer", fontWeight: 700, fontSize: 13,
-          fontFamily: "inherit",
-        }}>
-          Apply
-        </button>
-      </div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "inline-block", background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "10px 16px" }}>
-          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Total EXP (Levels {range.start}–{range.end})</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: colors.positive, fontFamily: "monospace" }}>{fmt(totalExp)}</div>
-        </div>
-      </div>
-      <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: colors.panel }}>
-              {["Level", "EXP Required", "Cumulative EXP"].map(h => (
-                <th key={h} style={{ padding: "10px 16px", color: colors.muted, fontWeight: 600, textAlign: "left", borderBottom: `1px solid ${colors.border}`, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>{h}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.level} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
-                <td style={{ padding: "8px 16px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
-                <td style={{ padding: "8px 16px", color: colors.text, fontFamily: "monospace" }}>{fmt(r.required)}</td>
-                <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
               </tr>
             ))}
           </tbody>
@@ -2562,77 +2480,6 @@ function RankRequiredView() {
 }
 
 // ─────────────────────────────────────────────
-// HOME VIEW
-// ─────────────────────────────────────────────
-const HOME_SECTIONS = [
-  {
-    group: "Upgrades",
-    color: "#4a9eff",
-    items: [
-      { key: "research",   label: "Research",   icon: "_energy.png",          desc: "Prestige power upgrades" },
-      { key: "spells",     label: "Spells",     icon: "_energy.png",          desc: "Spell levels and energy costs" },
-      { key: "runes",      label: "Runes",      icon: "_rune_2.png",          desc: "Rune bonuses" },
-      { key: "gems",       label: "Gems",       icon: "_gem_2.png",           desc: "Gem upgrades" },
-      { key: "powerups",   label: "Power Ups",  icon: "_prestigePower.png",   desc: "Power up levels" },
-      { key: "tech",       label: "Tech",       icon: "_techPts_2.png",       desc: "Tech tree upgrades" },
-      { key: "tournament", label: "Tournament", icon: "_tournPts.png",        desc: "Tournament upgrades" },
-      { key: "tickets",    label: "Tickets",    icon: "_ticket.png",          desc: "Weekly ticket upgrades" },
-      { key: "ultimus",    label: "Ultimus",    icon: "token_red.png",        desc: "Ultimus upgrades" },
-      { key: "mastery",    label: "Mastery",    icon: "_mastery_2.png",       desc: "Mastery levels" },
-    ],
-  },
-  {
-    group: "Hero Data",
-    color: "#b47aff",
-    items: [
-      { key: "allHeroes",    label: "All Heroes",    icon: "_heroHelm.png",           desc: "Stats, skills and synergies" },
-      { key: "synergies",    label: "Synergies",     icon: "_synergy.png",            desc: "Browse all synergy bonuses" },
-      { key: "milestones",   label: "Milestones",    icon: "_star 3610.png",          desc: "Hero milestone rewards" },
-      { key: "rankExp",      label: "Rank Exp",      icon: "_killExp.png",            desc: "Experience per rank level" },
-      { key: "attributes",   label: "Attributes",    icon: "_attributePoints_0.png",  desc: "Personal and global attribute costs" },
-      { key: "combatStyles", label: "Combat Styles", icon: "icon_scale.png",          desc: "Combat style bonuses and rank requirements" },
-    ],
-  },
-  {
-    group: "Tournament",
-    color: colors.gold,
-    items: [
-      { key: "brackets", label: "Brackets", icon: "Icon_Trophy_0.png", desc: "Trophy rewards by tier and placement" },
-    ],
-  },
-  {
-    group: "Maps",
-    color: colors.positive,
-    items: [
-      { key: "allMaps",  label: "All Maps",  icon: "Icon_Map_0.png",    desc: "Map perks and unlock requirements" },
-      { key: "mapPerks", label: "Map Perks", icon: "_starEmpty_0.png",  desc: "Perk points earned per wave milestone" },
-    ],
-  },
-  {
-    group: "Battlepass",
-    color: "#f5c842",
-    items: [
-      { key: "battpassExp", label: "Battlepass Exp", icon: "_battlepass.png", desc: "EXP required per battlepass level" },
-    ],
-  },
-  {
-    group: "Calculators",
-    color: colors.accent,
-    items: [
-      { key: "rankRequired", label: "Rank Required", icon: "_attributePoints_0.png", desc: "Min rank needed for your attribute levels" },
-      { key: "enemyHp",      label: "Enemy HP",      icon: "_bosses.png",            desc: "Enemy HP by wave with player reductions" },
-    ],
-  },
-];
-
-const STORE_LINKS = [
-  { label: "Android", url: "https://play.google.com/store/apps/details?id=com.SwellGamesLLC.IdleHeroTD", color: "#78c257", icon: "icon_android.png", desc: "Get it on Google Play" },
-  { label: "iOS",     url: "https://apps.apple.com/us/app/id6479284270",                                  color: "#aaaaaa", icon: "icon_ios.png",     desc: "Download on the App Store" },
-  { label: "Steam",   url: "https://store.steampowered.com/app/2897580",                                  color: "#1b9de2", icon: "icon_steam.png",    desc: "Available on Steam" },
-  { label: "Discord", url: "https://discord.com/invite/vs3uJUsxVx",                                       color: "#5865f2", icon: "discord-mark-blue.png", desc: "Join the community" },
-];
-
-// ─────────────────────────────────────────────
 // ENEMY HP CALCULATOR
 // ─────────────────────────────────────────────
 function EnemyHpView() {
@@ -2935,293 +2782,9 @@ function EnemyHpView() {
   );
 }
 
-function HomeView({ onNavigate }) {
-  const isMobile = useIsMobile();
-  return (
-    <div>
-
-      {/* Hero banner */}
-      <div style={{ textAlign: "center", marginBottom: 36, padding: "32px 20px", background: `linear-gradient(180deg, ${colors.panel} 0%, transparent 100%)`, borderRadius: 12, border: `1px solid ${colors.border}` }}>
-        <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 900, color: colors.accent, letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 24px rgba(245,146,30,0.5)", marginBottom: 8 }}>
-          Idle Hero TD
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: colors.text, marginBottom: 4 }}>Game Data Reference</div>
-        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>by Asingh · Game Version 15.04</div>
-        <p style={{ fontSize: 14, color: colors.muted, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 12px" }}>
-          A comprehensive reference tool for Idle Hero TD — covering upgrade costs, hero stats, synergies, milestones, mastery exp, map perks, tournament brackets, and battlepass exp. Use the sidebar to navigate between sections.
-        </p>
-        <p style={{ fontSize: 13, color: colors.muted, lineHeight: 1.6, maxWidth: 560, margin: "0 auto 24px", padding: "10px 16px", background: colors.header, borderRadius: 8, border: `1px solid ${colors.border}` }}>
-          Found an error or something looks off? Please message <span style={{ color: colors.accent, fontWeight: 700 }}>Asingh</span> or any of the mods on the Discord server.
-        </p>
-        {/* Store + Discord links */}
-        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 14 }}>Find the game and join the community:</div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-          {STORE_LINKS.map(link => (
-            <a key={link.label} href={link.url} target="_blank" rel="noreferrer" style={{
-              padding: "10px 18px", borderRadius: 10,
-              background: link.color + "22", border: `1px solid ${link.color}66`,
-              color: link.color, fontWeight: 700, fontSize: 13,
-              textDecoration: "none", display: "flex", alignItems: "center", gap: 8,
-              transition: "background 0.15s",
-            }}>
-              {link.icon && <img src={getIconUrl(link.icon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontWeight: 800 }}>{link.label}</div>
-                <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 400 }}>{link.desc}</div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Section quick-links */}
-      {HOME_SECTIONS.map(section => (
-        <div key={section.group} style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: section.color, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 }}>
-            {section.group}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 10 }}>
-            {section.items.map(item => (
-              <button key={item.key} onClick={() => onNavigate(item.key)} style={{
-                background: colors.header, border: `1px solid ${colors.border}`,
-                borderRadius: 8, padding: "12px 14px", textAlign: "left",
-                cursor: "pointer", fontFamily: "inherit",
-                transition: "border-color 0.15s, background 0.15s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = section.color; e.currentTarget.style.background = section.color + "11"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.background = colors.header; }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {item.icon && (
-                    <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: "#0f2640", border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                      <img src={getIconUrl(item.icon)} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-                    </div>
-                  )}
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: colors.text, marginBottom: 2 }}>{item.label}</div>
-                    <div style={{ fontSize: 12, color: colors.muted, lineHeight: 1.4 }}>{item.desc}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// TOURNAMENT BRACKETS VIEW
-// ─────────────────────────────────────────────
-function BracketsView() {
-  const [waveInput, setWaveInput] = useState("");
-  const wave = parseInt(waveInput) || null;
-
-  const activeBracket = wave != null
-    ? tournamentBracketsData.brackets.find(b => wave >= b.minWave && (b.maxWave == null || wave <= b.maxWave))
-    : null;
-
-  const thS = {
-    padding: "9px 12px", color: colors.muted, fontWeight: 700, fontSize: 11,
-    textAlign: "right", borderBottom: `1px solid ${colors.border}`,
-    letterSpacing: "0.06em", textTransform: "uppercase", whiteSpace: "nowrap",
-  };
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
-        <img src={getIconUrl("Icon_Trophy_0.png")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Tournament Brackets</div>
-          <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>Base trophy rewards by tier and placement.</div>
-        </div>
-      </div>
-
-      {/* Wave finder */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 20, background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "12px 16px" }}>
-        <span style={{ fontSize: 13, color: colors.muted }}>Your wave:</span>
-        <input
-          type="number" placeholder="e.g. 5000"
-          value={waveInput}
-          onChange={e => setWaveInput(e.target.value)}
-          style={{ background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6, color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit", width: 130, outline: "none" }}
-        />
-        {activeBracket && (
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 14, color: colors.positive, fontWeight: 700 }}>
-              Tier {activeBracket.tier} — {activeBracket.minWave.toLocaleString()}–{activeBracket.maxWave != null ? activeBracket.maxWave.toLocaleString() : "∞"}
-            </span>
-            <span style={{ fontSize: 13, color: colors.muted }}>
-              Rank 1: <span style={{ color: colors.gold, fontWeight: 700 }}>{activeBracket.trophiesPerRank[0].toLocaleString()}</span>
-            </span>
-            <span style={{ fontSize: 13, color: colors.muted }}>
-              Rank 10: <span style={{ color: colors.gold, fontWeight: 700 }}>{activeBracket.trophiesPerRank[9].toLocaleString()}</span>
-            </span>
-            <span style={{ fontSize: 13, color: colors.muted }}>
-              Gems: <span style={{ color: "#e06aaa", fontWeight: 700 }}>{activeBracket.gems.toLocaleString()}</span>
-            </span>
-          </div>
-        )}
-        {wave != null && !activeBracket && (
-          <span style={{ fontSize: 13, color: colors.muted, fontStyle: "italic" }}>No bracket found for wave {wave.toLocaleString()}</span>
-        )}
-      </div>
-
-      {/* Table */}
-      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 8, overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13, minWidth: 700 }}>
-          <thead style={{ background: colors.panel }}>
-            <tr>
-              <th style={{ ...thS, textAlign: "left" }}>Tier</th>
-              <th style={{ ...thS, textAlign: "left" }}>Wave Range</th>
-              {[1,2,3,4,5,6,7,8,9,10].map(r => (
-                <th key={r} style={{ ...thS, color: r === 1 ? colors.gold : thS.color }}>#{r}</th>
-              ))}
-              <th style={{ ...thS, color: "#e06aaa" }}>Gems</th>
-            </tr>
-          </thead>
-          <tbody>
-            {tournamentBracketsData.brackets.map((b, i) => {
-              const isActive = activeBracket?.tier === b.tier;
-              return (
-                <tr key={b.tier} style={{
-                  background: isActive ? colors.positive + "22" : i % 2 === 0 ? "transparent" : colors.panel + "60",
-                  borderBottom: `1px solid ${colors.border}${isActive ? "" : "22"}`,
-                  outline: isActive ? `1px solid ${colors.positive}` : "none",
-                }}>
-                  <td style={{ padding: "8px 12px", fontWeight: 700, color: isActive ? colors.positive : colors.accent, whiteSpace: "nowrap" }}>
-                    {isActive ? `▶ Tier ${b.tier}` : `Tier ${b.tier}`}
-                  </td>
-                  <td style={{ padding: "8px 12px", color: colors.muted, whiteSpace: "nowrap" }}>
-                    {b.minWave.toLocaleString()}–{b.maxWave != null ? b.maxWave.toLocaleString() : "∞"}
-                  </td>
-                  {b.trophiesPerRank.map((t, ri) => (
-                    <td key={ri} style={{ padding: "8px 12px", textAlign: "right", color: ri === 0 ? colors.gold : colors.text, fontWeight: ri === 0 ? 700 : 400 }}>
-                      {t.toLocaleString()}
-                    </td>
-                  ))}
-                  <td style={{ padding: "8px 12px", textAlign: "right", color: "#e06aaa", fontWeight: 600 }}>{b.gems.toLocaleString()}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────
 // MAP PERKS VIEW
 // ─────────────────────────────────────────────
-const MAP_PERK_START = 25000;
-const MAP_PERK_INTERVAL = 1000;
-
-function MapPerksView() {
-  const isMobile = useIsMobile();
-  const [startWave, setStartWave] = useState(MAP_PERK_START);
-  const [endWave,   setEndWave]   = useState(75000);
-  const [startInput, setStartInput] = useState(String(MAP_PERK_START));
-  const [endInput,   setEndInput]   = useState("75000");
-
-  const clampWave = (v) => Math.max(MAP_PERK_START, Math.round(v / MAP_PERK_INTERVAL) * MAP_PERK_INTERVAL);
-
-  function commitStart() {
-    const v = clampWave(parseInt(startInput) || MAP_PERK_START);
-    setStartWave(v);
-    setStartInput(v.toLocaleString().replace(/,/g, ""));
-    if (v > endWave) { setEndWave(v); setEndInput(String(v)); }
-  }
-  function commitEnd() {
-    const raw = clampWave(parseInt(endInput) || MAP_PERK_START);
-    const v = Math.max(raw, startWave);
-    setEndWave(v);
-    setEndInput(String(v));
-  }
-
-  const rows = useMemo(() => {
-    const out = [];
-    for (let w = startWave; w <= endWave; w += MAP_PERK_INTERVAL) {
-      const n = (w - MAP_PERK_START) / MAP_PERK_INTERVAL;
-      const granted    = n;
-      const cumulative = n * (n + 1) / 2;
-      out.push({ wave: w, granted, cumulative });
-    }
-    return out;
-  }, [startWave, endWave]);
-
-  const inputStyle = {
-    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
-    width: 110, textAlign: "center", outline: "none",
-  };
-  const thStyle = {
-    padding: "8px 16px", color: colors.muted, fontWeight: 700, fontSize: 12,
-    textAlign: "left", borderBottom: `1px solid ${colors.border}`,
-    letterSpacing: "0.06em", textTransform: "uppercase",
-  };
-
-  return (
-    <div>
-      {/* Header */}
-      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
-        <img src={getIconUrl("_starEmpty_0.png")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-        <div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Map Perks</div>
-          <div style={{ fontSize: 13, color: colors.muted, marginTop: 2 }}>Perk points earned per wave milestone (every 1,000 waves from {MAP_PERK_START.toLocaleString()})</div>
-        </div>
-      </div>
-
-      {/* Wave range filter */}
-      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBottom: 20, background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "12px 16px" }}>
-        <span style={{ color: colors.muted, fontSize: 13 }}>From wave</span>
-        <input type="number" value={startInput} min={MAP_PERK_START} step={MAP_PERK_INTERVAL}
-          onChange={e => setStartInput(e.target.value)}
-          onBlur={commitStart}
-          onKeyDown={e => e.key === "Enter" && commitStart()}
-          style={inputStyle} />
-        <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
-        <input type="number" value={endInput} min={MAP_PERK_START} step={MAP_PERK_INTERVAL}
-          onChange={e => setEndInput(e.target.value)}
-          onBlur={commitEnd}
-          onKeyDown={e => e.key === "Enter" && commitEnd()}
-          style={inputStyle} />
-        <span style={{ fontSize: 13, color: colors.muted }}>
-          — <span style={{ color: colors.accent, fontWeight: 700 }}>{rows[rows.length - 1]?.cumulative.toLocaleString() ?? 0}</span> total perks at wave {endWave.toLocaleString()}
-        </span>
-      </div>
-
-      {/* Table */}
-      <div style={{ border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead style={{ background: colors.panel }}>
-            <tr>
-              <th style={thStyle}>Wave</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Perks Granted</th>
-              <th style={{ ...thStyle, textAlign: "right" }}>Cumulative Perks</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) => (
-              <tr key={r.wave} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
-                <td style={{ padding: "7px 16px", color: colors.accent, fontWeight: 600 }}>{r.wave.toLocaleString()}</td>
-                <td style={{ padding: "7px 16px", textAlign: "right", color: r.granted === 0 ? colors.muted : colors.text, fontWeight: r.granted > 0 ? 600 : 400 }}>
-                  {r.granted === 0 ? "—" : `+${r.granted}`}
-                </td>
-                <td style={{ padding: "7px 16px", textAlign: "right", color: colors.gold, fontWeight: 600 }}>
-                  {r.cumulative.toLocaleString()}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────
 // TECH TREE VIEW
 // ─────────────────────────────────────────────
@@ -3673,6 +3236,22 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
     return initial;
   });
 
+  useEffect(() => {
+    setOpen((current) => {
+      let changed = false;
+      const next = { ...current };
+
+      for (const group of NAV_GROUPS) {
+        if (group.items.some((item) => item.key === activeKey) && !next[group.label]) {
+          next[group.label] = true;
+          changed = true;
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [activeKey]);
+
   function toggleGroup(label) {
     setOpen(prev => ({ ...prev, [label]: !prev[label] }));
   }
@@ -3727,6 +3306,7 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
 // MAIN APP
 // ─────────────────────────────────────────────
 export default function App() {
+  const fmt = useFmt();
   const [activeKey,    setActiveKey]    = useState(
     () => localStorage.getItem("activeKey") ?? "home"
   );
@@ -3740,7 +3320,12 @@ export default function App() {
   const [notation,     setNotation]     = useState(
     () => localStorage.getItem("notation") ?? "scientific"
   );
+  const [mapSpotsById, setMapSpotsById] = useState(() => getInitialMapSpotsById());
+  const [loadoutImportVersion, setLoadoutImportVersion] = useState(0);
+  const saveImportInputRef = useRef(null);
   const isMobile = useIsMobile();
+  const lazyFallback = <div style={{ color: colors.muted, padding: "24px 0" }}>Loading view...</div>;
+  const editableMaps = useMemo(() => mergeMapsWithSpots(mapsData.maps, mapSpotsById), [mapSpotsById]);
 
   function handleNotation(val) {
     setNotation(val);
@@ -3750,6 +3335,60 @@ export default function App() {
   function openModal(item, formula) {
     setModalItem(item);
     setModalFormula(formula);
+  }
+
+  function handleMapSpotsChange(mapId, nextSpots) {
+    setMapSpotsById((current) => ({
+      ...current,
+      [mapId]: normalizeMapSpots(mapId, nextSpots),
+    }));
+  }
+
+  function handleMapsJsonHydrate(rawJsonText) {
+    setMapSpotsById((current) => parseMapSpotsByIdFromJsonText(rawJsonText, current));
+  }
+
+  function handleExportSave() {
+    const payload = buildAppSavePayload(localStorage);
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+
+    link.href = url;
+    link.download = `ihtddata-save-${stamp}.json`;
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+  }
+
+  function handleImportSaveClick() {
+    saveImportInputRef.current?.click();
+  }
+
+  async function handleImportSaveChange(event) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+
+    if (!file) {
+      return;
+    }
+
+    try {
+      const text = await file.text();
+      const payload = JSON.parse(text);
+      const result = applyAppSavePayload(payload, localStorage);
+
+      if (!result.ok) {
+        window.alert(result.message);
+        return;
+      }
+
+      setLoadoutImportVersion((current) => current + 1);
+    } catch {
+      window.alert("Unable to import that save file.");
+    }
   }
 
   const activeSection = SECTION_MAP[activeKey];
@@ -3771,24 +3410,50 @@ export default function App() {
           <div style={{ fontSize: 11, color: colors.muted, marginTop: 1, letterSpacing: "0.04em" }}>Game Data Reference</div>
           <div style={{ fontSize: 10, color: colors.muted, opacity: 0.7, marginTop: 1 }}>by Asingh · v15.04</div>
         </div>
-        {/* Notation toggle */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Notation</span>
-          {[
-            { val: "scientific", label: "Scientific", example: "1.23e15" },
-            { val: "letters",    label: "Letters",    example: "aa, ab…"  },
-          ].map(({ val, label, example }) => (
-            <button key={val} onClick={() => handleNotation(val)} style={{
-              background: notation === val ? colors.accent : colors.header,
-              color: notation === val ? "#000" : colors.text,
-              border: `1px solid ${notation === val ? colors.accent : colors.border}`,
-              borderRadius: 6, padding: "5px 12px", cursor: "pointer",
-              fontFamily: "inherit", textAlign: "center", lineHeight: 1.2,
-            }}>
-              <div style={{ fontWeight: 700, fontSize: 12 }}>{label}</div>
-              <div style={{ fontSize: 10, opacity: 0.75, marginTop: 2 }}>{example}</div>
-            </button>
-          ))}
+        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "flex-end" }}>
+          <input ref={saveImportInputRef} type="file" accept="application/json,.json" onChange={handleImportSaveChange} style={{ display: "none" }} />
+          <button onClick={handleExportSave} style={{
+            background: colors.header,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 6,
+            padding: "8px 12px",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontWeight: 700,
+          }}>
+            Export Save
+          </button>
+          <button onClick={handleImportSaveClick} style={{
+            background: colors.header,
+            color: colors.text,
+            border: `1px solid ${colors.border}`,
+            borderRadius: 6,
+            padding: "8px 12px",
+            cursor: "pointer",
+            fontFamily: "inherit",
+            fontWeight: 700,
+          }}>
+            Import Save
+          </button>
+          <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+            <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Notation</span>
+            {[
+              { val: "scientific", label: "Scientific", example: "1.23e15" },
+              { val: "letters",    label: "Letters",    example: "aa, ab…"  },
+            ].map(({ val, label, example }) => (
+              <button key={val} onClick={() => handleNotation(val)} style={{
+                background: notation === val ? colors.accent : colors.header,
+                color: notation === val ? "#000" : colors.text,
+                border: `1px solid ${notation === val ? colors.accent : colors.border}`,
+                borderRadius: 6, padding: "5px 12px", cursor: "pointer",
+                fontFamily: "inherit", textAlign: "center", lineHeight: 1.2,
+              }}>
+                <div style={{ fontWeight: 700, fontSize: 12 }}>{label}</div>
+                <div style={{ fontSize: 10, opacity: 0.75, marginTop: 2 }}>{example}</div>
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -3827,11 +3492,71 @@ export default function App() {
           {activeKey === "combatStyles" && <CombatStylesView />}
           {activeKey === "rankRequired" && <RankRequiredView />}
           {activeKey === "enemyHp"      && <EnemyHpView />}
-          {activeKey === "home"       && <HomeView onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }} />}
-          {activeKey === "brackets"   && <BracketsView />}
+          {activeKey === "home"       && (
+            <Suspense fallback={lazyFallback}>
+              <HomeView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                isMobile={isMobile}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "brackets"   && (
+            <Suspense fallback={lazyFallback}>
+              <BracketsView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                tournamentBracketsData={tournamentBracketsData}
+              />
+            </Suspense>
+          )}
           {activeKey === "allMaps"    && <AllMapsView />}
-          {activeKey === "mapPerks"   && <MapPerksView />}
-          {activeKey === "battpassExp" && <BattlepassExpView />}
+          {activeKey === "mapPerks"   && (
+            <Suspense fallback={lazyFallback}>
+              <MapPerksView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "loadoutBuilder" && (
+            <Suspense fallback={lazyFallback}>
+              <LoadoutBuilderView
+                key={`loadout-builder-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                maps={editableMaps}
+                heroes={heroesData.heroes}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "statsLoadout" && (
+            <Suspense fallback={lazyFallback}>
+              <StatsLoadoutView
+                key={`stats-loadout-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+              />
+            </Suspense>
+          )}
+          {activeKey === "coordFinder" && (
+            <Suspense fallback={lazyFallback}>
+              <CoordFinderView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                maps={editableMaps}
+                heroes={heroesData.heroes}
+                onMapSpotsChange={handleMapSpotsChange}
+                onMapsJsonHydrate={handleMapsJsonHydrate}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "battpassExp" && (
+            <Suspense fallback={lazyFallback}>
+              <BattlepassExpView colors={colors} fmt={fmt} />
+            </Suspense>
+          )}
         </div>
 
       </div>
