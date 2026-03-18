@@ -290,6 +290,31 @@ function computeTotalCost(item, sectionFormula) {
         // mult = 8 if level > 80% maxLevel, 3 if >= 50%, else 1
         // linearMult requires float — fall through if item uses it
         if (item.hasLinearMult) break;
+
+        // Tournament-style capped formula: cost(L) = min(bc*(L+1)^mc, capCost), no bp mults
+        if (item.capCost !== undefined) {
+          const cc = BigInt(item.capCost);
+          if (!multiCost || multiCost === 1) {
+            // capLv = first L (1-indexed) where bc*(L+1) >= cc
+            const rawCapLv = cc > bc ? (cc + bc - 1n) / bc - 1n : 0n;
+            const cl = rawCapLv < 1n ? 1n : rawCapLv;
+            if (n < cl) {
+              // All levels pre-cap: sum_{L=1}^{N} bc*(L+1) = bc*((N+1)*(N+2)/2 - 1)
+              return bc * ((n + 1n) * (n + 2n) / 2n - 1n);
+            }
+            // Pre-cap sum (L=1..cl-1) + cap sum (L=cl..N)
+            const preCap = cl > 1n ? bc * (cl * (cl + 1n) / 2n - 1n) : 0n;
+            return preCap + cc * (n - cl + 1n);
+          }
+          // General mc: per-level loop (no current items reach this path)
+          let total = 0n;
+          for (let i = 1n; i <= n; i++) {
+            const raw = bc * (i + 1n) ** mc;
+            total += raw < cc ? raw : cc;
+          }
+          return total;
+        }
+
         const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
         const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
         const sumRange = (a, b) => b >= a ? (b - a + 1n) * (a + b) / 2n : 0n;
@@ -352,6 +377,22 @@ function computeTotalCost(item, sectionFormula) {
       return baseCost * maxLevel * (maxLevel + 1) / 2;
 
     case "power": {
+      if (item.capCost !== undefined) {
+        const mc = multiCost ?? 1;
+        const cc = item.capCost;
+        // capLv = first level where baseCost*(L+1)^mc >= cc
+        // For mc=1: capLv = ceil(cc/baseCost) - 1
+        const capLv = Math.max(1, Math.ceil(cc / baseCost) - 1);
+        if (maxLevel < capLv) {
+          // All pre-cap: sum_{L=1}^{N} baseCost*(L+1)^mc
+          let total = 0;
+          for (let lv = 1; lv <= maxLevel; lv++) total += baseCost * Math.pow(lv + 1, mc);
+          return total;
+        }
+        let preCap = 0;
+        for (let lv = 1; lv < capLv; lv++) preCap += baseCost * Math.pow(lv + 1, mc);
+        return preCap + cc * (maxLevel - capLv + 1);
+      }
       const bp1f = maxLevel * 0.5;
       const bp2f = maxLevel * 0.8;
       const mc = multiCost ?? 1;
@@ -532,6 +573,11 @@ function costAtLevel(level, item, sectionFormula) {
       case "power": {
         const ml = item.maxLevel ?? 999999;
         if (item.hasLinearMult) break; // linearMult requires float path
+        if (item.capCost !== undefined) {
+          const cc = BigInt(item.capCost);
+          const raw = bc * (lv + 1n) ** mc;
+          return raw < cc ? raw : cc;
+        }
         const bp1 = BigInt(Math.ceil(ml * 0.5));
         const bp2 = BigInt(Math.ceil(ml * 0.8));
         const mult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
@@ -560,6 +606,9 @@ function costAtLevel(level, item, sectionFormula) {
     case "flat":           return baseCost;
     case "rank_linear":    return baseCost * level;
     case "power": {
+      if (item.capCost !== undefined) {
+        return Math.min(baseCost * Math.pow(level + 1, multiCost ?? 1), item.capCost);
+      }
       const ml   = item.maxLevel ?? 999999;
       const bp1f = ml * 0.5;
       const bp2f = ml * 0.8;
