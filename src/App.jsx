@@ -2029,7 +2029,7 @@ function perkMaxCost(perk) {
   return (perk.unlockCost ?? 0) + low + high;
 }
 
-function MapModal({ map, onClose }) {
+function MapModal({ map, onClose, mapPerkMult = 1 }) {
   const hasVariants = map.astralVariants?.length > 0;
   const [tab, setTab] = useState("perks");
   const [variantIdx, setVariantIdx] = useState(0);
@@ -2117,18 +2117,26 @@ function MapModal({ map, onClose }) {
                         <th style={{ ...thStyle, textAlign: "left"  }}>Level</th>
                         <th style={{ ...thStyle, textAlign: "right" }}>Cost</th>
                         <th style={{ ...thStyle, textAlign: "right" }}>Total Cost</th>
-                        <th style={{ ...thStyle, textAlign: "right" }}>Bonus</th>
+                        <th style={{ ...thStyle, textAlign: "right" }}>
+                          Bonus{mapPerkMult > 1.0001 ? <span style={{ color: colors.positive, fontWeight: 400 }}> ×{mapPerkMult.toFixed(2)}</span> : ""}
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
-                      {rows.map((r, i) => (
+                      {rows.map((r, i) => {
+                        const boosted = r.bonus * mapPerkMult;
+                        const boostedStr = Number.isInteger(Math.round(boosted * 10) / 10)
+                          ? String(Math.round(boosted))
+                          : boosted.toFixed(1);
+                        return (
                         <tr key={i} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "50" }}>
                           <td style={{ padding: "4px 8px", color: r.level === "Unlock" ? colors.muted : colors.accent, fontWeight: 600 }}>{r.level}</td>
                           <td style={{ padding: "4px 8px", textAlign: "right", color: r.cost ? colors.gold : colors.muted, fontFamily: "monospace" }}>{r.cost ?? "—"}</td>
                           <td style={{ padding: "4px 8px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{r.cumulative}</td>
-                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.positive, fontWeight: 600 }}>{r.bonus}{unit}</td>
+                          <td style={{ padding: "4px 8px", textAlign: "right", color: colors.positive, fontWeight: 600 }}>{boostedStr}{unit}</td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -2179,10 +2187,12 @@ function MapModal({ map, onClose }) {
                     const isDebuff = negativIsGood.has(ef.statKey) ? ef.amount > 0 : ef.amount < 0;
                     const sign = ef.amount > 0 ? "+" : "";
                     const unitStr = ef.unit === "pct" ? "%" : "";
+                    const rawAmt = isDebuff ? ef.amount : ef.amount * mapPerkMult;
+                    const displayAmt = Number.isInteger(Math.round(rawAmt * 10) / 10) ? Math.round(rawAmt) : parseFloat(rawAmt.toFixed(1));
                     return (
                       <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "5px 0", borderBottom: i < variant.effects.length - 1 ? `1px solid ${colors.border}30` : "none" }}>
                         <span style={{ fontSize: 13, color: colors.muted }}>{ef.statLabel}</span>
-                        <span style={{ fontSize: 13, fontWeight: 700, color: isDebuff ? "#e05555" : colors.positive }}>{sign}{ef.amount}{unitStr}</span>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: isDebuff ? "#e05555" : colors.positive }}>{sign}{displayAmt}{unitStr}</span>
                       </div>
                     );
                   })}
@@ -2244,7 +2254,7 @@ function MapModal({ map, onClose }) {
   );
 }
 
-function MapCard({ map, onClick, isMobile }) {
+function MapCard({ map, onClick, isMobile, mapPerkMult = 1 }) {
   const isLocked = map.waveRequirement > 0;
   const iconUrl = getIconUrl(map.icon);
   const hasVariants = map.astralVariants?.length > 0;
@@ -2319,10 +2329,12 @@ function MapCard({ map, onClick, isMobile }) {
                   const sign = ef.amount > 0 ? "+" : "";
                   const unitStr = ef.unit === "pct" ? "%" : "";
                   const col = isLast ? "#e05555" : colors.positive;
+                  const rawAmt = isLast ? ef.amount : ef.amount * mapPerkMult;
+                  const displayAmt = Number.isInteger(Math.round(rawAmt * 10) / 10) ? Math.round(rawAmt) : parseFloat(rawAmt.toFixed(1));
                   return (
                     <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 5 }}>
                       <span style={{ fontSize: 15, color: col }}>{ef.statLabel}</span>
-                      <span style={{ fontSize: 15, fontWeight: 700, color: col, flexShrink: 0 }}>{sign}{ef.amount}{unitStr}</span>
+                      <span style={{ fontSize: 15, fontWeight: 700, color: col, flexShrink: 0 }}>{sign}{displayAmt}{unitStr}</span>
                     </div>
                   );
                 })}
@@ -2337,10 +2349,12 @@ function MapCard({ map, onClick, isMobile }) {
                   ? <span style={{ fontSize: 15, color: colors.muted, fontStyle: "italic" }}>None</span>
                   : defaults.map(perk => {
                       const unit = getPerkUnit(perk.name);
+                      const boosted = perk.baseAmt * mapPerkMult;
+                      const boostedStr = Number.isInteger(Math.round(boosted * 10) / 10) ? String(Math.round(boosted)) : boosted.toFixed(1);
                       return (
                         <div key={perk.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 6 }}>
                           <span style={{ fontSize: 15, color: colors.positive }}>{perk.name}</span>
-                          <span style={{ fontSize: 15, color: colors.positive, fontWeight: 700, flexShrink: 0 }}>{perk.baseAmt}{unit}</span>
+                          <span style={{ fontSize: 15, color: colors.positive, fontWeight: 700, flexShrink: 0 }}>{boostedStr}{unit}</span>
                         </div>
                       );
                     })
@@ -2424,19 +2438,135 @@ function CombatStylesView() {
   );
 }
 
+const MAP_PERK_UPGRADE_SOURCES = [
+  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15  },
+  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5   },
+  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15  },
+];
+
 function AllMapsView() {
   const [selectedMap, setSelectedMap] = useState(null);
   const isMobile = useIsMobile();
+
+  const [mpLevels, setMpLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
+      if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
+    } catch {}
+    return { runes: "", mastery: "", ultimus: "" };
+  });
+
+  function setMpLevel(id, val) {
+    setMpLevels(prev => {
+      const next = { ...prev, [id]: val };
+      localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function setAllMax() {
+    const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, String(u.maxLevel)]));
+    localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+    setMpLevels(next);
+  }
+
+  function isOverMax(id) {
+    const src = MAP_PERK_UPGRADE_SOURCES.find(u => u.id === id);
+    const n = parseInt(mpLevels[id]);
+    return !isNaN(n) && mpLevels[id] !== "" && n > src.maxLevel;
+  }
+
+  const [wave35k, setWave35k] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("mapPerkWave35k")) ?? false; } catch { return false; }
+  });
+
+  function toggleWave35k(val) {
+    setWave35k(val);
+    localStorage.setItem("mapPerkWave35k", JSON.stringify(val));
+  }
+
+  const mapPerkMult = MAP_PERK_UPGRADE_SOURCES.reduce((acc, upg) => {
+    const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+    return acc * (1 + upg.statAmt * lv / 100);
+  }, 1) * (wave35k ? 1.10 : 1);
+
+  const hasBoost = mapPerkMult > 1.0001;
+  const multDisplay = `+${((mapPerkMult - 1) * 100).toFixed(2)}%`;
+
+  const smallInput = {
+    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
+    color: colors.text, padding: "5px 8px", fontSize: 13, fontFamily: "inherit",
+    width: 68, textAlign: "center", outline: "none",
+  };
+
   return (
     <div>
-      <div style={{ marginBottom: 24 }}>
+      <div style={{ marginBottom: 16 }}>
         <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>All Maps</div>
         <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Click a map to see full perk details</div>
       </div>
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(200px, auto)" }}>
-        {mapsData.maps.map(map => <MapCard key={map.id} map={map} isMobile={isMobile} onClick={() => setSelectedMap(map)} />)}
+
+      {/* Map Perk Upgrade Sources */}
+      <div style={{ marginBottom: 20, display: "inline-block", minWidth: isMobile ? "100%" : 320 }}>
+        <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>Map Perk Upgrades</span>
+            <div style={{ display: "flex", gap: 6 }}>
+              <button onClick={setAllMax} style={{
+                background: colors.accent + "22", border: `1px solid ${colors.accent}44`,
+                color: colors.accent, borderRadius: 6, padding: "2px 12px",
+                fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer",
+              }}>Max</button>
+              <button onClick={() => { const z = { runes: "", mastery: "", ultimus: "" }; setMpLevels(z); localStorage.setItem("mapPerkUpgrades", JSON.stringify(z)); toggleWave35k(false); }} style={{
+                background: "transparent", border: `1px solid ${colors.border}`,
+                color: colors.muted, borderRadius: 6, padding: "2px 12px",
+                fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer",
+              }}>Clear</button>
+            </div>
+          </div>
+
+          {MAP_PERK_UPGRADE_SOURCES.map(upg => {
+            const over = isOverMax(upg.id);
+            const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+            const pct = upg.statAmt * lv;
+            return (
+              <div key={upg.id} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 13, color: colors.muted, minWidth: 70 }}>{upg.label}</span>
+                  <input type="number" min={0} max={upg.maxLevel}
+                    value={mpLevels[upg.id]}
+                    onChange={e => setMpLevel(upg.id, e.target.value)}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }}
+                  />
+                  <span style={{ fontSize: 12, color: colors.muted }}>/ {upg.maxLevel}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>+{pct}%</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 78 }}>Max is {upg.maxLevel}</div>}
+              </div>
+            );
+          })}
+
+          {/* Wave 35k checkbox */}
+          <div style={{ marginBottom: 7 }}>
+            <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer" }}>
+              <input type="checkbox" checked={wave35k} onChange={e => toggleWave35k(e.target.checked)}
+                style={{ width: 15, height: 15, cursor: "pointer", accentColor: colors.accent }} />
+              <span style={{ fontSize: 13, color: colors.muted }}>Wave 35k+ Challenge on all 7 Maps</span>
+              <span style={{ fontSize: 13, fontWeight: 700, color: wave35k ? colors.positive : colors.muted, marginLeft: "auto" }}>+10%</span>
+            </label>
+          </div>
+
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+            <span style={{ fontSize: 13, color: colors.muted }}>Total bonus: </span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: hasBoost ? colors.positive : colors.muted }}>{multDisplay}</span>
+          </div>
+        </div>
       </div>
-      {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} />}
+
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 20, gridAutoRows: "minmax(200px, auto)" }}>
+        {mapsData.maps.map(map => <MapCard key={map.id} map={map} isMobile={isMobile} mapPerkMult={mapPerkMult} onClick={() => setSelectedMap(map)} />)}
+      </div>
+      {selectedMap && <MapModal map={selectedMap} onClose={() => setSelectedMap(null)} mapPerkMult={mapPerkMult} />}
     </div>
   );
 }
