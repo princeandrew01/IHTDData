@@ -6359,7 +6359,7 @@
           "rankRequired": 250,
           "type": "energyUltraChance",
           "name": "Ultra Energy Chance",
-          "scope": "personal",
+          "scope": "global",
           "hero1": "sovereign",
           "hero2": "warden",
           "hero3": null,
