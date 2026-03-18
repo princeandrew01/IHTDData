@@ -259,11 +259,12 @@ function computeTotalCost(item, sectionFormula) {
   const intInputs = Number.isInteger(baseCost) &&
     (multiCost === undefined || Number.isInteger(multiCost));
 
+
   if (intInputs) {
     const bc = BigInt(baseCost);
     const mc = multiCost !== undefined ? BigInt(multiCost) : 1n;
     const n  = BigInt(maxLevel);
-
+    const formula_overide = "power"
     switch (formula) {
       case "flat":
         return bc * n;
@@ -273,30 +274,50 @@ function computeTotalCost(item, sectionFormula) {
         return bc * n * (n + 1n) / 2n;
 
       case "power": {
-        // cost(i) = baseCost × (i+1)^multiCost  for i = 0..maxLevel-1
-        // multCost === 1 → sum(1..n) = n*(n+1)/2  (exact closed form)
-        if (!multiCost || multiCost === 1) return bc * n * (n + 1n) / 2n;
-        if (maxLevel > 10000) {
-          // Integral approximation for very large n — float is sufficient here
-          const approx = baseCost * Math.pow(maxLevel, multiCost + 1) / (multiCost + 1);
-          return isFinite(approx) ? approx : Infinity;
+        // cost(level) = baseCost × level^multiCost × mult
+        // mult = 8 if level > 80% maxLevel, 3 if >= 50%, else 1
+        // linearMult requires float — fall through if maxLevel > 999
+        if (maxLevel > 999) break;
+        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
+        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        const sumRange = (a, b) => b >= a ? (b - a + 1n) * (a + b) / 2n : 0n;
+        if (!multiCost || multiCost === 1) {
+          return bc * (
+            sumRange(1n, bp1 - 1n) +
+            3n * sumRange(bp1, bp2 - 1n) +
+            24n * sumRange(bp2, n)
+          );
         }
         let total = 0n;
-        for (let i = 1n; i <= n; i++) total += bc * i ** mc;
+        for (let i = 1n; i <= n; i++) {
+          const mult = i >= bp2 ? 24n : i >= bp1 ? 3n : 1n;
+          total += bc * i ** mc * mult;
+        }
         return total;
       }
 
       case "exponential":
       case "exponential_endgame": {
-        // cost(i) = baseCost × multiCost^i  for i = 0..maxLevel-1
-        if (!multiCost || multiCost === 1) return bc * n;
-        // Guard against astronomical BigInt computation (e.g. 2^999999)
-        if (mc >= 2n && n > 1000n) {
-          const approx = baseCost * (Math.pow(multiCost, maxLevel) - 1) / (multiCost - 1);
-          return isFinite(approx) ? approx : Infinity;
+        // cost(level) = baseCost × multiCost^(level-1) × bpMult
+        // linearMult requires float — fall through if maxLevel > 999
+        if (maxLevel > 999) break;
+        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
+        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        if (!multiCost || multiCost === 1) {
+          const c1 = bp1 > 1n ? bp1 - 1n : 0n;
+          const c2 = bp2 > bp1 ? bp2 - bp1 : 0n;
+          const c3 = n >= bp2 ? n - bp2 + 1n : 0n;
+          return bc * (c1 + 3n * c2 + 24n * c3);
         }
-        // Geometric series: bc * (mc^n - 1) / (mc - 1)  — exact integer division
-        return bc * (mc ** n - 1n) / (mc - 1n);
+        // Segmented geometric series (exact BigInt)
+        // sum(level=a..b) mc^(level-1) = mc^(a-1) * (mc^(b-a+1) - 1) / (mc-1)
+        const geo = (a, b) => b < a ? 0n : mc ** (a - 1n) * (mc ** (b - a + 1n) - 1n) / (mc - 1n);
+        try {
+          return bc * (geo(1n, bp1-1n) + 3n * geo(bp1, bp2-1n) + 24n * geo(bp2, n));
+        } catch {
+          // BigInt too large — fall through to float path below
+          break;
+        }
       }
 
       case "capped_linear": {
@@ -319,21 +340,49 @@ function computeTotalCost(item, sectionFormula) {
       return baseCost * maxLevel * (maxLevel + 1) / 2;
 
     case "power": {
-      if (!multiCost || multiCost === 1) return baseCost * maxLevel * (maxLevel + 1) / 2;
+      const bp1f = maxLevel * 0.5;
+      const bp2f = maxLevel * 0.8;
+      const mc = multiCost ?? 1;
       if (maxLevel > 10000) {
-        const approx = baseCost * Math.pow(maxLevel, multiCost + 1) / (multiCost + 1);
-        return isFinite(approx) ? approx : Infinity;
+        // Integral approximation including linearMult = (1 + L*0.001) for L > 1
+        // ∫ L^mc * (1 + L*0.001) dL = L^(mc+1)/(mc+1) + 0.001*L^(mc+2)/(mc+2)
+        const intPow = (a, b) => {
+          const t1 = (Math.pow(b, mc + 1) - Math.pow(a, mc + 1)) / (mc + 1);
+          const t2 = 0.001 * (Math.pow(b, mc + 2) - Math.pow(a, mc + 2)) / (mc + 2);
+          return t1 + t2;
+        };
+        return baseCost * (intPow(0, bp1f) + 3 * intPow(bp1f, bp2f) + 24 * intPow(bp2f, maxLevel));
       }
       let total = 0;
-      for (let i = 0; i < maxLevel; i++) total += baseCost * Math.pow(i + 1, multiCost);
+      for (let i = 0; i < maxLevel; i++) {
+        const lv = i + 1;
+        const mult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
+        const linMult = (maxLevel > 999 && lv > 1) ? (1 + lv * 0.001) : 1;
+        total += baseCost * Math.pow(lv, mc) * mult * linMult;
+      }
       return total;
     }
 
     case "exponential":
     case "exponential_endgame": {
-      if (!multiCost || multiCost === 1) return baseCost * maxLevel;
-      const total = baseCost * (Math.pow(multiCost, maxLevel) - 1) / (multiCost - 1);
-      return isFinite(total) ? total : Infinity;
+      const bp1f = Math.ceil(maxLevel * 0.5);
+      const bp2f = Math.ceil(maxLevel * 0.8);
+      if (maxLevel > 999) {
+        // linearMult applies — sum level by level
+        let total = 0;
+        for (let lv = 1; lv <= maxLevel; lv++) {
+          const bpMult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
+          const linMult = lv > 1 ? (1 + lv * 0.001) : 1;
+          total += baseCost * Math.pow(multiCost ?? 1, lv - 1) * bpMult * linMult;
+        }
+        return total;
+      }
+      const geoSum = (a, b) => {
+        if (b < a) return 0;
+        if (!multiCost || multiCost === 1) return b - a + 1;
+        return Math.pow(multiCost, a - 1) * (Math.pow(multiCost, b - a + 1) - 1) / (multiCost - 1);
+      };
+      return baseCost * (geoSum(1, bp1f-1) + 3*geoSum(bp1f, bp2f-1) + 24*geoSum(bp2f, maxLevel));
     }
 
     case "capped_linear": {
@@ -461,9 +510,23 @@ function costAtLevel(level, item, sectionFormula) {
     switch (formula) {
       case "flat":           return bc;
       case "rank_linear":    return bc * lv;
-      case "power":          return bc * lv ** mc;
+      case "power": {
+        const ml = item.maxLevel ?? 999999;
+        if (ml > 999) break; // linearMult requires float path
+        const bp1 = BigInt(Math.ceil(ml * 0.5));
+        const bp2 = BigInt(Math.ceil(ml * 0.8));
+        const mult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
+        return bc * lv ** mc * mult;
+      }
       case "exponential":
-      case "exponential_endgame": return bc * mc ** (lv - 1n);
+      case "exponential_endgame": {
+        const ml = item.maxLevel ?? 999999;
+        if (ml > 999) break; // linearMult requires float path
+        const bp1 = BigInt(Math.ceil(ml * 0.5));
+        const bp2 = BigInt(Math.ceil(ml * 0.8));
+        const bpMult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
+        return bc * mc ** (lv - 1n) * bpMult;
+      }
       case "capped_linear": {
         const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : lv;
         return bc * (lv < cap ? lv : cap);
@@ -477,9 +540,23 @@ function costAtLevel(level, item, sectionFormula) {
   switch (formula) {
     case "flat":           return baseCost;
     case "rank_linear":    return baseCost * level;
-    case "power":          return baseCost * Math.pow(level, multiCost ?? 1);
+    case "power": {
+      const ml   = item.maxLevel ?? 999999;
+      const bp1f = ml * 0.5;
+      const bp2f = ml * 0.8;
+      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
+      const linMult = (ml > 999 && level > 1) ? (1 + level * 0.001) : 1;
+      return baseCost * Math.pow(level, multiCost ?? 1) * bpMult * linMult;
+    }
     case "exponential":
-    case "exponential_endgame": return baseCost * Math.pow(multiCost ?? 1, i);
+    case "exponential_endgame": {
+      const ml   = item.maxLevel ?? 999999;
+      const bp1f = ml * 0.5;
+      const bp2f = ml * 0.8;
+      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
+      const linMult = (ml > 999 && level > 1) ? (1 + level * 0.001) : 1;
+      return baseCost * Math.pow(multiCost ?? 1, i) * bpMult * linMult;
+    }
     case "capped_linear":  return baseCost * Math.min(level, stopCostIncreaseAt ?? level);
     default:               return baseCost;
   }
