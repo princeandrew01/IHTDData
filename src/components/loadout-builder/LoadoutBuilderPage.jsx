@@ -4,8 +4,10 @@ import { MapStage, OverlayAnchor, HeroToken } from "../map/MapStage";
 import { mapsData } from "../../lib/gameData";
 import { HERO_ATTRIBUTE_DEFINITIONS, getHeroAttributeTotalValue, readHeroLoadoutState } from "../../lib/heroLoadout";
 import { LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY, LOADOUT_BUILDER_RANKS_STORAGE_KEY, LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY } from "../../lib/loadoutBuilderSave";
+import { buildGlobalLoadoutStatModel } from "../../lib/loadoutStatEngine";
 import { getPerkCurrentBonus, getPlacementBonusValue, readMapLoadoutBuilderMode, readMapLoadoutState, writeMapLoadoutBuilderMode } from "../../lib/mapLoadout";
-import { getStatsLoadoutBonusTotals, readStatsLoadoutState } from "../../lib/statsLoadout";
+import { readPlayerLoadoutState } from "../../lib/playerLoadout";
+import { readStatsLoadoutState } from "../../lib/statsLoadout";
 import { MapPerksLoadoutBuilder } from "./MapPerksLoadoutBuilder";
 
 const MAX_DUPLICATE_HEROES = 3;
@@ -1144,6 +1146,7 @@ function FocusedHeroSynergyCard({ synergy, colors }) {
 
 export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigate }) {
   const statsLoadoutState = useMemo(() => readStatsLoadoutState(localStorage), []);
+  const playerLoadoutState = useMemo(() => readPlayerLoadoutState(localStorage), []);
   const heroLoadoutState = useMemo(() => readHeroLoadoutState(localStorage), []);
   const [builderMode, setBuilderMode] = useState(() => readMapLoadoutBuilderMode(localStorage));
   const [selectedMapId, setSelectedMapId] = useState(() => localStorage.getItem(LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY) ?? maps[0]?.id ?? "");
@@ -1201,8 +1204,8 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
     [maps, selectedMapId]
   );
   const statsLoadoutBonuses = useMemo(
-    () => normalizeBonusTotals(getStatsLoadoutBonusTotals(statsLoadoutState.levelsByTab)),
-    [statsLoadoutState.levelsByTab]
+    () => buildGlobalLoadoutStatModel({ statsLoadoutState, playerLoadoutState }).totals,
+    [playerLoadoutState, statsLoadoutState]
   );
   const selectedMapPerkState = selectedMap ? (mapLoadoutState.perksByMap[selectedMap.id] ?? {}) : {};
   const selectedMapPlacementBonuses = selectedMap ? (mapLoadoutState.placementBonusPlacementsByMap[selectedMap.id] ?? {}) : {};

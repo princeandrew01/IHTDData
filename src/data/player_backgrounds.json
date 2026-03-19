@@ -1,7 +1,7 @@
 {
   "menuOrder": 14,
   "parentMenuName": "Cosmetics",
-  "menuIcon": "_player_bg.png",
+  "menuIcon": "_prestigeBg.png",
   "label": "Player Backgrounds",
   "groups": {
     "Highest Wave": [

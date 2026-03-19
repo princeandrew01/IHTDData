@@ -11,20 +11,20 @@ function useIsMobile() {
 }
 
 import { heroesData, mapsData, getInitialMapSpotsById, mergeMapsWithSpots, normalizeMapSpots, parseMapSpotsByIdFromJsonText } from "./lib/gameData";
-import researchData   from "./data/research.json";
-import spellsData     from "./data/spells.json";
-import powerupsData   from "./data/powerups.json";
-import gemsData       from "./data/gems.json";
-import masteryData    from "./data/mastery.json";
-import techData       from "./data/tech.json";
-import ticketsData    from "./data/tickets.json";
+import researchData from "./data/research.json";
+import spellsData from "./data/spells.json";
+import powerupsData from "./data/powerups.json";
+import gemsData from "./data/gems.json";
+import masteryData from "./data/mastery.json";
+import techData from "./data/tech.json";
+import ticketsData from "./data/tickets.json";
 import tournamentData from "./data/tournament.json";
-import ultimusData    from "./data/ultimus.json";
-import runesData           from "./data/runes.json";
-import heroAttributesData       from "./data/hero_attributes.json";
-import tournamentBracketsData   from "./data/tournament_brackets.json";
-import STAT_UNITS          from "./data/stat_units.json";
-import techTreeDisplayData  from "./data/tech_tree_display.json";
+import ultimusData from "./data/ultimus.json";
+import runesData from "./data/runes.json";
+import heroAttributesData from "./data/hero_attributes.json";
+import tournamentBracketsData from "./data/tournament_brackets.json";
+import STAT_UNITS from "./data/stat_units.json";
+import techTreeDisplayData from "./data/tech_tree_display.json";
 import { applyAppSavePayload, buildAppSavePayload } from "./lib/loadoutBuilderSave";
 
 const loadSecondaryViews = () => import("./views/secondaryViews.jsx");
@@ -32,23 +32,31 @@ const HomeView = lazy(() => loadSecondaryViews().then((module) => ({ default: mo
 const BracketsView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BracketsView })));
 const BattlepassExpView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BattlepassExpView })));
 const MapPerksView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.MapPerksView })));
+const loadMiscViews = () => import("./views/miscViews.jsx");
+const ChallengesView = lazy(() => loadMiscViews().then((module) => ({ default: module.ChallengesView })));
+const PlayerIconsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerIconsView })));
+const PlayerBackgroundsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerBackgroundsView })));
+const WavePerksView = lazy(() => loadMiscViews().then((module) => ({ default: module.WavePerksView })));
 const loadCalculatorViews = () => import("./views/calculatorViews.jsx");
 const CombatStylesView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.CombatStylesView })));
 const EnemyHpView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.EnemyHpView })));
+const loadAppDataViews = () => import("./views/appDataViews.jsx");
+const AllHeroesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllHeroesRoute })));
+const AllSynergiesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllSynergiesRoute })));
+const AllMilestonesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllMilestonesRoute })));
+const AllMapsRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllMapsRoute })));
 const loadBuilderViews = () => import("./views/loadoutBuilderViews.jsx");
 const LoadoutBuilderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.LoadoutBuilderView })));
 const StatsLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.StatsLoadoutView })));
 const HeroLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.HeroLoadoutView })));
+const PlayerLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.PlayerLoadoutView })));
+const StatsHubView = lazy(() => loadBuilderViews().then((module) => ({ default: module.StatsHubView })));
 const CoordFinderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.CoordFinderView })));
 
-// ─────────────────────────────────────────────
-// NORMALIZE  — rename multCost → multiCost for
-// consistency, and hoist per-item costFormula
-// ─────────────────────────────────────────────
 function normalizeSection(data) {
   const groups = {};
   for (const [groupName, items] of Object.entries(data.groups)) {
-    groups[groupName] = items.map(item => ({
+    groups[groupName] = items.map((item) => ({
       ...item,
       multiCost: item.multCost ?? item.multiCost,
       hasLinearMult: item.hasLinearMult ?? data.hasLinearMult ?? false,
@@ -58,19 +66,19 @@ function normalizeSection(data) {
 }
 
 const SECTIONS = [
-  { key: "research",   data: normalizeSection(researchData) },
-  { key: "spells",     data: normalizeSection(spellsData) },
-  { key: "runes",      data: normalizeSection(runesData) },
-  { key: "gems",       data: normalizeSection(gemsData) },
-  { key: "powerups",   data: normalizeSection(powerupsData) },
-  { key: "tech",       data: normalizeSection(techData) },
+  { key: "research", data: normalizeSection(researchData) },
+  { key: "spells", data: normalizeSection(spellsData) },
+  { key: "runes", data: normalizeSection(runesData) },
+  { key: "gems", data: normalizeSection(gemsData) },
+  { key: "powerups", data: normalizeSection(powerupsData) },
+  { key: "tech", data: normalizeSection(techData) },
   { key: "tournament", data: normalizeSection(tournamentData) },
-  { key: "tickets",    data: normalizeSection(ticketsData) },
-  { key: "ultimus",    data: normalizeSection(ultimusData) },
-  { key: "mastery",    data: normalizeSection(masteryData) },
+  { key: "tickets", data: normalizeSection(ticketsData) },
+  { key: "ultimus", data: normalizeSection(ultimusData) },
+  { key: "mastery", data: normalizeSection(masteryData) },
 ];
 
-const SECTION_MAP = Object.fromEntries(SECTIONS.map(s => [s.key, s]));
+const SECTION_MAP = Object.fromEntries(SECTIONS.map((section) => [section.key, section]));
 
 const NAV_GROUPS = [
   {
@@ -91,160 +99,138 @@ const NAV_GROUPS = [
   {
     label: "Hero Data",
     items: [
-      { key: "allHeroes",    label: "All Heroes",    menuIcon: "_heroHelm.png" },
-      { key: "synergies",    label: "Synergies",     menuIcon: "_synergy.png", iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
-      { key: "milestones",   label: "Milestones",    menuIcon: "_star 3610.png" },
-      { key: "rankExp",      label: "Rank Exp",      menuIcon: "_killExp.png" },
-      { key: "attributes",    label: "Attributes",     menuIcon: "_attributePoints_0.png" },
-      { key: "combatStyles",  label: "Combat Styles",  menuIcon: "icon_scale.png" },
+      { key: "allHeroes", label: "All Heroes", menuIcon: "_heroHelm.png" },
+      { key: "synergies", label: "Synergies", menuIcon: "_synergy.png", iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
+      { key: "milestones", label: "Milestones", menuIcon: "_star 3610.png" },
+      { key: "rankExp", label: "Rank Exp", menuIcon: "_killExp.png" },
+      { key: "attributes", label: "Attributes", menuIcon: "_attributePoints_0.png" },
+      { key: "combatStyles", label: "Combat Styles", menuIcon: "icon_scale.png" },
     ],
   },
   {
     label: "Tournament",
-    items: [
-      { key: "brackets", label: "Brackets", menuIcon: "Icon_Trophy_0.png" },
-    ],
+    items: [{ key: "brackets", label: "Brackets", menuIcon: "Icon_Trophy_0.png" }],
   },
   {
     label: "Maps",
     items: [
-      { key: "allMaps",   label: "All Maps",   menuIcon: "Icon_Map_0.png" },
-      { key: "mapPerks",  label: "Map Perks",  menuIcon: "_starEmpty_0.png" },
+      { key: "allMaps", label: "All Maps", menuIcon: "Icon_Map_0.png" },
+      { key: "mapPerks", label: "Map Perks", menuIcon: "_starEmpty_0.png" },
     ],
   },
   {
     label: "Loadout",
     items: [
+      { key: "statsHub", label: "Stats Hub", menuIcon: "_attributePoints_0.png" },
       { key: "loadoutBuilder", label: "Map Loadouts", menuIcon: "tower2.png" },
       { key: "heroLoadout", label: "Hero Loadout", menuIcon: "_heroHelm.png" },
-      { key: "statsLoadout", label: "Stats Loadout", menuIcon: "_attributePoints_0.png" },
+      { key: "statsLoadout", label: "Upgrades Loadout", menuIcon: "_attributePoints_0.png" },
+      { key: "playerLoadout", label: "Player Loadout", menuIcon: "_background.png" },
     ],
   },
   {
-    label: "Battlepass",
+    label: "Misc",
     items: [
       { key: "battpassExp", label: "Battlepass Exp", menuIcon: "_battlepass.png" },
+      { key: "wavePerks", label: "Wave Perks", menuIcon: "flagSword.png" },
+      { key: "challenges", label: "Challenges", menuIcon: "_starBlue.png" },
+      { key: "playerIcons", label: "Player Icons", menuIcon: "icon_inforound.png" },
+      { key: "playerBackgrounds", label: "Player Backgrounds", menuIcon: "_prestigeBg.png" },
     ],
   },
   {
     label: "Calculators",
     items: [
-      { key: "rankRequired", label: "Rank Required",    menuIcon: "_attributePoints_0.png" },
-      { key: "enemyHp",      label: "Enemy HP",         menuIcon: "_bosses.png" },
+      { key: "rankRequired", label: "Rank Required", menuIcon: "_attributePoints_0.png" },
+      { key: "enemyHp", label: "Enemy HP", menuIcon: "_bosses.png" },
     ],
   },
   {
     label: "Admin",
-    items: [
-      { key: "coordFinder", label: "Coord Finder", menuIcon: "_edit.png" },
-    ],
+    items: [{ key: "coordFinder", label: "Coord Finder", menuIcon: "_edit.png" }],
   },
 ];
 
-// ─────────────────────────────────────────────
-// COST COMPUTATION
-// ─────────────────────────────────────────────
-// Suffixes: "", K, M, B, T, then aa–az, ba–bz, ca–cz, da–dz
-// Covers up to tier 108 (1e324) — well beyond float max (~1e308)
 const BIG_SUFFIXES = (() => {
-  const s = ["", "K", "M", "B", "T"];
-  for (const c1 of "abcd") {
-    for (const c2 of "abcdefghijklmnopqrstuvwxyz") {
-      s.push(c1 + c2);
+  const suffixes = ["", "K", "M", "B", "T"];
+  for (const first of "abcd") {
+    for (const second of "abcdefghijklmnopqrstuvwxyz") {
+      suffixes.push(first + second);
     }
   }
-  return s;
+  return suffixes;
 })();
 
-// notation: "scientific" | "letters"
 function formatBigNum(n, notation = "scientific") {
-  // Log-space result from simulate — {logValue: number} represents ~10^logValue
   if (n !== null && typeof n === "object" && "logValue" in n) {
-    const lv = n.logValue;
-    if (!isFinite(lv)) return lv > 0 ? "∞" : "0";
-    const exp = Math.floor(lv);
-    const mantissa = Math.pow(10, lv - exp);
+    const logValue = n.logValue;
+    if (!isFinite(logValue)) return logValue > 0 ? "∞" : "0";
+    const exponent = Math.floor(logValue);
+    const mantissa = Math.pow(10, logValue - exponent);
     if (notation === "letters") {
-      const tier = Math.floor(exp / 3);
+      const tier = Math.floor(exponent / 3);
       if (tier > 0 && tier < BIG_SUFFIXES.length) {
-        return (mantissa * Math.pow(10, exp - tier * 3)).toFixed(2) + BIG_SUFFIXES[tier];
+        return (mantissa * Math.pow(10, exponent - tier * 3)).toFixed(2) + BIG_SUFFIXES[tier];
       }
     }
-    return `${mantissa.toFixed(2)}e${exp}`;
+    return `${mantissa.toFixed(2)}e${exponent}`;
   }
   if (typeof n === "bigint") n = Number(n);
   if (!isFinite(n)) return "∞";
   if (n === 0) return "0";
   const tier = Math.max(0, Math.floor(Math.log10(Math.max(1, n)) / 3));
   if (tier === 0) return n.toFixed(0);
-  // K → T: same for both
   if (tier <= 4) return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
-  // 1e15+ diverge
   if (notation === "scientific") {
-    const exp = Math.floor(Math.log10(n));
-    const mantissa = n / Math.pow(10, exp);
-    return `${mantissa.toFixed(2)}e${exp}`;
+    const exponent = Math.floor(Math.log10(n));
+    const mantissa = n / Math.pow(10, exponent);
+    return `${mantissa.toFixed(2)}e${exponent}`;
   }
   if (tier >= BIG_SUFFIXES.length) return "∞";
   return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
 }
 
-// ─────────────────────────────────────────────
-// SPELL FORMULA
-// Tier 1:  levels 1-15   — energy every level
-// Tier 2:  level  16     — tier2Unlock (different currency, one-time)
-//          levels 17-20  — energy
-// Tier 3:  level  21     — tier3Unlock (different currency, one-time)
-//          levels 22-25  — energy
-// ─────────────────────────────────────────────
 const CURRENCY_LABELS = {
-  prestigePower:    "Prestige Power",
+  prestigePower: "Prestige Power",
   tournamentPoints: "Tournament Points",
-  techPoints:       "Tech Points",
-  weeklyTickets:    "Weekly Tickets",
-  gems:             "Gems",
-  tokensBlue:       "Blue Tokens",
-  tokensGreen:      "Green Tokens",
-  tokensRed:        "Red Tokens",
+  techPoints: "Tech Points",
+  weeklyTickets: "Weekly Tickets",
+  gems: "Gems",
+  tokensBlue: "Blue Tokens",
+  tokensGreen: "Green Tokens",
+  tokensRed: "Red Tokens",
 };
 
-// level is 1-indexed (1-25).
-// Returns { type:"energy", cost:BigInt }
-//      or { type:"unlock", currency:string, amount:number }
 function spellCostEntry(level, item) {
-  if (level === 16 && item.tier2Unlock)
+  if (level === 16 && item.tier2Unlock) {
     return { type: "unlock", currency: item.tier2Unlock.currency, amount: item.tier2Unlock.amount };
-  if (level === 21 && item.tier3Unlock)
+  }
+  if (level === 21 && item.tier3Unlock) {
     return { type: "unlock", currency: item.tier3Unlock.currency, amount: item.tier3Unlock.amount };
+  }
 
   const { baseCost, base15, base20, multCost, noBreakpointMult } = item;
-
-  // Level 1 is the initial unlock — costs exactly baseCost
   if (level === 1) return { type: "energy", cost: BigInt(Math.round(baseCost)) };
 
-  let tierIdx, base;
+  let tierIndex;
+  let base;
 
   if (level <= 15) {
-    tierIdx = level - 1;       // 0-14 within tier 1
-    base = tierIdx < 10 ? baseCost : baseCost * 2;
+    tierIndex = level - 1;
+    base = tierIndex < 10 ? baseCost : baseCost * 2;
   } else if (level >= 17 && level <= 20) {
-    tierIdx = level - 1;      // 0-3 within tier 2
+    tierIndex = level - 1;
     base = base15;
   } else {
-    tierIdx = level - 1;      // 0-3 within tier 3
+    tierIndex = level - 1;
     base = base20;
   }
 
-  const bpMult = noBreakpointMult ? 1 : (tierIdx < 3 ? 1 : tierIdx < 6 ? 2 : 6);
-  const cost   = BigInt(Math.round(base))
-               * BigInt(Math.round(multCost)) ** BigInt(tierIdx + 1)
-               * BigInt(bpMult);
+  const breakpointMult = noBreakpointMult ? 1 : tierIndex < 3 ? 1 : tierIndex < 6 ? 2 : 6;
+  const cost = BigInt(Math.round(base)) * BigInt(Math.round(multCost)) ** BigInt(tierIndex + 1) * BigInt(breakpointMult);
   return { type: "energy", cost };
 }
 
-// ─────────────────────────────────────────────
-// NOTATION CONTEXT
-// ─────────────────────────────────────────────
 const NotationContext = createContext("scientific");
 
 function useFmt() {
@@ -261,160 +247,134 @@ function computeTotalCost(item, sectionFormula) {
 
   if (formula === "spell") {
     let total = 0n;
-    for (let lvl = 1; lvl <= maxLevel; lvl++) {
-      const entry = spellCostEntry(lvl, item);
+    for (let level = 1; level <= maxLevel; level += 1) {
+      const entry = spellCostEntry(level, item);
       if (entry.type === "energy") total += entry.cost;
     }
     return total;
   }
 
   if (formula === "hero_attr") {
-    const bp1 = Math.round(maxLevel * 0.5);
-    const bp2 = Math.round(maxLevel * 0.8);
-    // Closed-form: sum(L=a..b) floor(bc * L * mult) ≈ mult * bc * (b-a+1)*(a+b)/2
-    // Error ≤ number of terms — negligible for display at any scale
-    const sumRange = (a, b) => b >= a ? (b - a + 1) * (a + b) / 2 : 0;
-    return Math.round(
-      baseCost       * sumRange(1,     bp1 - 1) +
-      1.25  * baseCost * sumRange(bp1,   bp2 - 1) +
-      1.875 * baseCost * sumRange(bp2,   maxLevel)
-    );
+    const breakpointOne = Math.round(maxLevel * 0.5);
+    const breakpointTwo = Math.round(maxLevel * 0.8);
+    const sumRange = (start, end) => (end >= start ? ((end - start + 1) * (start + end)) / 2 : 0);
+    return Math.round(baseCost * sumRange(1, breakpointOne - 1) + 1.25 * baseCost * sumRange(breakpointOne, breakpointTwo - 1) + 1.875 * baseCost * sumRange(breakpointTwo, maxLevel));
   }
 
-  // Use BigInt arithmetic when all inputs are integers for exact results
-  const intInputs = Number.isInteger(baseCost) &&
-    (multiCost === undefined || Number.isInteger(multiCost));
-
+  const intInputs = Number.isInteger(baseCost) && (multiCost === undefined || Number.isInteger(multiCost));
 
   if (intInputs) {
-    const bc = BigInt(baseCost);
-    const mc = multiCost !== undefined ? BigInt(multiCost) : 1n;
-    const n  = BigInt(maxLevel);
-    const formula_overide = "power"
+    const baseCostBig = BigInt(baseCost);
+    const multiCostBig = multiCost !== undefined ? BigInt(multiCost) : 1n;
+    const maxLevelBig = BigInt(maxLevel);
+
     switch (formula) {
       case "flat":
-        return bc * n;
+        return baseCostBig * maxLevelBig;
 
-      // rank_linear: cost(level) = baseCost × level → total = baseCost × n×(n+1)/2
       case "rank_linear":
-        return bc * n * (n + 1n) / 2n;
+        return (baseCostBig * maxLevelBig * (maxLevelBig + 1n)) / 2n;
 
       case "power": {
-        // cost(level) = baseCost × level^multiCost × mult
-        // mult = 8 if level > 80% maxLevel, 3 if >= 50%, else 1
-        // linearMult requires float — fall through if item uses it
         if (item.hasLinearMult) break;
-        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
-        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
-        const sumRange = (a, b) => b >= a ? (b - a + 1n) * (a + b) / 2n : 0n;
+        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
+        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
+        const sumRange = (start, end) => (end >= start ? ((end - start + 1n) * (start + end)) / 2n : 0n);
         if (!multiCost || multiCost === 1) {
-          return bc * (
-            sumRange(1n, bp1 - 1n) +
-            3n * sumRange(bp1, bp2 - 1n) +
-            24n * sumRange(bp2, n)
-          );
+          return baseCostBig * (sumRange(1n, breakpointOne - 1n) + 3n * sumRange(breakpointOne, breakpointTwo - 1n) + 24n * sumRange(breakpointTwo, maxLevelBig));
         }
         let total = 0n;
-        for (let i = 1n; i <= n; i++) {
-          const mult = i >= bp2 ? 24n : i >= bp1 ? 3n : 1n;
-          total += bc * i ** mc * mult;
+        for (let level = 1n; level <= maxLevelBig; level += 1n) {
+          const breakpointMult = level >= breakpointTwo ? 24n : level >= breakpointOne ? 3n : 1n;
+          total += baseCostBig * level ** multiCostBig * breakpointMult;
         }
         return total;
       }
 
       case "exponential":
       case "exponential_endgame": {
-        // cost(level) = baseCost × multiCost^(level-1) × bpMult
-        // linearMult requires float — fall through if item uses it
         if (item.hasLinearMult) break;
-        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
-        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
+        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
         if (!multiCost || multiCost === 1) {
-          const c1 = bp1 > 1n ? bp1 - 1n : 0n;
-          const c2 = bp2 > bp1 ? bp2 - bp1 : 0n;
-          const c3 = n >= bp2 ? n - bp2 + 1n : 0n;
-          return bc * (c1 + 3n * c2 + 24n * c3);
+          const countOne = breakpointOne > 1n ? breakpointOne - 1n : 0n;
+          const countTwo = breakpointTwo > breakpointOne ? breakpointTwo - breakpointOne : 0n;
+          const countThree = maxLevelBig >= breakpointTwo ? maxLevelBig - breakpointTwo + 1n : 0n;
+          return baseCostBig * (countOne + 3n * countTwo + 24n * countThree);
         }
-        // Segmented geometric series (exact BigInt)
-        // sum(level=a..b) mc^(level-1) = mc^(a-1) * (mc^(b-a+1) - 1) / (mc-1)
-        const geo = (a, b) => b < a ? 0n : mc ** (a - 1n) * (mc ** (b - a + 1n) - 1n) / (mc - 1n);
+        const geometric = (start, end) => end < start ? 0n : multiCostBig ** (start - 1n) * (multiCostBig ** (end - start + 1n) - 1n) / (multiCostBig - 1n);
         try {
-          return bc * (geo(1n, bp1-1n) + 3n * geo(bp1, bp2-1n) + 24n * geo(bp2, n));
+          return baseCostBig * (geometric(1n, breakpointOne - 1n) + 3n * geometric(breakpointOne, breakpointTwo - 1n) + 24n * geometric(breakpointTwo, maxLevelBig));
         } catch {
-          // BigInt too large — fall through to float path below
           break;
         }
       }
 
       case "capped_linear": {
-        const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : n;
-        if (n <= cap) return bc * n * (n + 1n) / 2n;
-        return bc * (cap * (cap + 1n) / 2n + (n - cap) * cap);
+        const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : maxLevelBig;
+        if (maxLevelBig <= cap) return (baseCostBig * maxLevelBig * (maxLevelBig + 1n)) / 2n;
+        return baseCostBig * (((cap * (cap + 1n)) / 2n) + (maxLevelBig - cap) * cap);
       }
 
       default:
-        return bc * n;
+        return baseCostBig * maxLevelBig;
     }
   }
 
-  // Float fallback for fractional multipliers (e.g. exponential_endgame with 1.1×, 1.2×, ...)
   switch (formula) {
     case "flat":
       return baseCost * maxLevel;
 
     case "rank_linear":
-      return baseCost * maxLevel * (maxLevel + 1) / 2;
+      return (baseCost * maxLevel * (maxLevel + 1)) / 2;
 
     case "power": {
-      const bp1f = maxLevel * 0.5;
-      const bp2f = maxLevel * 0.8;
-      const mc = multiCost ?? 1;
+      const breakpointOne = maxLevel * 0.5;
+      const breakpointTwo = maxLevel * 0.8;
+      const exponent = multiCost ?? 1;
       if (maxLevel > 10000) {
-        // Integral approximation including linearMult = (1 + L*0.001) for L > 1
-        // ∫ L^mc * (1 + L*0.001) dL = L^(mc+1)/(mc+1) + 0.001*L^(mc+2)/(mc+2)
-        const intPow = (a, b) => {
-          const t1 = (Math.pow(b, mc + 1) - Math.pow(a, mc + 1)) / (mc + 1);
-          const t2 = 0.001 * (Math.pow(b, mc + 2) - Math.pow(a, mc + 2)) / (mc + 2);
-          return t1 + t2;
+        const integral = (start, end) => {
+          const first = (Math.pow(end, exponent + 1) - Math.pow(start, exponent + 1)) / (exponent + 1);
+          const second = 0.001 * (Math.pow(end, exponent + 2) - Math.pow(start, exponent + 2)) / (exponent + 2);
+          return first + second;
         };
-        return baseCost * (intPow(0, bp1f) + 3 * intPow(bp1f, bp2f) + 24 * intPow(bp2f, maxLevel));
+        return baseCost * (integral(0, breakpointOne) + 3 * integral(breakpointOne, breakpointTwo) + 24 * integral(breakpointTwo, maxLevel));
       }
       let total = 0;
-      for (let i = 0; i < maxLevel; i++) {
-        const lv = i + 1;
-        const mult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
-        const linMult = (item.hasLinearMult && lv > 1) ? (1 + lv * 0.001) : 1;
-        total += baseCost * Math.pow(lv, mc) * mult * linMult;
+      for (let index = 0; index < maxLevel; index += 1) {
+        const level = index + 1;
+        const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
+        const linearMult = item.hasLinearMult && level > 1 ? 1 + level * 0.001 : 1;
+        total += baseCost * Math.pow(level, exponent) * breakpointMult * linearMult;
       }
       return total;
     }
 
     case "exponential":
     case "exponential_endgame": {
-      const bp1f = Math.ceil(maxLevel * 0.5);
-      const bp2f = Math.ceil(maxLevel * 0.8);
+      const breakpointOne = Math.ceil(maxLevel * 0.5);
+      const breakpointTwo = Math.ceil(maxLevel * 0.8);
       if (item.hasLinearMult) {
-        // linearMult applies — sum level by level
         let total = 0;
-        for (let lv = 1; lv <= maxLevel; lv++) {
-          const bpMult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
-          const linMult = lv > 1 ? (1 + lv * 0.001) : 1;
-          total += baseCost * Math.pow(multiCost ?? 1, lv - 1) * bpMult * linMult;
+        for (let level = 1; level <= maxLevel; level += 1) {
+          const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
+          const linearMult = level > 1 ? 1 + level * 0.001 : 1;
+          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * breakpointMult * linearMult;
         }
         return total;
       }
-      const geoSum = (a, b) => {
-        if (b < a) return 0;
-        if (!multiCost || multiCost === 1) return b - a + 1;
-        return Math.pow(multiCost, a - 1) * (Math.pow(multiCost, b - a + 1) - 1) / (multiCost - 1);
+      const geometric = (start, end) => {
+        if (end < start) return 0;
+        if (!multiCost || multiCost === 1) return end - start + 1;
+        return Math.pow(multiCost, start - 1) * (Math.pow(multiCost, end - start + 1) - 1) / (multiCost - 1);
       };
-      return baseCost * (geoSum(1, bp1f-1) + 3*geoSum(bp1f, bp2f-1) + 24*geoSum(bp2f, maxLevel));
+      return baseCost * (geometric(1, breakpointOne - 1) + 3 * geometric(breakpointOne, breakpointTwo - 1) + 24 * geometric(breakpointTwo, maxLevel));
     }
 
     case "capped_linear": {
       const cap = stopCostIncreaseAt ?? maxLevel;
-      if (maxLevel <= cap) return baseCost * maxLevel * (maxLevel + 1) / 2;
-      return baseCost * (cap * (cap + 1) / 2 + (maxLevel - cap) * cap);
+      if (maxLevel <= cap) return (baseCost * maxLevel * (maxLevel + 1)) / 2;
+      return baseCost * (((cap * (cap + 1)) / 2) + (maxLevel - cap) * cap);
     }
 
     default:
@@ -2338,9 +2298,9 @@ function MapCard({ map, onClick, isMobile, mapPerkMult = 1 }) {
 
 // ─────────────────────────────────────────────
 const MAP_PERK_UPGRADE_SOURCES = [
-  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15  },
-  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5   },
-  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15  },
+  { id: "runes", label: "Runes", statAmt: 2, maxLevel: 15, icon: "_rune_2.png" },
+  { id: "mastery", label: "Mastery", statAmt: 5, maxLevel: 5, icon: "_mastery_2.png" },
+  { id: "ultimus", label: "Ultimus", statAmt: 2, maxLevel: 15, icon: "token_red.png" },
 ];
 
 function AllMapsView() {
@@ -3371,9 +3331,21 @@ export default function App() {
           {activeKey === "tech" && (
             <TechTreeView onOpen={item => openModal(item, SECTION_MAP["tech"].data.costFormula)} />
           )}
-          {activeKey === "allHeroes"  && <AllHeroesView />}
-          {activeKey === "synergies"  && <AllSynergiesView />}
-          {activeKey === "milestones" && <AllMilestonesView />}
+          {activeKey === "allHeroes"  && (
+            <Suspense fallback={lazyFallback}>
+              <AllHeroesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "synergies"  && (
+            <Suspense fallback={lazyFallback}>
+              <AllSynergiesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "milestones" && (
+            <Suspense fallback={lazyFallback}>
+              <AllMilestonesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
           {activeKey === "rankExp"    && <RankExpView />}
           {activeKey === "attributes"   && <AttributesView />}
           {activeKey === "combatStyles" && (
@@ -3406,7 +3378,11 @@ export default function App() {
               />
             </Suspense>
           )}
-          {activeKey === "allMaps"    && <AllMapsView />}
+          {activeKey === "allMaps"    && (
+            <Suspense fallback={lazyFallback}>
+              <AllMapsRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
           {activeKey === "mapPerks"   && (
             <Suspense fallback={lazyFallback}>
               <MapPerksView colors={colors} getIconUrl={getIconUrl} />
@@ -3445,6 +3421,26 @@ export default function App() {
               />
             </Suspense>
           )}
+          {activeKey === "playerLoadout" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerLoadoutView
+                key={`player-loadout-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+              />
+            </Suspense>
+          )}
+          {activeKey === "statsHub" && (
+            <Suspense fallback={lazyFallback}>
+              <StatsHubView
+                key={`stats-hub-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                heroes={heroesData.heroes}
+              />
+            </Suspense>
+          )}
           {activeKey === "coordFinder" && (
             <Suspense fallback={lazyFallback}>
               <CoordFinderView
@@ -3461,6 +3457,32 @@ export default function App() {
           {activeKey === "battpassExp" && (
             <Suspense fallback={lazyFallback}>
               <BattlepassExpView colors={colors} fmt={fmt} />
+            </Suspense>
+          )}
+          {activeKey === "wavePerks" && (
+            <Suspense fallback={lazyFallback}>
+              <WavePerksView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                isMobile={isMobile}
+                rarityColors={RARITY_COLORS}
+                mapPerkUpgradeSources={MAP_PERK_UPGRADE_SOURCES}
+              />
+            </Suspense>
+          )}
+          {activeKey === "challenges" && (
+            <Suspense fallback={lazyFallback}>
+              <ChallengesView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "playerIcons" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerIconsView colors={colors} getIconUrl={getIconUrl} fmt={fmt} />
+            </Suspense>
+          )}
+          {activeKey === "playerBackgrounds" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerBackgroundsView colors={colors} getIconUrl={getIconUrl} />
             </Suspense>
           )}
         </div>

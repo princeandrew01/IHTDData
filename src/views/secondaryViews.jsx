@@ -49,15 +49,22 @@ function getHomeSections(colors) {
       group: "Loadout",
       color: "#68d391",
       items: [
+        { key: "statsHub", label: "Stats Hub", icon: "_attributePoints_0.png", desc: "Review global and hero-specific loadout stat breakdowns" },
         { key: "loadoutBuilder", label: "Map Loadouts", icon: "tower2.png", desc: "Plan hero placements on authored map nodes" },
-        { key: "statsLoadout", label: "Stats Loadout", icon: "_attributePoints_0.png", desc: "Track upgrade levels and preview stat gains by tab" },
+        { key: "heroLoadout", label: "Hero Loadout", icon: "_heroHelm.png", desc: "Build and save focused hero equipment and stat plans" },
+        { key: "statsLoadout", label: "Upgrades Loadout", icon: "_attributePoints_0.png", desc: "Track purchased upgrade levels and preview stat gains by tab" },
+        { key: "playerLoadout", label: "Player Loadout", icon: "_background.png", desc: "Track purchased player icons and backgrounds as global stats" },
       ],
     },
     {
-      group: "Battlepass",
+      group: "Misc",
       color: "#f5c842",
       items: [
         { key: "battpassExp", label: "Battlepass Exp", icon: "_battlepass.png", desc: "EXP required per battlepass level" },
+        { key: "wavePerks", label: "Wave Perks", icon: "flagSword.png", desc: "Review wave perk values and effect multipliers" },
+        { key: "challenges", label: "Challenges", icon: "_starBlue.png", desc: "Challenge requirements and permanent rewards" },
+        { key: "playerIcons", label: "Player Icons", icon: "icon_inforound.png", desc: "Unlock costs and rewards for player icons" },
+        { key: "playerBackgrounds", label: "Player Backgrounds", icon: "_prestigeBg.png", desc: "Background unlock requirements and rewards" },
       ],
     },
     {

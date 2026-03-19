@@ -1,11 +1,12 @@
 export const LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY = "ihtddata.loadoutBuilder.selectedMapId";
 export const LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY = "ihtddata.loadoutBuilder.placements.v1";
 export const LOADOUT_BUILDER_RANKS_STORAGE_KEY = "ihtddata.loadoutBuilder.ranks.v1";
-export const APP_SAVE_VERSION = 6;
+export const APP_SAVE_VERSION = 7;
 
 import { normalizeStatsLoadoutState, readStatsLoadoutState, writeStatsLoadoutState } from "./statsLoadout";
 import { normalizeMapLoadoutState, readMapLoadoutState, writeMapLoadoutState } from "./mapLoadout";
 import { normalizeHeroLoadoutState, readHeroLoadoutState, writeHeroLoadoutState } from "./heroLoadout";
+import { normalizePlayerLoadoutState, readPlayerLoadoutState, writePlayerLoadoutState } from "./playerLoadout";
 
 function isObject(value) {
   return value != null && typeof value === "object" && !Array.isArray(value);
@@ -49,6 +50,7 @@ export function buildAppSavePayload(storage = localStorage) {
       statsLoadout: readStatsLoadoutState(storage),
       mapLoadout: readMapLoadoutState(storage),
       heroLoadout: readHeroLoadoutState(storage),
+      playerLoadout: readPlayerLoadoutState(storage),
     },
   };
 }
@@ -94,6 +96,11 @@ export function validateAppSavePayload(payload) {
     return { ok: false, message: "Hero loadout data must be an object when provided." };
   }
 
+  const playerLoadout = payload.sections.playerLoadout;
+  if (playerLoadout !== undefined && !isObject(playerLoadout)) {
+    return { ok: false, message: "Player loadout data must be an object when provided." };
+  }
+
   return { ok: true };
 }
 
@@ -122,6 +129,11 @@ export function applyAppSavePayload(payload, storage = localStorage) {
     ? normalizeHeroLoadoutState({})
     : normalizeHeroLoadoutState(payload.sections.heroLoadout);
   writeHeroLoadoutState(heroLoadout, storage);
+
+  const playerLoadout = payload.sections.playerLoadout === undefined
+    ? normalizePlayerLoadoutState({})
+    : normalizePlayerLoadoutState(payload.sections.playerLoadout);
+  writePlayerLoadoutState(playerLoadout, storage);
 
   return { ok: true };
 }

@@ -80,14 +80,10 @@ export default defineConfig({
     open: '/IHTDData/',
   },
   build: {
-    chunkSizeWarningLimit: 525,
+    chunkSizeWarningLimit: 1200,
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('/src/App.jsx')) {
-            return 'app-shell'
-          }
-
           if (id.includes('node_modules/@dnd-kit')) {
             return 'loadout-vendor'
           }
@@ -100,8 +96,62 @@ export default defineConfig({
             return 'vendor'
           }
 
+          if (id.includes('/src/data/heroes.json') || id.includes('/src/data/hero_attributes.json')) {
+            return 'hero-data'
+          }
+
+          if (id.includes('/src/data/maps.json')) {
+            return 'map-data'
+          }
+
+          if (
+            id.includes('/src/data/research.json') ||
+            id.includes('/src/data/spells.json') ||
+            id.includes('/src/data/runes.json') ||
+            id.includes('/src/data/gems.json') ||
+            id.includes('/src/data/powerups.json') ||
+            id.includes('/src/data/tech.json') ||
+            id.includes('/src/data/tournament.json') ||
+            id.includes('/src/data/tickets.json') ||
+            id.includes('/src/data/ultimus.json') ||
+            id.includes('/src/data/mastery.json') ||
+            id.includes('/src/data/stat_units.json')
+          ) {
+            return 'upgrade-data'
+          }
+
+          if (
+            id.includes('/src/data/player_icons.json') ||
+            id.includes('/src/data/player_backgrounds.json') ||
+            id.includes('/src/data/challenges.json') ||
+            id.includes('/src/data/wave_perks.json')
+          ) {
+            return 'misc-data'
+          }
+
+          if (
+            id.includes('/src/data/combat_styles.json') ||
+            id.includes('/src/data/enemy_hp.json') ||
+            id.includes('/src/data/tournament_brackets.json') ||
+            id.includes('/src/data/battlepass_exp.json')
+          ) {
+            return 'calculator-data'
+          }
+
           if (id.includes('/src/data/')) {
             return 'game-data'
+          }
+
+          if (
+            id.includes('/src/lib/gameData.js') ||
+            id.includes('/src/lib/heroLoadout.js') ||
+            id.includes('/src/lib/mapLoadout.js') ||
+            id.includes('/src/lib/statsLoadout.js') ||
+            id.includes('/src/lib/playerLoadout.js') ||
+            id.includes('/src/lib/loadoutStatEngine.js') ||
+            id.includes('/src/lib/loadoutBuilderSave.js')
+          ) {
+            return 'loadout-core'
           }
         },
       },

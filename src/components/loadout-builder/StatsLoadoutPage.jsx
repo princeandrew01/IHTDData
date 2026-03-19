@@ -111,6 +111,19 @@ function CategoryTabButton({ label, isActive, colors, onSelect }) {
   );
 }
 
+function getGroupBucket(groupName) {
+  return /supreme/i.test(groupName) ? "supreme" : "normal";
+}
+
+function getDisplayedGroups(groupBuckets, bucketKey) {
+  const groups = groupBuckets[bucketKey] ?? [];
+  if (groups.length) {
+    return groups;
+  }
+
+  return bucketKey === "supreme" ? (groupBuckets.normal ?? []) : (groupBuckets.supreme ?? []);
+}
+
 function UpgradeCard({ item, sectionFormula, currentLevel, previewLevels, colors, getIconUrl, fmt, onLevelChange }) {
   const preview = useMemo(
     () => buildUpgradePreview(item, sectionFormula, currentLevel, previewLevels),
@@ -221,9 +234,19 @@ export function StatsLoadoutPage({ colors, getIconUrl, fmt }) {
   const activeLevels = levelsByTab[activeTab.key] ?? {};
   const hideMaxed = hideMaxedByTab[activeTab.key] ?? false;
   const activeGroups = Object.entries(activeTab.data.groups);
+  const activeGroupBuckets = activeGroups.reduce(
+    (buckets, entry) => {
+      buckets[getGroupBucket(entry[0])].push(entry);
+      return buckets;
+    },
+    { normal: [], supreme: [] }
+  );
   const activeGroupName = selectedGroupByTab[activeTab.key] && activeTab.data.groups[selectedGroupByTab[activeTab.key]]
     ? selectedGroupByTab[activeTab.key]
     : activeGroups[0]?.[0] ?? "";
+  const activeParentGroup = getGroupBucket(activeGroupName);
+  const visibleGroups = getDisplayedGroups(activeGroupBuckets, activeParentGroup);
+  const shouldShowParentGroups = activeGroupBuckets.normal.length > 0 && activeGroupBuckets.supreme.length > 0;
   const activeGroupItems = (activeTab.data.groups[activeGroupName] ?? []).filter((item) => !hideMaxed || (activeLevels[item.id] ?? 0) < (item.maxLevel ?? 999999));
 
   useEffect(() => {
@@ -244,6 +267,15 @@ export function StatsLoadoutPage({ colors, getIconUrl, fmt }) {
       ...current,
       [activeTab.key]: groupName,
     }));
+  }
+
+  function handleParentGroupChange(bucketKey) {
+    const nextGroupName = getDisplayedGroups(activeGroupBuckets, bucketKey)[0]?.[0];
+    if (!nextGroupName) {
+      return;
+    }
+
+    handleGroupChange(nextGroupName);
   }
 
   function handlePreviewChange(rawValue) {
@@ -283,7 +315,8 @@ export function StatsLoadoutPage({ colors, getIconUrl, fmt }) {
     <div style={{ display: "grid", gap: 20 }}>
       <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 18, display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{activeTab.label}</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>Upgrades Loadout</div>
+          <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>{activeTab.label}</div>
         </div>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
           <label style={{ display: "flex", alignItems: "center", gap: 8, color: colors.text, fontSize: 13, fontWeight: 700 }}>
@@ -330,16 +363,35 @@ export function StatsLoadoutPage({ colors, getIconUrl, fmt }) {
 
         <section style={{ flex: "1 1 760px", minWidth: 0, display: "grid", gap: 16 }}>
           {activeGroups.length > 1 && (
-            <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, display: "flex", gap: 10, flexWrap: "wrap" }}>
-              {activeGroups.map(([groupName]) => (
-                <CategoryTabButton
-                  key={groupName}
-                  label={groupName}
-                  isActive={groupName === activeGroupName}
-                  colors={colors}
-                  onSelect={() => handleGroupChange(groupName)}
-                />
-              ))}
+            <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 14, display: "grid", gap: 12 }}>
+              {shouldShowParentGroups && (
+                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                  <CategoryTabButton
+                    label="Normal"
+                    isActive={activeParentGroup === "normal"}
+                    colors={colors}
+                    onSelect={() => handleParentGroupChange("normal")}
+                  />
+                  <CategoryTabButton
+                    label="Supreme"
+                    isActive={activeParentGroup === "supreme"}
+                    colors={colors}
+                    onSelect={() => handleParentGroupChange("supreme")}
+                  />
+                </div>
+              )}
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {visibleGroups.map(([groupName]) => (
+                  <CategoryTabButton
+                    key={groupName}
+                    label={groupName}
+                    isActive={groupName === activeGroupName}
+                    colors={colors}
+                    onSelect={() => handleGroupChange(groupName)}
+                  />
+                ))}
+              </div>
             </div>
           )}
 

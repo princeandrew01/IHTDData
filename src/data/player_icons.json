@@ -1,7 +1,7 @@
 {
   "menuOrder": 13,
   "parentMenuName": "Cosmetics",
-  "menuIcon": "_player_icon.png",
+  "menuIcon": "icon_inforound.png",
   "label": "Player Icons",
   "groups": {
     "Gold": [
