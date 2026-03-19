@@ -124,7 +124,7 @@ const NAV_GROUPS = [
       { key: "statsHub", label: "Stats Hub", menuIcon: "_attributePoints_0.png" },
       { key: "loadoutBuilder", label: "Map Loadouts", menuIcon: "tower2.png" },
       { key: "heroLoadout", label: "Hero Loadout", menuIcon: "_heroHelm.png" },
-      { key: "statsLoadout", label: "Upgrades Loadout", menuIcon: "_attributePoints_0.png" },
+      { key: "statsLoadout", label: "Upgrades Loadout", menuIcon: "_heroes.png" },
       { key: "playerLoadout", label: "Player Loadout", menuIcon: "_background.png" },
     ],
   },
@@ -150,6 +150,17 @@ const NAV_GROUPS = [
     items: [{ key: "coordFinder", label: "Coord Finder", menuIcon: "_edit.png" }],
   },
 ];
+
+const ADMIN_ROUTE_KEYS = new Set(["coordFinder"]);
+
+function isLocalhostAdminHost() {
+  const hostname = window.location.hostname.toLowerCase();
+  return import.meta.env.DEV
+    || hostname === "localhost"
+    || hostname === "127.0.0.1"
+    || hostname === "::1"
+    || hostname === "[::1]";
+}
 
 const BIG_SUFFIXES = (() => {
   const suffixes = ["", "K", "M", "B", "T"];
@@ -178,16 +189,18 @@ function formatBigNum(n, notation = "scientific") {
   if (typeof n === "bigint") n = Number(n);
   if (!isFinite(n)) return "∞";
   if (n === 0) return "0";
-  const tier = Math.max(0, Math.floor(Math.log10(Math.max(1, n)) / 3));
-  if (tier === 0) return n.toFixed(0);
-  if (tier <= 4) return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
+  const sign = n < 0 ? "-" : "";
+  const absolute = Math.abs(n);
+  const tier = Math.max(0, Math.floor(Math.log10(Math.max(1, absolute)) / 3));
+  if (tier === 0) return sign + absolute.toFixed(0);
+  if (tier <= 4) return sign + (absolute / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
   if (notation === "scientific") {
-    const exponent = Math.floor(Math.log10(n));
-    const mantissa = n / Math.pow(10, exponent);
-    return `${mantissa.toFixed(2)}e${exponent}`;
+    const exponent = Math.floor(Math.log10(absolute));
+    const mantissa = absolute / Math.pow(10, exponent);
+    return `${sign}${mantissa.toFixed(2)}e${exponent}`;
   }
   if (tier >= BIG_SUFFIXES.length) return "∞";
-  return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
+  return sign + (absolute / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
 }
 
 const CURRENCY_LABELS = {
@@ -3074,10 +3087,10 @@ function TechTreeView({ onOpen }) {
 // ─────────────────────────────────────────────
 // SIDEBAR
 // ─────────────────────────────────────────────
-function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
+function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
   const [open, setOpen] = useState(() => {
     const initial = {};
-    for (const group of NAV_GROUPS) {
+    for (const group of navGroups) {
       initial[group.label] = group.items.some(item => item.key === activeKey);
     }
     return initial;
@@ -3088,7 +3101,7 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
       let changed = false;
       const next = { ...current };
 
-      for (const group of NAV_GROUPS) {
+      for (const group of navGroups) {
         if (group.items.some((item) => item.key === activeKey) && !next[group.label]) {
           next[group.label] = true;
           changed = true;
@@ -3097,7 +3110,7 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
 
       return changed ? next : current;
     });
-  }, [activeKey]);
+  }, [activeKey, navGroups]);
 
   function toggleGroup(label) {
     setOpen(prev => ({ ...prev, [label]: !prev[label] }));
@@ -3122,7 +3135,7 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
           </button>
         );
       })()}
-      {NAV_GROUPS.map(group => (
+      {navGroups.map(group => (
         <div key={group.label} style={{ marginBottom: 4 }}>
           <button onClick={() => toggleGroup(group.label)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", color: colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {group.label}
@@ -3173,6 +3186,18 @@ export default function App() {
   const isMobile = useIsMobile();
   const lazyFallback = <div style={{ color: colors.muted, padding: "24px 0" }}>Loading view...</div>;
   const editableMaps = useMemo(() => mergeMapsWithSpots(mapsData.maps, mapSpotsById), [mapSpotsById]);
+  const isLocalAdmin = useMemo(() => isLocalhostAdminHost(), []);
+  const visibleNavGroups = useMemo(
+    () => NAV_GROUPS.filter((group) => group.label !== "Admin" || isLocalAdmin),
+    [isLocalAdmin]
+  );
+
+  useEffect(() => {
+    if (ADMIN_ROUTE_KEYS.has(activeKey) && !isLocalAdmin) {
+      setActiveKey("home");
+      localStorage.setItem("activeKey", "home");
+    }
+  }, [activeKey, isLocalAdmin]);
 
   function handleNotation(val) {
     setNotation(val);
@@ -3232,6 +3257,7 @@ export default function App() {
         return;
       }
 
+      setNotation(localStorage.getItem("notation") ?? "scientific");
       setLoadoutImportVersion((current) => current + 1);
     } catch {
       window.alert("Unable to import that save file.");
@@ -3318,6 +3344,7 @@ export default function App() {
           onSelect={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          navGroups={visibleNavGroups}
         />
 
         {/* Main content */}
@@ -3365,6 +3392,7 @@ export default function App() {
                 colors={colors}
                 getIconUrl={getIconUrl}
                 isMobile={isMobile}
+                isAdmin={isLocalAdmin}
                 onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
               />
             </Suspense>
@@ -3394,6 +3422,7 @@ export default function App() {
                 key={`loadout-builder-${loadoutImportVersion}`}
                 colors={colors}
                 getIconUrl={getIconUrl}
+                fmt={fmt}
                 maps={editableMaps}
                 heroes={heroesData.heroes}
                 onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
@@ -3436,12 +3465,13 @@ export default function App() {
               <StatsHubView
                 key={`stats-hub-${loadoutImportVersion}`}
                 colors={colors}
+                fmt={fmt}
                 getIconUrl={getIconUrl}
                 heroes={heroesData.heroes}
               />
             </Suspense>
           )}
-          {activeKey === "coordFinder" && (
+          {activeKey === "coordFinder" && isLocalAdmin && (
             <Suspense fallback={lazyFallback}>
               <CoordFinderView
                 colors={colors}

@@ -1,7 +1,7 @@
 import { useMemo, useState, useTransition } from "react";
 
-function getHomeSections(colors) {
-  return [
+function getHomeSections(colors, isAdmin) {
+  const sections = [
     {
       group: "Upgrades",
       color: "#4a9eff",
@@ -52,7 +52,7 @@ function getHomeSections(colors) {
         { key: "statsHub", label: "Stats Hub", icon: "_attributePoints_0.png", desc: "Review global and hero-specific loadout stat breakdowns" },
         { key: "loadoutBuilder", label: "Map Loadouts", icon: "tower2.png", desc: "Plan hero placements on authored map nodes" },
         { key: "heroLoadout", label: "Hero Loadout", icon: "_heroHelm.png", desc: "Build and save focused hero equipment and stat plans" },
-        { key: "statsLoadout", label: "Upgrades Loadout", icon: "_attributePoints_0.png", desc: "Track purchased upgrade levels and preview stat gains by tab" },
+        { key: "statsLoadout", label: "Upgrades Loadout", icon: "_heroes.png", desc: "Track purchased upgrade levels and preview stat gains by tab" },
         { key: "playerLoadout", label: "Player Loadout", icon: "_background.png", desc: "Track purchased player icons and backgrounds as global stats" },
       ],
     },
@@ -83,6 +83,8 @@ function getHomeSections(colors) {
       ],
     },
   ];
+
+  return isAdmin ? sections : sections.filter((section) => section.group !== "Admin");
 }
 
 const STORE_LINKS = [
@@ -92,8 +94,8 @@ const STORE_LINKS = [
   { label: "Discord", url: "https://discord.com/invite/vs3uJUsxVx", color: "#5865f2", icon: "discord-mark-blue.png", desc: "Join the community" },
 ];
 
-export function HomeView({ colors, getIconUrl, onNavigate, isMobile }) {
-  const homeSections = getHomeSections(colors);
+export function HomeView({ colors, getIconUrl, onNavigate, isMobile, isAdmin }) {
+  const homeSections = getHomeSections(colors, isAdmin);
 
   return (
     <div>

@@ -171,8 +171,8 @@ function UpgradeCard({ item, sectionFormula, currentLevel, previewLevels, colors
         <div style={{ minWidth: 0, flex: 1 }}>
           <div style={{ fontSize: 16, fontWeight: 800, color: colors.text }}>{item.name}</div>
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
-            <span style={{ fontSize: 12, color: colors.muted }}>Max {preview.maxLevel.toLocaleString()}</span>
-            {item.waveReq ? <span style={{ fontSize: 12, color: colors.accent }}>Wave {item.waveReq.toLocaleString()}</span> : null}
+            <span style={{ fontSize: 12, color: colors.muted }}>Max {fmt(preview.maxLevel)}</span>
+            {item.waveReq ? <span style={{ fontSize: 12, color: colors.accent }}>Wave {fmt(item.waveReq)}</span> : null}
           </div>
         </div>
         <label style={{ display: "grid", gap: 4, minWidth: 104 }}>

@@ -37,13 +37,23 @@ function TabButton({ tab, isActive, colors, getIconUrl, onSelect }) {
   );
 }
 
-function SummaryCard({ label, value, sublabel, colors, valueColor }) {
+function GroupTabButton({ label, isActive, colors, onSelect }) {
   return (
-    <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14, display: "grid", gap: 6 }}>
-      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>{label}</div>
-      <div style={{ fontSize: 22, color: valueColor ?? colors.text, fontWeight: 900 }}>{value}</div>
-      {sublabel ? <div style={{ fontSize: 12, color: colors.muted }}>{sublabel}</div> : null}
-    </div>
+    <button
+      type="button"
+      onClick={onSelect}
+      style={{
+        background: isActive ? "rgba(245,146,30,0.16)" : colors.panel,
+        color: isActive ? colors.text : colors.muted,
+        border: `1px solid ${isActive ? colors.accent : colors.border}`,
+        borderRadius: 999,
+        padding: "8px 12px",
+        fontWeight: 800,
+        cursor: "pointer",
+      }}
+    >
+      {label}
+    </button>
   );
 }
 
@@ -56,14 +66,14 @@ function PurchasedToggle({ isPurchased, colors, onToggle }) {
   );
 }
 
-function RewardLine({ item, colors }) {
+function RewardLine({ item, colors, fmt }) {
   if (!item.rewardUnit || item.reward == null) {
     return <div style={{ fontSize: 13, color: colors.muted }}>Reward -</div>;
   }
 
   return (
     <div style={{ fontSize: 13, color: colors.muted }}>
-      Reward <span style={{ color: item.reward < 0 ? colors.positive : colors.accent, fontWeight: 700 }}>{formatSignedHeroBonus("damage", item.reward).replace("%", "")}</span> {item.rewardUnit}
+      Reward <span style={{ color: item.reward < 0 ? colors.positive : colors.accent, fontWeight: 700 }}>{formatSignedHeroBonus("damage", item.reward, fmt).replace("%", "")}</span> {item.rewardUnit}
     </div>
   );
 }
@@ -86,7 +96,7 @@ function IconCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle }) {
           <div style={{ fontSize: 13, color: colors.muted, marginBottom: 2 }}>
             Cost <span style={{ color: item.cost === 0 ? colors.positive : colors.gold, fontWeight: 700 }}>{item.cost === 0 ? "Free" : fmt(item.cost)}</span>
           </div>
-          <RewardLine item={item} colors={colors} />
+          <RewardLine item={item} colors={colors} fmt={fmt} />
         </div>
         <img src={getIconUrl(item.icon)} alt={item.name} style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 6, objectFit: "contain" }} />
       </div>
@@ -100,7 +110,7 @@ function IconCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle }) {
   );
 }
 
-function BackgroundCard({ item, isPurchased, colors, getIconUrl, onToggle }) {
+function BackgroundCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle }) {
   return (
     <div style={{ position: "relative", backgroundImage: item.background ? `url(${getIconUrl(item.background)})` : "none", backgroundSize: "cover", backgroundPosition: "center", border: `1px solid ${isPurchased ? colors.accent : colors.border}`, borderRadius: 10, padding: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.2)", overflow: "hidden", minHeight: 132 }}>
       {item.background && <div style={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.58)" }} />}
@@ -118,9 +128,9 @@ function BackgroundCard({ item, isPurchased, colors, getIconUrl, onToggle }) {
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ color: colors.text, fontWeight: 700, fontSize: 15, lineHeight: 1.2, marginBottom: 4 }}>{item.name}</div>
             <div style={{ fontSize: 13, color: colors.muted, marginBottom: 2 }}>
-              Req <span style={{ color: colors.gold, fontWeight: 700 }}>{item.requirement != null ? (typeof item.requirement === "string" ? item.requirement : item.requirement.toLocaleString()) : "-"}</span>
+              Req <span style={{ color: colors.gold, fontWeight: 700 }}>{item.requirement != null ? (typeof item.requirement === "string" ? item.requirement : fmt(item.requirement)) : "-"}</span>
             </div>
-            <RewardLine item={item} colors={colors} />
+            <RewardLine item={item} colors={colors} fmt={fmt} />
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: "auto" }}>
@@ -134,7 +144,7 @@ function BackgroundCard({ item, isPurchased, colors, getIconUrl, onToggle }) {
   );
 }
 
-function StatSummaryList({ entries, colors }) {
+function StatSummaryList({ entries, colors, fmt }) {
   const breakdown = useMemo(() => buildStatBreakdown(entries), [entries]);
 
   if (!breakdown.orderedStats.length) {
@@ -147,13 +157,13 @@ function StatSummaryList({ entries, colors }) {
         <div key={item.statKey} style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 12, display: "grid", gap: 8 }}>
           <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center" }}>
             <div style={{ fontSize: 13, color: colors.text, fontWeight: 800 }}>{item.label}</div>
-            <div style={{ fontSize: 13, color: colors.accent, fontWeight: 900 }}>{formatSignedHeroBonus(item.statKey, item.total)}</div>
+            <div style={{ fontSize: 13, color: colors.accent, fontWeight: 900 }}>{formatSignedHeroBonus(item.statKey, item.total, fmt)}</div>
           </div>
           <div style={{ display: "grid", gap: 6 }}>
             {item.entries.map((entry) => (
               <div key={`${entry.sourceType}-${entry.sourceId}`} style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12 }}>
                 <span style={{ color: colors.muted }}>{entry.sourceLabel}</span>
-                <span style={{ color: colors.text, fontWeight: 700 }}>{formatSignedHeroBonus(item.statKey, entry.amount)}</span>
+                <span style={{ color: colors.text, fontWeight: 700 }}>{formatSignedHeroBonus(item.statKey, entry.amount, fmt)}</span>
               </div>
             ))}
           </div>
@@ -166,24 +176,41 @@ function StatSummaryList({ entries, colors }) {
 export function PlayerLoadoutPage({ colors, getIconUrl, fmt }) {
   const initialState = useMemo(() => readPlayerLoadoutState(localStorage), []);
   const [selectedTab, setSelectedTab] = useState(initialState.selectedTab);
+  const [selectedGroupByTab, setSelectedGroupByTab] = useState(initialState.selectedGroupByTab);
   const [purchasedByTab, setPurchasedByTab] = useState(initialState.purchasedByTab);
 
   useEffect(() => {
-    writePlayerLoadoutState({ selectedTab, purchasedByTab }, localStorage);
-  }, [selectedTab, purchasedByTab]);
+    writePlayerLoadoutState({ selectedTab, selectedGroupByTab, purchasedByTab }, localStorage);
+  }, [purchasedByTab, selectedGroupByTab, selectedTab]);
 
   const activeTab = PLAYER_LOADOUT_TAB_MAP[selectedTab] ?? PLAYER_LOADOUT_TABS[0];
-  const activeItems = getPlayerLoadoutItems(activeTab.key);
+  const groupEntries = Object.entries(activeTab.data.groups ?? {}).map(([groupKey, items]) => ({
+    key: groupKey,
+    label: groupKey,
+    items,
+  }));
+  const activeGroup = groupEntries.find((group) => group.key === selectedGroupByTab[activeTab.key]) ?? groupEntries[0] ?? null;
+  const activeItems = activeGroup?.items ?? getPlayerLoadoutItems(activeTab.key);
   const activePurchased = purchasedByTab[activeTab.key] ?? {};
-  const activeEntries = useMemo(
-    () => getPlayerLoadoutPurchasedEntries({ selectedTab: activeTab.key, purchasedByTab: { [activeTab.key]: activePurchased } }),
-    [activeItems, activePurchased, activeTab.key]
-  );
   const allEntries = useMemo(
     () => getPlayerLoadoutPurchasedEntries({ selectedTab, purchasedByTab }),
     [selectedTab, purchasedByTab]
   );
-  const purchasedCount = Object.values(activePurchased).filter(Boolean).length;
+  const activeItemIds = useMemo(() => new Set(activeItems.map((item) => item.id)), [activeItems]);
+  const activeEntries = useMemo(
+    () => allEntries.filter((entry) => entry.sourceType === activeTab.key && activeItemIds.has(entry.sourceId)),
+    [activeItemIds, activeTab.key, allEntries]
+  );
+  const purchasedCount = activeItems.filter((item) => Boolean(activePurchased[item.id])).length;
+
+  useEffect(() => {
+    if (!activeGroup && groupEntries[0]) {
+      setSelectedGroupByTab((current) => ({
+        ...current,
+        [activeTab.key]: groupEntries[0].key,
+      }));
+    }
+  }, [activeGroup, activeTab.key, groupEntries]);
 
   function handlePurchasedChange(tabKey, itemId, isPurchased) {
     setPurchasedByTab((current) => {
@@ -199,6 +226,13 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt }) {
         [tabKey]: nextTab,
       };
     });
+  }
+
+  function handleGroupChange(groupKey) {
+    setSelectedGroupByTab((current) => ({
+      ...current,
+      [activeTab.key]: groupKey,
+    }));
   }
 
   return (
@@ -227,18 +261,35 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt }) {
         </aside>
 
         <section style={{ flex: "1 1 760px", minWidth: 0, display: "grid", gap: 16 }}>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-            <SummaryCard label="Active Tab" value={activeTab.label} colors={colors} />
-            <SummaryCard label="Purchased In Tab" value={String(purchasedCount)} colors={colors} valueColor={colors.accent} />
-            <SummaryCard label="Tab Stat Sources" value={String(activeEntries.length)} colors={colors} valueColor={colors.positive} />
-            <SummaryCard label="Total Stat Sources" value={String(allEntries.length)} colors={colors} valueColor={colors.gold} />
+          <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <div>
+                <div style={{ fontSize: 14, fontWeight: 900, color: colors.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>
+                  {activeTab.label}
+                </div>
+                <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>
+                  {activeGroup?.label ?? "Group"} group with {fmt(purchasedCount)} purchased and {fmt(activeItems.length)} total items.
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                {groupEntries.map((group) => (
+                  <GroupTabButton
+                    key={group.key}
+                    label={group.label}
+                    isActive={group.key === activeGroup?.key}
+                    colors={colors}
+                    onSelect={() => handleGroupChange(group.key)}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
 
           <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 900, color: colors.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              {activeTab.label} Global Stat Summary
+              {activeGroup?.label ?? activeTab.label} Stat Summary
             </div>
-            <StatSummaryList entries={activeEntries} colors={colors} />
+            <StatSummaryList entries={activeEntries} colors={colors} fmt={fmt} />
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>
@@ -254,6 +305,7 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt }) {
                     colors={colors}
                     getIconUrl={getIconUrl}
                     onToggle={(checked) => handlePurchasedChange(activeTab.key, item.id, checked)}
+                    fmt={fmt}
                   />
                 );
               }
@@ -272,12 +324,6 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt }) {
             })}
           </div>
 
-          <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12 }}>
-            <div style={{ fontSize: 14, fontWeight: 900, color: colors.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-              Combined Cosmetic Stat Summary
-            </div>
-            <StatSummaryList entries={allEntries} colors={colors} />
-          </div>
         </section>
       </div>
     </div>

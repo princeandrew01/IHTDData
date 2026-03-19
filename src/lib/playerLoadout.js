@@ -23,6 +23,11 @@ export const PLAYER_LOADOUT_TAB_MAP = Object.freeze(
 );
 
 const TAB_KEYS = new Set(PLAYER_LOADOUT_TABS.map((tab) => tab.key));
+const TAB_GROUP_KEYS = Object.freeze(
+  Object.fromEntries(
+    PLAYER_LOADOUT_TABS.map((tab) => [tab.key, Object.keys(tab.data.groups ?? {})])
+  )
+);
 
 const TAB_ITEM_MAP = Object.freeze(
   Object.fromEntries(
@@ -98,6 +103,10 @@ function getDefaultSelectedTab() {
   return PLAYER_LOADOUT_TABS[0]?.key ?? "icons";
 }
 
+function getDefaultSelectedGroup(tabKey) {
+  return TAB_GROUP_KEYS[tabKey]?.[0] ?? "";
+}
+
 function normalizePurchasedMap(tabKey, rawPurchased) {
   const itemMap = TAB_ITEM_MAP[tabKey] ?? {};
   const nextPurchased = {};
@@ -115,6 +124,19 @@ function normalizePurchasedMap(tabKey, rawPurchased) {
   return nextPurchased;
 }
 
+function normalizeSelectedGroupByTab(rawSelectedGroupByTab) {
+  return Object.fromEntries(
+    PLAYER_LOADOUT_TABS.map((tab) => {
+      const availableGroups = TAB_GROUP_KEYS[tab.key] ?? [];
+      const requestedGroup = rawSelectedGroupByTab?.[tab.key];
+      const selectedGroup = availableGroups.includes(requestedGroup)
+        ? requestedGroup
+        : getDefaultSelectedGroup(tab.key);
+      return [tab.key, selectedGroup];
+    })
+  );
+}
+
 export function normalizePlayerLoadoutState(rawState) {
   const selectedTab = TAB_KEYS.has(rawState?.selectedTab) ? rawState.selectedTab : getDefaultSelectedTab();
   const purchasedByTab = {};
@@ -125,6 +147,7 @@ export function normalizePlayerLoadoutState(rawState) {
 
   return {
     selectedTab,
+    selectedGroupByTab: normalizeSelectedGroupByTab(rawState?.selectedGroupByTab),
     purchasedByTab,
   };
 }

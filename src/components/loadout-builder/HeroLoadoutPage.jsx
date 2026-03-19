@@ -286,18 +286,18 @@ function sortHeroes(heroes, mode) {
   return nextHeroes;
 }
 
-function formatAttributeValue(attribute, value) {
+function formatAttributeValue(attribute, value, fmt) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return String(value ?? "-");
   }
 
   if (FLAT_VALUE_KEYS.has(attribute.statKey)) {
-    return numeric.toLocaleString();
+    return typeof fmt === "function" ? fmt(numeric) : numeric.toLocaleString();
   }
 
   const prefix = numeric > 0 ? "+" : "";
-  return `${prefix}${numeric.toLocaleString()}%`;
+  return `${prefix}${typeof fmt === "function" ? fmt(numeric) : numeric.toLocaleString()}%`;
 }
 
 function normalizeHeroEffectKey(statKey) {
@@ -309,7 +309,7 @@ function getHeroEffectLabel(statKey) {
   return HERO_STAT_LABELS[normalizedKey] ?? formatLabel(normalizedKey);
 }
 
-function formatHeroEffectAmount(statKey, amount) {
+function formatHeroEffectAmount(statKey, amount, fmt) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric)) {
     return String(amount ?? "-");
@@ -319,13 +319,13 @@ function formatHeroEffectAmount(statKey, amount) {
   const prefix = numeric > 0 ? "+" : "";
 
   if (FLAT_VALUE_KEYS.has(normalizedKey) || FLAT_VALUE_KEYS.has(statKey)) {
-    return `${prefix}${numeric.toLocaleString()}`;
+    return `${prefix}${typeof fmt === "function" ? fmt(numeric) : numeric.toLocaleString()}`;
   }
 
-  return `${prefix}${numeric.toLocaleString()}%`;
+  return `${prefix}${typeof fmt === "function" ? fmt(numeric) : numeric.toLocaleString()}%`;
 }
 
-function formatBaseStatValue(statKey, value) {
+function formatBaseStatValue(statKey, value, fmt) {
   if (value == null) {
     return "-";
   }
@@ -334,7 +334,7 @@ function formatBaseStatValue(statKey, value) {
     return `${value}s`;
   }
 
-  return Number.isFinite(Number(value)) ? Number(value).toLocaleString() : String(value);
+  return Number.isFinite(Number(value)) ? (typeof fmt === "function" ? fmt(Number(value)) : Number(value).toLocaleString()) : String(value);
 }
 
 function FilterTabButton({ active, label, onClick, colors }) {
@@ -436,8 +436,8 @@ function AttributeCard({ attribute, currentLevel, previewLevels, colors, fmt, ge
           <div style={{ fontSize: 16, fontWeight: 800, color: colors.text }}>{attribute.name}</div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 4 }}>
             <span style={{ fontSize: 12, color: colors.muted }}>{formatLabel(attribute.scope)}</span>
-            <span style={{ fontSize: 12, color: colors.muted }}>Rank {attribute.rankReq?.toLocaleString() ?? 0}+</span>
-            <span style={{ fontSize: 12, color: colors.accent }}>{formatAttributeValue(attribute, attribute.statAmt ?? 0)} / level</span>
+            <span style={{ fontSize: 12, color: colors.muted }}>Rank {fmt(attribute.rankReq ?? 0)}+</span>
+            <span style={{ fontSize: 12, color: colors.accent }}>{formatAttributeValue(attribute, attribute.statAmt ?? 0, fmt)} / level</span>
           </div>
         </div>
         <label style={{ display: "grid", gap: 4, minWidth: 108 }}>
@@ -466,7 +466,7 @@ function AttributeCard({ attribute, currentLevel, previewLevels, colors, fmt, ge
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 12 }}>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Current Bonus</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.positive }}>{formatAttributeValue(attribute, preview.currentValue)}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: colors.positive }}>{formatAttributeValue(attribute, preview.currentValue, fmt)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Projected Level</div>
@@ -474,13 +474,35 @@ function AttributeCard({ attribute, currentLevel, previewLevels, colors, fmt, ge
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Projected Bonus</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.positive }}>{formatAttributeValue(attribute, preview.projectedValue)}</div>
+            <div style={{ fontSize: 14, fontWeight: 800, color: colors.positive }}>{formatAttributeValue(attribute, preview.projectedValue, fmt)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Preview Cost</div>
           <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{fmt(preview.previewCost)}</div>
         </div>
       </div>
+    </div>
+  );
+}
+
+function HeaderFieldCard({ label, value, colors, helper, valueColor, min = 0, max, onChange, disabled = false }) {
+  return (
+    <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
+      <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>{label}</div>
+      {onChange ? (
+        <input
+          type="number"
+          min={min}
+          max={max}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          disabled={disabled}
+          style={{ background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 10, color: colors.text, fontSize: 16, fontWeight: 800, padding: "10px 12px", fontFamily: "inherit" }}
+        />
+      ) : (
+        <div style={{ fontSize: 16, fontWeight: 900, color: valueColor ?? colors.text }}>{value}</div>
+      )}
+      {helper ? <div style={{ fontSize: 12, color: colors.muted, lineHeight: 1.5 }}>{helper}</div> : null}
     </div>
   );
 }
@@ -939,11 +961,6 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                     <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>{formatLabel(selectedHero.class)} · {selectedHero.rarity} · {formatLabel(selectedHero.type)}</div>
                     <div style={{ fontSize: 13, color: colors.muted, marginTop: 8 }}>Rank, map-resetting level, mastery, and attributes on this page apply to every placed copy of {selectedHero.name}.</div>
                   </div>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "6px 10px", fontSize: 12, fontWeight: 800, color: colors.accent }}>Rank {selectedHeroRank.toLocaleString()}</div>
-                    <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "6px 10px", fontSize: 12, fontWeight: 800, color: colors.gold }}>Level {selectedHeroLevel.toLocaleString()}</div>
-                    <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "6px 10px", fontSize: 12, fontWeight: 800, color: colors.text }}>Mastery {selectedHeroMasteryLevel}/{selectedHero.masteryExp?.maxLevel ?? 0}</div>
-                  </div>
                 </div>
 
                 <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
@@ -966,6 +983,46 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                     </button>
                   ))}
                 </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12 }}>
+                  <HeaderFieldCard
+                    label="Current Rank"
+                    value={selectedHeroRank}
+                    onChange={handleRankChange}
+                    colors={colors}
+                    helper="Synergy requirements use rank."
+                  />
+                  <HeaderFieldCard
+                    label="Current Level"
+                    value={selectedHeroLevel}
+                    onChange={handleHeroLevelChange}
+                    colors={colors}
+                    helper="Milestone unlocks use level."
+                  />
+                  <HeaderFieldCard
+                    label="Current Mastery Level"
+                    value={selectedHeroMasteryLevel}
+                    onChange={handleMasteryLevelChange}
+                    min={0}
+                    max={selectedHero.masteryExp?.maxLevel ?? 0}
+                    disabled={!selectedHero.masteryExp}
+                    colors={colors}
+                    helper={selectedHero.masteryExp ? `Max ${selectedHero.masteryLevel?.maxLevel ?? selectedHero.masteryExp?.maxLevel ?? 0}` : "Mastery is unavailable for this hero."}
+                  />
+                  <HeaderFieldCard
+                    label="Wave Unlocked"
+                    value={selectedHeroUnlockWave != null ? fmt(selectedHeroUnlockWave) : "Not provided"}
+                    colors={colors}
+                    helper="Hero data unlock requirement."
+                  />
+                  <HeaderFieldCard
+                    label="Next Mastery Cost"
+                    value={selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Maxed" : `${fmt(nextMasteryCost)} exp`) : "Unavailable"}
+                    valueColor={colors.accent}
+                    colors={colors}
+                    helper={selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Mastery is fully maxed." : `Next level ${nextMasteryLevel}`) : "No mastery table is available."}
+                  />
+                </div>
               </div>
 
               {activeHeroTab === "information" && (
@@ -984,9 +1041,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                           { label: "Hero", value: selectedHero.name },
                           { label: "Rarity", value: selectedHero.rarity },
                           { label: "Type", value: formatLabel(selectedHero.type) },
-                          { label: "Wave Unlocked", value: selectedHeroUnlockWave != null ? selectedHeroUnlockWave.toLocaleString() : "Not provided" },
-                          { label: "Current Rank", value: selectedHeroRank.toLocaleString() },
-                          { label: "Current Level", value: selectedHeroLevel.toLocaleString() },
+                          { label: "Wave Unlocked", value: selectedHeroUnlockWave != null ? fmt(selectedHeroUnlockWave) : "Not provided" },
                           { label: "Class", value: formatLabel(selectedHero.class) },
                         ].map((item) => (
                           <div key={item.label} style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 6 }}>
@@ -1042,22 +1097,16 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Skill Mastery</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Track the current mastery level and the exp cost required for the next level.</div>
+                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Review the current mastery state and the exp cost required for the next level.</div>
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                      <label style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Current Mastery Level</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={selectedHero.masteryExp?.maxLevel ?? 0}
-                          value={selectedHeroMasteryLevel}
-                          onChange={(event) => handleMasteryLevelChange(event.target.value)}
-                          style={{ background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 10, color: colors.text, fontSize: 14, fontWeight: 700, padding: "10px 12px", fontFamily: "inherit" }}
-                          disabled={!selectedHero.masteryExp}
-                        />
-                      </label>
+                      <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
+                        <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Current Mastery Level</div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: colors.text }}>
+                          {selectedHero.masteryExp ? `${selectedHeroMasteryLevel} / ${selectedHero.masteryExp.maxLevel ?? 0}` : "Unavailable"}
+                        </div>
+                      </div>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Next Mastery Level</div>
                         <div style={{ fontSize: 16, fontWeight: 900, color: colors.text }}>
@@ -1087,7 +1136,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                       {Object.entries(selectedHero.baseStats ?? {}).map(([statKey, value]) => (
                         <div key={statKey} style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 6 }}>
                           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>{BASE_STAT_LABELS[statKey] ?? formatLabel(statKey)}</div>
-                          <div style={{ fontSize: 18, fontWeight: 900, color: colors.gold }}>{formatBaseStatValue(statKey, value)}</div>
+                          <div style={{ fontSize: 18, fontWeight: 900, color: colors.gold }}>{formatBaseStatValue(statKey, value, fmt)}</div>
                         </div>
                       ))}
                     </div>
@@ -1112,9 +1161,9 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                                 <div style={{ background: isActive ? "rgba(46,204,113,0.18)" : colors.panel, border: `1px solid ${isActive ? colors.positive : colors.border}`, borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800, color: isActive ? colors.positive : colors.muted }}>{isActive ? "Active" : "Locked"}</div>
                               </div>
                               <div style={{ display: "grid", gap: 6 }}>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Required Level:</span> {milestone.requirement?.toLocaleString() ?? 0}</div>
+                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Required Level:</span> {fmt(milestone.requirement ?? 0)}</div>
                                 <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Stat:</span> {getHeroEffectLabel(milestone.type)}</div>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Amount:</span> {formatHeroEffectAmount(milestone.type, milestone.amount)}</div>
+                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Amount:</span> {formatHeroEffectAmount(milestone.type, milestone.amount, fmt)}</div>
                                 <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Scope:</span> {formatLabel(milestone.scope)}</div>
                               </div>
                             </div>
@@ -1132,37 +1181,17 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                 <div style={{ display: "grid", gap: 16 }}>
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
-                      <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Rank</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Rank drives synergies. Level resets each map and drives milestone unlocks.</div>
+                      <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Progress</div>
+                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Adjust rank, level, and mastery from the hero header. This section keeps the milestone progress view focused.</div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
-                      <label style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Current Rank</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={selectedHeroRank}
-                          onChange={(event) => handleRankChange(event.target.value)}
-                          style={{ background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 10, color: colors.text, fontSize: 14, fontWeight: 700, padding: "10px 12px", fontFamily: "inherit" }}
-                        />
-                      </label>
-                      <label style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
-                        <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Current Level</span>
-                        <input
-                          type="number"
-                          min={0}
-                          value={selectedHeroLevel}
-                          onChange={(event) => handleHeroLevelChange(event.target.value)}
-                          style={{ background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 10, color: colors.text, fontSize: 14, fontWeight: 700, padding: "10px 12px", fontFamily: "inherit" }}
-                        />
-                      </label>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Milestones Reached</div>
                         <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>{milestoneProgress.completed} / {selectedHero.milestones?.length ?? 0}</div>
                       </div>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Next Milestone</div>
-                        <div style={{ fontSize: 16, fontWeight: 900, color: colors.accent }}>{milestoneProgress.next ? `Level ${milestoneProgress.next.requirement.toLocaleString()}` : "Completed"}</div>
+                        <div style={{ fontSize: 16, fontWeight: 900, color: colors.accent }}>{milestoneProgress.next ? `Level ${fmt(milestoneProgress.next.requirement)}` : "Completed"}</div>
                         <div style={{ fontSize: 12, color: colors.muted }}>{milestoneProgress.next ? getHeroEffectLabel(milestoneProgress.next.type) : "All milestones unlocked"}</div>
                       </div>
                     </div>
@@ -1247,7 +1276,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                               <div>
                                 <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Tier {synergy.tier} · Path {synergy.synergyLevel}</div>
                                 <div style={{ fontSize: 18, fontWeight: 900, color: colors.text, marginTop: 4 }}>{synergy.name}</div>
-                                <div style={{ fontSize: 12, color: colors.muted, marginTop: 6 }}>Required rank for all heroes: {synergy.rankRequired?.toLocaleString() ?? 0}</div>
+                                <div style={{ fontSize: 12, color: colors.muted, marginTop: 6 }}>Required rank for all heroes: {fmt(synergy.rankRequired ?? 0)}</div>
                               </div>
                               <div style={{ background: isActive ? "rgba(46,204,113,0.18)" : colors.panel, border: `1px solid ${isActive ? colors.positive : colors.border}`, borderRadius: 999, padding: "6px 10px", fontSize: 11, fontWeight: 800, color: isActive ? colors.positive : colors.muted }}>{isActive ? "Active" : "Inactive"}</div>
                             </div>
@@ -1264,8 +1293,8 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                                     </div>
                                     <div style={{ minWidth: 0, flex: 1 }}>
                                       <div style={{ fontSize: 13, fontWeight: 800, color: colors.text }}>{teamHero?.name ?? formatLabel(heroId)}</div>
-                                      <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>Current Rank {currentRank.toLocaleString()}</div>
-                                      <div style={{ fontSize: 11, color: meetsRank ? colors.positive : colors.accent, marginTop: 2 }}>{meetsRank ? "Requirement met" : `Needs ${Math.max((synergy.rankRequired ?? 0) - currentRank, 0).toLocaleString()} more rank`}</div>
+                                      <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>Current Rank {fmt(currentRank)}</div>
+                                      <div style={{ fontSize: 11, color: meetsRank ? colors.positive : colors.accent, marginTop: 2 }}>{meetsRank ? "Requirement met" : `Needs ${fmt(Math.max((synergy.rankRequired ?? 0) - currentRank, 0))} more rank`}</div>
                                     </div>
                                   </div>
                                 );
@@ -1276,7 +1305,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes }) {
                               <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 6 }}>
                                 <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Stat Increase</div>
                                 <div style={{ fontSize: 16, fontWeight: 900, color: colors.text }}>{getHeroEffectLabel(synergy.type)}</div>
-                                <div style={{ fontSize: 12, color: colors.accent, fontWeight: 800 }}>{formatHeroEffectAmount(synergy.type, synergy.amount)}</div>
+                                <div style={{ fontSize: 12, color: colors.accent, fontWeight: 800 }}>{formatHeroEffectAmount(synergy.type, synergy.amount, fmt)}</div>
                               </div>
                               <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 6 }}>
                                 <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Scope</div>

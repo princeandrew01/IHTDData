@@ -1,7 +1,7 @@
 export const LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY = "ihtddata.loadoutBuilder.selectedMapId";
 export const LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY = "ihtddata.loadoutBuilder.placements.v1";
 export const LOADOUT_BUILDER_RANKS_STORAGE_KEY = "ihtddata.loadoutBuilder.ranks.v1";
-export const APP_SAVE_VERSION = 7;
+export const APP_SAVE_VERSION = 8;
 
 import { normalizeStatsLoadoutState, readStatsLoadoutState, writeStatsLoadoutState } from "./statsLoadout";
 import { normalizeMapLoadoutState, readMapLoadoutState, writeMapLoadoutState } from "./mapLoadout";
@@ -45,6 +45,9 @@ export function buildAppSavePayload(storage = localStorage) {
   return {
     version: APP_SAVE_VERSION,
     exportedAt: new Date().toISOString(),
+    preferences: {
+      notation: storage.getItem("notation") ?? "scientific",
+    },
     sections: {
       loadoutBuilder: readLoadoutBuilderState(storage),
       statsLoadout: readStatsLoadoutState(storage),
@@ -62,6 +65,14 @@ export function validateAppSavePayload(payload) {
 
   if (!isObject(payload.sections)) {
     return { ok: false, message: "Save file is missing sections data." };
+  }
+
+  if (payload.preferences !== undefined && !isObject(payload.preferences)) {
+    return { ok: false, message: "Save file preferences must be an object when provided." };
+  }
+
+  if (payload.preferences?.notation !== undefined && !["scientific", "letters"].includes(payload.preferences.notation)) {
+    return { ok: false, message: "Save file notation must be scientific or letters when provided." };
   }
 
   const loadoutBuilder = payload.sections.loadoutBuilder;
@@ -108,6 +119,11 @@ export function applyAppSavePayload(payload, storage = localStorage) {
   const validation = validateAppSavePayload(payload);
   if (!validation.ok) {
     return validation;
+  }
+
+  const notation = payload.preferences?.notation;
+  if (notation === "scientific" || notation === "letters") {
+    storage.setItem("notation", notation);
   }
 
   const loadoutBuilder = payload.sections.loadoutBuilder;

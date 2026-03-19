@@ -317,7 +317,7 @@ function normalizeBonusTotals(source) {
   return totals;
 }
 
-function formatSignedHeroBonus(key, amount) {
+function formatSignedHeroBonus(key, amount, fmt) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric)) {
     return String(amount ?? "-");
@@ -325,10 +325,10 @@ function formatSignedHeroBonus(key, amount) {
 
   const prefix = numeric > 0 ? "+" : "";
   if (FLAT_HERO_STAT_KEYS.has(key)) {
-    return `${prefix}${formatHeroStatValue(numeric)}`;
+    return `${prefix}${formatHeroStatValue(numeric, fmt)}`;
   }
 
-  return `${prefix}${formatHeroStatValue(numeric)}%`;
+  return `${prefix}${formatHeroStatValue(numeric, fmt)}%`;
 }
 
 function getHeroAttributeBonusTotals(levelsByAttributeId, scope) {
@@ -384,7 +384,7 @@ function getEffectAmountWithModifier(effect, effectModifierPct) {
   return numericAmount * (1 + (Number(effectModifierPct) || 0) / 100);
 }
 
-function enrichProgressionEffect(effect, kind, effectModifierPct) {
+function enrichProgressionEffect(effect, kind, effectModifierPct, fmt) {
   const bonusKey = normalizeHeroEffectBonusKey(effect.type);
   const effectiveAmount = getEffectAmountWithModifier(effect, effectModifierPct);
 
@@ -393,7 +393,7 @@ function enrichProgressionEffect(effect, kind, effectModifierPct) {
     kind,
     bonusKey,
     effectiveAmount,
-    amountLabel: formatSignedHeroBonus(bonusKey, effectiveAmount),
+    amountLabel: formatSignedHeroBonus(bonusKey, effectiveAmount, fmt),
     scopeLabel: formatFilterLabel(effect.scope),
     statLabel: HERO_STAT_LABELS[bonusKey] ?? formatFilterLabel(effect.type),
   };
@@ -427,16 +427,16 @@ function inferMapPerkBonusKey(perk) {
   return null;
 }
 
-function formatHeroStatValue(value) {
+function formatHeroStatValue(value, fmt) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return String(value ?? "-");
   }
 
-  return Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2).replace(/\.00$/, "");
+  return Number.isInteger(numeric) ? (typeof fmt === "function" ? fmt(numeric) : numeric.toString()) : numeric.toFixed(2).replace(/\.00$/, "");
 }
 
-function buildHeroUpgradeStats(hero, bonusTotals) {
+function buildHeroUpgradeStats(hero, bonusTotals, fmt) {
   const baseStats = hero.baseStats ?? {};
   const damageBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.damage);
   const attackSpeedBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.attackSpeed);
@@ -502,11 +502,11 @@ function buildHeroUpgradeStats(hero, bonusTotals) {
   const displayStats = Object.entries(adjustedBaseStats).map(([key, value]) => ({
     key,
     label: formatFilterLabel(key),
-    value: formatHeroStatValue(value),
+    value: formatHeroStatValue(value, fmt),
     bonusLabel: (() => {
-      if (key === "damage" && damageBonus) return `+${formatHeroStatValue(damageBonus)}% from upgrades`;
-      if (key === "attackSpeed" && attackSpeedBonus) return `+${formatHeroStatValue(attackSpeedBonus)}% from upgrades`;
-      if (key === "range" && rangeBonus) return `+${formatHeroStatValue(rangeBonus)}% from upgrades`;
+      if (key === "damage" && damageBonus) return `+${formatHeroStatValue(damageBonus, fmt)}% from upgrades`;
+      if (key === "attackSpeed" && attackSpeedBonus) return `+${formatHeroStatValue(attackSpeedBonus, fmt)}% from upgrades`;
+      if (key === "range" && rangeBonus) return `+${formatHeroStatValue(rangeBonus, fmt)}% from upgrades`;
       if (key === "dps" && (damageBonus || attackSpeedBonus)) return `Damage + Attack Speed applied`;
       return null;
     })(),
@@ -558,10 +558,10 @@ function buildHeroUpgradeStats(hero, bonusTotals) {
       key,
       label: HERO_STAT_LABELS[key] ?? formatFilterLabel(key),
       value: key === "skillCooldown" && adjustedSkillCooldown != null
-        ? `${formatHeroStatValue(adjustedSkillCooldown)}s`
-        : formatSignedHeroBonus(key, bonus),
+        ? `${formatHeroStatValue(adjustedSkillCooldown, fmt)}s`
+        : formatSignedHeroBonus(key, bonus, fmt),
       bonusLabel: key === "skillCooldown" && adjustedSkillCooldown != null
-        ? `${formatHeroStatValue(bonus)}% reduction from active bonuses`
+        ? `${formatHeroStatValue(bonus, fmt)}% reduction from active bonuses`
         : "Active bonus",
     }));
 
@@ -1144,7 +1144,7 @@ function FocusedHeroSynergyCard({ synergy, colors }) {
   );
 }
 
-export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigate }) {
+export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigate, fmt }) {
   const statsLoadoutState = useMemo(() => readStatsLoadoutState(localStorage), []);
   const playerLoadoutState = useMemo(() => readPlayerLoadoutState(localStorage), []);
   const heroLoadoutState = useMemo(() => readHeroLoadoutState(localStorage), []);
@@ -1237,7 +1237,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
       const heroAttributeLevels = heroLoadoutState.attributeLevelsByHero?.[hero.id] ?? {};
       const personalAttributeBonuses = getHeroAttributeBonusTotals(heroAttributeLevels, "personal");
       const globalAttributeBonuses = getHeroAttributeBonusTotals(heroAttributeLevels, "global");
-      const upgradeStats = buildHeroUpgradeStats(hero, mergeBonusTotals(statsLoadoutBonuses, selectedMapGlobalBonuses, personalAttributeBonuses, globalAttributeBonuses));
+      const upgradeStats = buildHeroUpgradeStats(hero, mergeBonusTotals(statsLoadoutBonuses, selectedMapGlobalBonuses, personalAttributeBonuses, globalAttributeBonuses), fmt);
       return {
         ...hero,
         baseStats: upgradeStats.adjustedBaseStats,
@@ -1442,10 +1442,10 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
 
       entry.activeMilestones = (entry.baseHero.milestones ?? [])
         .filter((milestone) => (milestone.requirement ?? 0) <= entry.currentLevel)
-        .map((milestone) => enrichProgressionEffect(milestone, "milestone", entry.milestoneEffectBonusPct));
+        .map((milestone) => enrichProgressionEffect(milestone, "milestone", entry.milestoneEffectBonusPct, fmt));
       entry.inactiveMilestones = (entry.baseHero.milestones ?? [])
         .filter((milestone) => (milestone.requirement ?? 0) > entry.currentLevel)
-        .map((milestone) => enrichProgressionEffect(milestone, "milestone", entry.milestoneEffectBonusPct));
+        .map((milestone) => enrichProgressionEffect(milestone, "milestone", entry.milestoneEffectBonusPct, fmt));
 
       entry.activeMilestones
         .filter((milestone) => milestone.scope === "global")
@@ -1471,7 +1471,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
         buildProgressionBonusTotals(entry.activeMilestones, "personal"),
         entry.placementTotals
       );
-      const preSynergyStats = buildHeroUpgradeStats(entry.baseHero, preSynergyBonuses);
+      const preSynergyStats = buildHeroUpgradeStats(entry.baseHero, preSynergyBonuses, fmt);
       entry.preSynergyRange = preSynergyStats.adjustedBaseStats.range ?? entry.baseHero.baseStats?.range ?? 0;
     });
 
@@ -1529,7 +1529,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
       entry.inactiveSynergies = [];
 
       (entry.baseHero.synergies ?? []).forEach((synergy) => {
-        const enriched = enrichProgressionEffect(synergy, "synergy", entry.synergyEffectBonusPct);
+        const enriched = enrichProgressionEffect(synergy, "synergy", entry.synergyEffectBonusPct, fmt);
         const matchedGroup = (synergy.rankRequired ?? 0) <= entry.currentRank
           ? findSynergyActivationGroup(entry, synergy)
           : null;
@@ -1570,7 +1570,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
         buildProgressionBonusTotals(entry.activeSynergies, "personal"),
         entry.placementTotals
       );
-      const upgradeStats = buildHeroUpgradeStats(entry.baseHero, bonusTotals);
+      const upgradeStats = buildHeroUpgradeStats(entry.baseHero, bonusTotals, fmt);
 
       return {
         ...entry,
@@ -1600,7 +1600,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
     const heroAttributeLevels = heroLoadoutState.attributeLevelsByHero?.[baseHero.id] ?? {};
     const personalAttributeBonuses = getHeroAttributeBonusTotals(heroAttributeLevels, "personal");
     const globalAttributeBonuses = getHeroAttributeBonusTotals(heroAttributeLevels, "global");
-    const upgradeStats = buildHeroUpgradeStats(baseHero, mergeBonusTotals(statsLoadoutBonuses, selectedMapGlobalBonuses, personalAttributeBonuses, globalAttributeBonuses));
+    const upgradeStats = buildHeroUpgradeStats(baseHero, mergeBonusTotals(statsLoadoutBonuses, selectedMapGlobalBonuses, personalAttributeBonuses, globalAttributeBonuses), fmt);
 
     return {
       ...baseHero,
@@ -1612,12 +1612,12 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
       placementBonus: null,
       activeMilestones: (baseHero.milestones ?? [])
         .filter((milestone) => (milestone.requirement ?? 0) <= (Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[baseHero.id], 10) || 0)))
-        .map((milestone) => enrichProgressionEffect(milestone, "milestone", selectedMapGlobalBonuses.milestoneBonus ?? 0)),
+        .map((milestone) => enrichProgressionEffect(milestone, "milestone", selectedMapGlobalBonuses.milestoneBonus ?? 0, fmt)),
       inactiveMilestones: (baseHero.milestones ?? [])
         .filter((milestone) => (milestone.requirement ?? 0) > (Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[baseHero.id], 10) || 0)))
-        .map((milestone) => enrichProgressionEffect(milestone, "milestone", selectedMapGlobalBonuses.milestoneBonus ?? 0)),
+        .map((milestone) => enrichProgressionEffect(milestone, "milestone", selectedMapGlobalBonuses.milestoneBonus ?? 0, fmt)),
       activeSynergies: [],
-      inactiveSynergies: (baseHero.synergies ?? []).map((synergy) => enrichProgressionEffect(synergy, "synergy", selectedMapGlobalBonuses.synergyBonus ?? 0)),
+      inactiveSynergies: (baseHero.synergies ?? []).map((synergy) => enrichProgressionEffect(synergy, "synergy", selectedMapGlobalBonuses.synergyBonus ?? 0, fmt)),
     };
   }, [heroLoadoutState.attributeLevelsByHero, heroLoadoutState.levelByHero, heroLoadoutState.rankByHero, heroes, inspectedHeroId, selectedMapGlobalBonuses, statsLoadoutBonuses]);
 
@@ -2148,7 +2148,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
                             <div style={{ fontSize: 11, color: colors.muted }}>{entry.spot.label} · {entry.spot.id}</div>
                             <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>Hero Level {entry.hero.currentLevel ?? 0}</div>
                             <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
-                              {entry.placedBonus ? `${entry.placedBonus.name} ${formatSignedHeroBonus(normalizeMapPlacementBonusKey(entry.placedBonus.statKey), getPlacementBonusValue(entry.placedBonus, mapLoadoutState.placementBonusLevels[entry.placedBonus.id] ?? 0))}` : "No placement bonus"}
+                              {entry.placedBonus ? `${entry.placedBonus.name} ${formatSignedHeroBonus(normalizeMapPlacementBonusKey(entry.placedBonus.statKey), getPlacementBonusValue(entry.placedBonus, mapLoadoutState.placementBonusLevels[entry.placedBonus.id] ?? 0), fmt)}` : "No placement bonus"}
                             </div>
                           </div>
                         </div>
@@ -2352,6 +2352,7 @@ export function LoadoutBuilderPage({ colors, getIconUrl, maps, heroes, onNavigat
               selectedMap={selectedMap}
               maps={maps}
               getIconUrl={getIconUrl}
+              fmt={fmt}
             />
           )}
         </div>

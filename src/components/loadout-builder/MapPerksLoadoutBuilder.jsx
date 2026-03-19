@@ -21,27 +21,27 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(value, max));
 }
 
-function formatStatValue(value) {
+function formatStatValue(value, fmt) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return String(value ?? "-");
   }
-  return Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2).replace(/\.00$/, "");
+  return Number.isInteger(numeric) ? (typeof fmt === "function" ? fmt(numeric) : numeric.toString()) : numeric.toFixed(2).replace(/\.00$/, "");
 }
 
-function formatPercentValue(value) {
+function formatPercentValue(value, fmt) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return String(value ?? "-");
   }
 
   const prefix = numeric > 0 ? "+" : "";
-  return `${prefix}${formatStatValue(numeric)}%`;
+  return `${prefix}${formatStatValue(numeric, fmt)}%`;
 }
 
-function formatPlacementBonusLabel(bonus, level) {
+function formatPlacementBonusLabel(bonus, level, fmt) {
   const total = getPlacementBonusValue(bonus, level);
-  return `${bonus.name} ${formatPercentValue(total)}`;
+  return `${bonus.name} ${formatPercentValue(total, fmt)}`;
 }
 
 function RightSideTabButton({ active, label, onClick, colors }) {
@@ -86,7 +86,7 @@ function ActionButton({ onClick, disabled, children, colors, accent = false }) {
   );
 }
 
-function PerkCard({ perk, state, equippedCount, colors, onUnlock, onToggleEquip, onLevelChange }) {
+function PerkCard({ perk, state, equippedCount, colors, fmt, onUnlock, onToggleEquip, onLevelChange }) {
   const currentBonus = getPerkCurrentBonus(perk, state.level);
   const nextUpgradeCost = state.unlocked && state.level < (perk.maxLevel ?? 0)
     ? getPerkUpgradeStepCost(perk, state.level + 1)
@@ -113,22 +113,22 @@ function PerkCard({ perk, state, equippedCount, colors, onUnlock, onToggleEquip,
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))", gap: 10 }}>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Bonus</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{formatPercentValue(currentBonus)}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{formatPercentValue(currentBonus, fmt)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Total Cost</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{formatStatValue(totalSpent)}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{formatStatValue(totalSpent, fmt)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Cost</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{nextUpgradeCost != null ? formatStatValue(nextUpgradeCost) : "Maxed"}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{nextUpgradeCost != null ? formatStatValue(nextUpgradeCost, fmt) : "Maxed"}</div>
         </div>
       </div>
 
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
         {!state.unlocked && !perk.isDefault && (
           <ActionButton onClick={onUnlock} colors={colors} accent>
-            Unlock {formatStatValue(perk.unlockCost ?? 0)}
+            Unlock {formatStatValue(perk.unlockCost ?? 0, fmt)}
           </ActionButton>
         )}
         {state.unlocked && (
@@ -147,7 +147,7 @@ function PerkCard({ perk, state, equippedCount, colors, onUnlock, onToggleEquip,
   );
 }
 
-function PlacementBonusCard({ bonus, level, placementCount, selected, colors, onSelect, onLevelChange }) {
+function PlacementBonusCard({ bonus, level, placementCount, selected, colors, fmt, onSelect, onLevelChange }) {
   const nextCost = level < (bonus.maxLevel ?? 0) ? getPlacementBonusStepCost(bonus, level + 1) : null;
 
   return (
@@ -166,15 +166,15 @@ function PlacementBonusCard({ bonus, level, placementCount, selected, colors, on
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10 }}>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Bonus</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{level > 0 ? formatPlacementBonusLabel(bonus, level) : "Level 1 required"}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{level > 0 ? formatPlacementBonusLabel(bonus, level, fmt) : "Level 1 required"}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Total Cost</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{formatStatValue(getPlacementBonusTotalCost(bonus, level))}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{formatStatValue(getPlacementBonusTotalCost(bonus, level), fmt)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Next Cost</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{nextCost != null ? formatStatValue(nextCost) : "Maxed"}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.gold }}>{nextCost != null ? formatStatValue(nextCost, fmt) : "Maxed"}</div>
         </div>
       </div>
 
@@ -191,7 +191,7 @@ function PlacementBonusCard({ bonus, level, placementCount, selected, colors, on
   );
 }
 
-export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
+export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt }) {
   const [loadoutState, setLoadoutState] = useState(() => readMapLoadoutState(localStorage));
   const [selectedPlacementBonusId, setSelectedPlacementBonusId] = useState(null);
   const [activeRightTab, setActiveRightTab] = useState("perks");
@@ -379,7 +379,7 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                   <div style={{ fontSize: 11, color: "#e05555", textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 700 }}>Negative Perk</div>
                   <div style={{ fontSize: 14, fontWeight: 800, color: colors.text, marginTop: 4 }}>{selectedMap.negativePerk.name}</div>
                 </div>
-                <div style={{ fontSize: 18, fontWeight: 900, color: "#e05555" }}>{formatPercentValue(selectedMap.negativePerk.statAmt)}</div>
+                <div style={{ fontSize: 18, fontWeight: 900, color: "#e05555" }}>{formatPercentValue(selectedMap.negativePerk.statAmt, fmt)}</div>
               </div>
             )}
           </div>
@@ -417,7 +417,7 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                           {placedBonus ? (
                             <>
                               <span style={{ fontSize: 11, fontWeight: 800 }}>{placedBonus.name}</span>
-                              <span style={{ fontSize: 10, color: colors.accent }}>{formatPlacementBonusLabel(placedBonus, placedLevel)}</span>
+                              <span style={{ fontSize: 10, color: colors.accent }}>{formatPlacementBonusLabel(placedBonus, placedLevel, fmt)}</span>
                             </>
                           ) : null}
                         </button>
@@ -440,7 +440,7 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                   <div key={entry.spot.id} style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 10, padding: 10, display: "grid", gap: 8 }}>
                     <div style={{ fontWeight: 800, color: colors.text }}>{entry.bonus.name}</div>
                     <div style={{ fontSize: 11, color: colors.muted }}>{entry.spot.label} · {entry.spot.id}</div>
-                    <div style={{ fontSize: 12, color: colors.accent }}>{formatPlacementBonusLabel(entry.bonus, placementBonusLevels[entry.bonus.id] ?? 0)}</div>
+                    <div style={{ fontSize: 12, color: colors.accent }}>{formatPlacementBonusLabel(entry.bonus, placementBonusLevels[entry.bonus.id] ?? 0, fmt)}</div>
                     <ActionButton onClick={() => clearPlacementSpot(entry.spot.id)} colors={colors}>Remove</ActionButton>
                   </div>
                 ))}
@@ -471,6 +471,7 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                   state={perkStateById[perk.id] ?? { unlocked: false, equipped: false, level: 0 }}
                   equippedCount={equippedPerkCount}
                   colors={colors}
+                  fmt={fmt}
                   onUnlock={() => unlockPerk(perk)}
                   onToggleEquip={() => toggleEquipPerk(perk)}
                   onLevelChange={(nextLevel) => setPerkLevel(perk, nextLevel)}
@@ -495,6 +496,7 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                   placementCount={countPlacementBonusCopies(bonusPlacementsBySpot, bonus.id)}
                   selected={selectedPlacementBonusId === bonus.id}
                   colors={colors}
+                  fmt={fmt}
                   onSelect={() => setSelectedPlacementBonusId((current) => current === bonus.id ? null : bonus.id)}
                   onLevelChange={(nextLevel) => setPlacementBonusLevel(bonus, nextLevel)}
                 />

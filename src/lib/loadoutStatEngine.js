@@ -303,16 +303,18 @@ export function formatStatLabel(statKey) {
     .replace(/\b\w/g, (character) => character.toUpperCase());
 }
 
-export function formatHeroStatValue(value) {
+export function formatHeroStatValue(value, fmt) {
   const numeric = Number(value);
   if (!Number.isFinite(numeric)) {
     return String(value ?? "-");
   }
 
-  return Number.isInteger(numeric) ? numeric.toString() : numeric.toFixed(2).replace(/\.00$/, "");
+  return Number.isInteger(numeric)
+    ? (typeof fmt === "function" ? fmt(numeric) : numeric.toString())
+    : numeric.toFixed(2).replace(/\.00$/, "");
 }
 
-export function formatSignedHeroBonus(key, amount) {
+export function formatSignedHeroBonus(key, amount, fmt) {
   const numeric = Number(amount);
   if (!Number.isFinite(numeric)) {
     return String(amount ?? "-");
@@ -320,10 +322,10 @@ export function formatSignedHeroBonus(key, amount) {
 
   const prefix = numeric > 0 ? "+" : "";
   if (FLAT_HERO_STAT_KEYS.has(key)) {
-    return `${prefix}${formatHeroStatValue(numeric)}`;
+    return `${prefix}${formatHeroStatValue(numeric, fmt)}`;
   }
 
-  return `${prefix}${formatHeroStatValue(numeric)}%`;
+  return `${prefix}${formatHeroStatValue(numeric, fmt)}%`;
 }
 
 export function getHeroAttributeBonusTotals(levelsByAttributeId, scope) {
