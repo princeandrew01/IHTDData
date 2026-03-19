@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useTransition } from "react";
 
 function getHomeSections(colors) {
   return [
@@ -271,6 +271,8 @@ export function BattlepassExpView({ colors, fmt }) {
   const [startInput, setStartInput] = useState("1");
   const [endInput, setEndInput] = useState("150");
   const [range, setRange] = useState({ start: 1, end: 150 });
+  const [sortDir, setSortDir] = useState("asc");
+  const [isPending, startTransition] = useTransition();
 
   function applyRange() {
     const start = Math.max(1, parseInt(startInput) || 1);
@@ -289,7 +291,7 @@ export function BattlepassExpView({ colors, fmt }) {
     let cumulative = 0;
 
     for (let level = range.start; level <= range.end; level++) {
-      const required = battpassExpForLevel(level);
+      const required = battpassExpForLevel(level - 1);
       cumulative += required;
       nextRows.push({ level, required, cumulative });
     }
@@ -300,10 +302,30 @@ export function BattlepassExpView({ colors, fmt }) {
     };
   }, [range]);
 
+  const displayRows = sortDir === "asc" ? rows : [...rows].reverse();
+
   const inputStyle = {
     background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
     color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
     width: 90, textAlign: "center", outline: "none",
+  };
+
+  const thBase = {
+    padding: "10px 16px",
+    fontWeight: 600,
+    textAlign: "left",
+    borderBottom: `1px solid ${colors.border}`,
+    fontSize: 11,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+  };
+  const thMuted = { ...thBase, color: colors.muted };
+  const thSortable = {
+    ...thBase,
+    color: colors.accent,
+    cursor: isPending ? "wait" : "pointer",
+    userSelect: "none",
+    whiteSpace: "nowrap",
   };
 
   return (
@@ -341,13 +363,15 @@ export function BattlepassExpView({ colors, fmt }) {
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
           <thead>
             <tr style={{ background: colors.panel }}>
-              {["Level", "EXP Required", "Cumulative EXP"].map(header => (
-                <th key={header} style={{ padding: "10px 16px", color: colors.muted, fontWeight: 600, textAlign: "left", borderBottom: `1px solid ${colors.border}`, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" }}>{header}</th>
-              ))}
+              <th onClick={() => !isPending && startTransition(() => setSortDir(current => current === "asc" ? "desc" : "asc"))} style={thSortable}>
+                Level{isPending ? <span className="sort-spinner" /> : (sortDir === "asc" ? " ▲" : " ▼")}
+              </th>
+              <th style={thMuted}>EXP Required</th>
+              <th style={thMuted}>Cumulative EXP</th>
             </tr>
           </thead>
           <tbody>
-            {rows.map((row, index) => (
+            {displayRows.map((row, index) => (
               <tr key={row.level} style={{ background: index % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
                 <td style={{ padding: "8px 16px", color: colors.accent, fontWeight: 600 }}>{row.level}</td>
                 <td style={{ padding: "8px 16px", color: colors.text, fontFamily: "monospace" }}>{fmt(row.required)}</td>
