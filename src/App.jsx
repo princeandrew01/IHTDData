@@ -29,6 +29,7 @@ import enemyHpData              from "./data/enemy_hp.json";
 import battpassExpData          from "./data/battlepass_exp.json";
 import challengesData          from "./data/challenges.json";
 import playerIconsData         from "./data/player_icons.json";
+import wavePerksData           from "./data/wave_perks.json";
 import playerBgData            from "./data/player_backgrounds.json";
 import STAT_UNITS          from "./data/stat_units.json";
 import techTreeDisplayData  from "./data/tech_tree_display.json";
@@ -105,14 +106,10 @@ const NAV_GROUPS = [
     ],
   },
   {
-    label: "Battlepass",
+    label: "Misc",
     items: [
-      { key: "battpassExp", label: "Battlepass Exp", menuIcon: "_battlepass.png" },
-    ],
-  },
-  {
-    label: "Challenges",
-    items: [
+      { key: "battpassExp",       label: "Battlepass Exp",     menuIcon: "_battlepass.png" },
+      { key: "wavePerks",         label: "Wave Perks",         menuIcon: "flagSword.png" },
       { key: "challenges",        label: "Challenges",         menuIcon: "_starBlue.png" },
       { key: "playerIcons",       label: "Player Icons",       menuIcon: "icon_inforound.png" },
       { key: "playerBackgrounds", label: "Player Backgrounds", menuIcon: "_prestigeBg.png" },
@@ -2570,9 +2567,9 @@ function CombatStylesView() {
 }
 
 const MAP_PERK_UPGRADE_SOURCES = [
-  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15  },
-  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5   },
-  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15  },
+  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15, icon: "_rune_2.png"    },
+  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5,  icon: "_mastery_2.png" },
+  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15, icon: "token_red.png"  },
 ];
 
 function AllMapsView() {
@@ -2948,19 +2945,14 @@ const HOME_SECTIONS = [
     ],
   },
   {
-    group: "Battlepass",
-    color: "#f5c842",
-    items: [
-      { key: "battpassExp", label: "Battlepass Exp", icon: "_battlepass.png", desc: "EXP required per battlepass level" },
-    ],
-  },
-  {
-    group: "Challenges",
+    group: "Misc",
     color: "#4ac8ff",
     items: [
-      { key: "challenges",        label: "Challenges",         icon: "_starBlue.png",       desc: "Challenge rewards by difficulty" },
-      { key: "playerIcons",       label: "Player Icons",       icon: "icon_inforound.png",  desc: "Player icon costs and bonuses" },
-      { key: "playerBackgrounds", label: "Player Backgrounds", icon: "_prestigeBg.png",     desc: "Background unlock requirements and rewards" },
+      { key: "battpassExp",       label: "Battlepass Exp",     icon: "_battlepass.png",       desc: "EXP required per battlepass level" },
+      { key: "wavePerks",         label: "Wave Perks",         icon: "flagSword.png",   desc: "Wave perk bonuses by rarity" },
+      { key: "challenges",        label: "Challenges",         icon: "_starBlue.png",         desc: "Challenge rewards by difficulty" },
+      { key: "playerIcons",       label: "Player Icons",       icon: "icon_inforound.png",    desc: "Player icon costs and bonuses" },
+      { key: "playerBackgrounds", label: "Player Backgrounds", icon: "_prestigeBg.png",       desc: "Background unlock requirements and rewards" },
     ],
   },
   {
@@ -3003,12 +2995,57 @@ function EnemyHpView() {
   const [runesInput,       setRunesInput]       = useState(savedInputs.runes       ?? "0");
   const [tournSkipInput,   setTournSkipInput]   = useState(savedInputs.tournSkip   ?? "0");
   const [runesSkipInput,   setRunesSkipInput]   = useState(savedInputs.runesSkip   ?? "0");
+  const [playerIconChecked, setPlayerIconChecked] = useState(savedInputs.playerIcon === "true");
+  const [wpStacksInput,    setWpStacksInput]    = useState(savedInputs.wpStacks    ?? "0");
+  // WPE levels — shared localStorage key with Wave Perks page
+  const [wpeLevels, setWpeLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("wavePerkEffectLevels"));
+      if (saved && typeof saved === "object") {
+        const defaults = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+        return { ...defaults, ...saved };
+      }
+    } catch {}
+    return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+  });
+
+  function setWpeLevel(key, val) {
+    setWpeLevels(prev => {
+      const next = { ...prev, [key]: val };
+      localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  const [snowLevel, setSnowLevelState] = useState(() => {
+    try { return localStorage.getItem("wavePerkSnowLevel") ?? ""; } catch { return ""; }
+  });
+  function updateSnowLevel(val) {
+    setSnowLevelState(val);
+    localStorage.setItem("wavePerkSnowLevel", val);
+  }
+  const [mpLevels, setMpLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
+      if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
+    } catch {}
+    return { runes: "", mastery: "", ultimus: "" };
+  });
+  function setMpLevel(id, val) {
+    setMpLevels(prev => {
+      const next = { ...prev, [id]: val };
+      localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+      return next;
+    });
+  }
+
   const [params, setParams] = useState(() => {
     const w = Math.max(1, parseInt(savedInputs.wave) || 100);
     return { wave: w, mastery: parseInt(savedInputs.mastery) || 0, ultimus: parseInt(savedInputs.ultimus) || 0,
              research: parseInt(savedInputs.research) || 0, tech: parseInt(savedInputs.tech) || 0,
              runes: parseInt(savedInputs.runes) || 0, tournSkip: parseInt(savedInputs.tournSkip) || 0,
-             runesSkip: parseInt(savedInputs.runesSkip) || 0 };
+             runesSkip: parseInt(savedInputs.runesSkip) || 0,
+             playerIcon: savedInputs.playerIcon === "true", wpStacks: parseInt(savedInputs.wpStacks) || 0 };
   });
 
   function clamp(val, max) { return Math.min(Math.max(parseInt(val) || 0, 0), max); }
@@ -3022,21 +3059,26 @@ function EnemyHpView() {
     const runes     = clamp(runesInput,     enemy_hp.sources[2].maxLevel);
     const tournSkip = clamp(tournSkipInput, wave_skip.sources[0].maxLevel);
     const runesSkip = clamp(runesSkipInput, wave_skip.sources[1].maxLevel);
-    const next = { wave, mastery, ultimus, research, tech, runes, tournSkip, runesSkip };
+    const wpStacks  = clamp(wpStacksInput,  5);
+    const next = { wave, mastery, ultimus, research, tech, runes, tournSkip, runesSkip,
+                   playerIcon: playerIconChecked, wpStacks };
     setWaveInput(String(wave));
     setMasteryInput(String(mastery));   setUltimusInput(String(ultimus));
     setResearchInput(String(research)); setTechInput(String(tech)); setRunesInput(String(runes));
     setTournSkipInput(String(tournSkip)); setRunesSkipInput(String(runesSkip));
+    setWpStacksInput(String(wpStacks));
     setParams(next);
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ wave: String(wave), mastery: String(mastery), ultimus: String(ultimus),
-      research: String(research), tech: String(tech), runes: String(runes), tournSkip: String(tournSkip), runesSkip: String(runesSkip) }));
+      research: String(research), tech: String(tech), runes: String(runes), tournSkip: String(tournSkip), runesSkip: String(runesSkip),
+      playerIcon: String(playerIconChecked), wpStacks: String(wpStacks) }));
   }
 
   function clear() {
     setWaveInput("100"); setMasteryInput("0"); setUltimusInput("0");
     setResearchInput("0"); setTechInput("0"); setRunesInput("0");
     setTournSkipInput("0"); setRunesSkipInput("0");
-    setParams({ wave: 100, mastery: 0, ultimus: 0, research: 0, tech: 0, runes: 0, tournSkip: 0, runesSkip: 0 });
+    setPlayerIconChecked(false); setWpStacksInput("0");
+    setParams({ wave: 100, mastery: 0, ultimus: 0, research: 0, tech: 0, runes: 0, tournSkip: 0, runesSkip: 0, playerIcon: false, wpStacks: 0 });
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -3085,8 +3127,24 @@ function EnemyHpView() {
                      (1 - params.tech     * enemy_hp.sources[1].amtPerLevel) *
                      (1 - params.runes    * enemy_hp.sources[2].amtPerLevel);
 
-    const scalingPct  = (1 - num12)   * 100;
-    const ehpPct      = (1 - ehpMult) * 100;
+    const mapPerkMultCalc = MAP_PERK_UPGRADE_SOURCES.reduce((acc, upg) => {
+      const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+      return acc * (1 + upg.statAmt * lv / 100);
+    }, 1);
+    const snowLvCalc = Math.min(Math.max(0, parseInt(snowLevel) || 0), SNOW_FORT_WPE.maxLevel);
+    const snowBonusCalc = snowLvCalc > 0 ? (SNOW_FORT_WPE.baseAmt + SNOW_FORT_WPE.statAmt * snowLvCalc) / 100 * mapPerkMultCalc : 0;
+    const wpeMult = WAVE_PERK_EFFECT_SOURCES.reduce((acc, s) => {
+      const lv = Math.min(Math.max(0, parseInt(wpeLevels[s.key]) || 0), s.maxLevel);
+      return acc * (1 + lv * s.statAmt / 100);
+    }, 1) * (1 + snowBonusCalc);
+    const wavePerkEhpBonus = params.wpStacks * (-0.05) * wpeMult;
+    const playerIconMult   = params.playerIcon ? 0.9 : 1.0;
+    const finalEhpMult     = ehpMult * (1 + wavePerkEhpBonus) * playerIconMult;
+
+    const scalingPct     = (1 - num12)   * 100;
+    const ehpPct         = (1 - ehpMult) * 100;
+    const wavePerkEhpPct = wavePerkEhpBonus * 100;
+    const playerIconPct  = (1 - playerIconMult) * 100;
     const skipChance  = params.tournSkip * wave_skip.sources[0].amtPerLevel +
                         params.runesSkip * wave_skip.sources[1].amtPerLevel;
     const effectiveWave = Math.max(1, Math.floor(params.wave * (1 - skipChance / 100)));
@@ -3094,7 +3152,7 @@ function EnemyHpView() {
     const hp     = simulate(params.wave,  num12);
     const hpSkip = simulate(effectiveWave, num12);
 
-    const logEhpMult = Math.log10(ehpMult);
+    const logFinalEhpMult = Math.log10(finalEhpMult);
 
     function buildTypes(rawHp, wave) {
       const { mobCount, hasBoss } = mobsForWave(wave);
@@ -3105,12 +3163,12 @@ function EnemyHpView() {
         let perHp, totalHp;
         if (typeof rawHp === "bigint") {
           const PREC = 1_000_000_000_000n;
-          const multBig = BigInt(Math.round(t.mult * ehpMult * 1e12));
+          const multBig = BigInt(Math.round(t.mult * finalEhpMult * 1e12));
           perHp   = (rawHp * multBig + PREC / 2n) / PREC;
           totalHp = perHp * BigInt(t.count);
         } else {
           // rawHp is {logValue}
-          const logPerHp = rawHp.logValue + Math.log10(t.mult) + logEhpMult;
+          const logPerHp = rawHp.logValue + Math.log10(t.mult) + logFinalEhpMult;
           perHp   = { logValue: logPerHp };
           totalHp = { logValue: t.count > 0 ? logPerHp + Math.log10(t.count) : -Infinity };
         }
@@ -3125,10 +3183,10 @@ function EnemyHpView() {
       baseHp: hp,
       types:     buildTypes(hp,     params.wave),
       typesSkip: buildTypes(hpSkip, effectiveWave),
-      scalingPct, ehpPct, skipChance, effectiveWave,
-      mobCount, hasBoss, mobCountSkip, hasBossSkip,
+      scalingPct, ehpPct, wavePerkEhpPct, playerIconPct, skipChance, effectiveWave,
+      mobCount, hasBoss, mobCountSkip, hasBossSkip, wpeMult, mapPerkMult: mapPerkMultCalc,
     };
-  }, [params]);
+  }, [params, wpeLevels, snowLevel, mpLevels]);
 
   const smallInput = {
     background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
@@ -3136,34 +3194,6 @@ function EnemyHpView() {
     width: 68, textAlign: "center", outline: "none",
   };
   const typeColors = { normal: "#a3e8b0", boss: "#f87171" };
-
-  const reductionCards = [
-    {
-      key: "ehp", label: "Enemy HP", badge: "Post-Sim", badgeColor: colors.accent,
-      footer: { label: "Total reduction:", value: `−${result.ehpPct.toFixed(2)}%`, color: result.ehpPct > 0 ? colors.positive : colors.muted },
-      sources: [
-        { label: "Research", icon: "_energy.png",    val: researchInput,  set: setResearchInput,  max: enemy_hp.sources[0].maxLevel, amtPer: enemy_hp.sources[0].amtPerLevel },
-        { label: "Tech",     icon: "_techPts_2.png", val: techInput,      set: setTechInput,      max: enemy_hp.sources[1].maxLevel, amtPer: enemy_hp.sources[1].amtPerLevel },
-        { label: "Runes",    icon: "_rune_2.png",    val: runesInput,     set: setRunesInput,     max: enemy_hp.sources[2].maxLevel, amtPer: enemy_hp.sources[2].amtPerLevel },
-      ],
-    },
-    {
-      key: "scaling", label: "Enemy Scaling", badge: "Per Wave", badgeColor: "#60a5fa",
-      footer: { label: "Total reduction:", value: `−${result.scalingPct.toFixed(2)}%`, color: result.scalingPct > 0 ? colors.positive : colors.muted },
-      sources: [
-        { label: "Mastery", icon: "_mastery_2.png", val: masteryInput, set: setMasteryInput, max: enemy_hp_scaling.sources[0].maxLevel, amtPer: enemy_hp_scaling.sources[0].amtPerLevel },
-        { label: "Ultimus", icon: "token_red.png",  val: ultimusInput, set: setUltimusInput, max: enemy_hp_scaling.sources[1].maxLevel, amtPer: enemy_hp_scaling.sources[1].amtPerLevel },
-      ],
-    },
-    {
-      key: "skip", label: "Enemy Skip Chance", badge: "Exploration", badgeColor: colors.gold,
-      footer: { label: "Skip chance:", value: `${result.skipChance.toFixed(2)}%`, color: result.skipChance > 0 ? colors.gold : colors.muted },
-      sources: [
-        { label: "Tournament", icon: "_tournPts.png", val: tournSkipInput, set: setTournSkipInput, max: wave_skip.sources[0].maxLevel, amtPer: wave_skip.sources[0].amtPerLevel, isChance: true },
-        { label: "Runes",      icon: "_rune_2.png",   val: runesSkipInput, set: setRunesSkipInput, max: wave_skip.sources[1].maxLevel, amtPer: wave_skip.sources[1].amtPerLevel, isChance: true },
-      ],
-    },
-  ];
 
   return (
     <div>
@@ -3176,38 +3206,232 @@ function EnemyHpView() {
         </div>
       </div>
 
-      {/* Reduction + skip cards */}
-      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(3, 1fr)", gap: 10, marginBottom: 16 }}>
-        {reductionCards.map(card => (
-          <div key={card.key} style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
-              <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>{card.label}</span>
-              <span style={{ fontSize: 10, fontWeight: 700, padding: "2px 8px", borderRadius: 10, background: card.badgeColor + "22", border: `1px solid ${card.badgeColor}55`, color: card.badgeColor }}>{card.badge}</span>
-            </div>
-            {card.sources.map(src => {
-              const over = (parseInt(src.val) || 0) > src.max;
-              return (
-                <div key={src.label} style={{ marginBottom: 7 }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                    {src.icon && <img src={getIconUrl(src.icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />}
-                    <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{src.label}</span>
-                    <input type="number" min={0} max={src.max} value={src.val} onChange={e => src.set(e.target.value)} onKeyDown={handleKeyDown}
-                      style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
-                    <span style={{ fontSize: 11, color: colors.muted }}>/ {src.max}</span>
-                    <span style={{ fontSize: 11, color: src.isChance ? colors.gold : colors.positive, marginLeft: "auto" }}>
-                      {src.isChance ? "" : "−"}{((parseInt(src.val) || 0) * src.amtPer * 100).toFixed(1)}%
-                    </span>
-                  </div>
-                  {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {src.max}</div>}
+      {/* Two input tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", gap: 10, marginBottom: 16 }}>
+
+        {/* Left tile: Enemy HP + Scaling + Skip */}
+        <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+
+          {/* — Enemy HP — */}
+          <div style={{ marginBottom: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: colors.text }}>Enemy HP</span>
+          </div>
+          {[
+            { key: "res", icon: "_energy.png",    label: "Research", val: researchInput, set: setResearchInput, max: enemy_hp.sources[0].maxLevel, amtPer: enemy_hp.sources[0].amtPerLevel },
+            { key: "tch", icon: "_techPts_2.png", label: "Tech",     val: techInput,     set: setTechInput,     max: enemy_hp.sources[1].maxLevel, amtPer: enemy_hp.sources[1].amtPerLevel },
+            { key: "run", icon: "_rune_2.png",    label: "Runes",    val: runesInput,    set: setRunesInput,    max: enemy_hp.sources[2].maxLevel, amtPer: enemy_hp.sources[2].amtPerLevel },
+          ].map(({ key, icon, label, val, set, max, amtPer }) => {
+            const over = (parseInt(val) || 0) > max;
+            const pct = (parseInt(val) || 0) * amtPer * 100;
+            return (
+              <div key={key} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl(icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{label}</span>
+                  <input type="number" min={0} max={max} value={val} onChange={e => set(e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {max}</span>
+                  <span style={{ fontSize: 11, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>
+                    {pct > 0 ? `−${pct.toFixed(1)}%` : "0.0%"}
+                  </span>
                 </div>
-              );
-            })}
-            <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
-              <span style={{ fontSize: 13, color: colors.muted }}>{card.footer.label} </span>
-              <span style={{ fontSize: 14, fontWeight: 700, color: card.footer.color }}>{card.footer.value}</span>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {max}</div>}
+              </div>
+            );
+          })}
+          {/* Player Icon checkbox */}
+          <div style={{ marginBottom: 7 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <img src={getIconUrl("gems2.png")} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+              <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>Player Icon</span>
+              <input type="checkbox" checked={playerIconChecked} onChange={e => setPlayerIconChecked(e.target.checked)}
+                style={{ width: 16, height: 16, cursor: "pointer" }} />
+              <span style={{ fontSize: 11, color: playerIconChecked ? colors.positive : colors.muted, marginLeft: "auto" }}>
+                {playerIconChecked ? "−10.0%" : "0.0%"}
+              </span>
             </div>
           </div>
-        ))}
+          {/* Wave Perk Stacks */}
+          {(() => {
+            const over = (parseInt(wpStacksInput) || 0) > 5;
+            return (
+              <div style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl("_wavePerkWaves2.png")} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>Wave Perk Stacks</span>
+                  <input type="number" min={0} max={5} value={wpStacksInput} onChange={e => setWpStacksInput(e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ 5</span>
+                  {(() => {
+                    const stacks = Math.min(parseInt(wpStacksInput) || 0, 5);
+                    const pct = stacks * 5 * result.wpeMult;
+                    return (
+                      <span style={{ fontSize: 11, color: stacks > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>
+                        {stacks > 0 ? `−${pct.toFixed(1)}%` : "0.0%"}
+                      </span>
+                    );
+                  })()}
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is 5</div>}
+              </div>
+            );
+          })()}
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: colors.muted }}>Total reduction: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: result.ehpPct > 0 ? colors.positive : colors.muted }}>
+              {result.ehpPct > 0 ? `−${result.ehpPct.toFixed(2)}%` : "0.00%"}
+            </span>
+          </div>
+
+          {/* — Enemy Scaling — */}
+          <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 10, marginBottom: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: colors.text }}>Enemy Scaling</span>
+          </div>
+          {[
+            { key: "mas", icon: "_mastery_2.png", label: "Mastery", val: masteryInput, set: setMasteryInput, max: enemy_hp_scaling.sources[0].maxLevel, amtPer: enemy_hp_scaling.sources[0].amtPerLevel },
+            { key: "ult", icon: "token_red.png",  label: "Ultimus", val: ultimusInput, set: setUltimusInput, max: enemy_hp_scaling.sources[1].maxLevel, amtPer: enemy_hp_scaling.sources[1].amtPerLevel },
+          ].map(({ key, icon, label, val, set, max, amtPer }) => {
+            const over = (parseInt(val) || 0) > max;
+            const pct = (parseInt(val) || 0) * amtPer * 100;
+            return (
+              <div key={key} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl(icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{label}</span>
+                  <input type="number" min={0} max={max} value={val} onChange={e => set(e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {max}</span>
+                  <span style={{ fontSize: 11, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>
+                    {pct > 0 ? `−${pct.toFixed(1)}%` : "0.0%"}
+                  </span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {max}</div>}
+              </div>
+            );
+          })}
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: colors.muted }}>Total reduction: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: result.scalingPct > 0 ? colors.positive : colors.muted }}>
+              {result.scalingPct > 0 ? `−${result.scalingPct.toFixed(2)}%` : "0.00%"}
+            </span>
+          </div>
+
+          {/* — Enemy Skip Chance — */}
+          <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 10, marginBottom: 8 }}>
+            <span style={{ fontWeight: 700, fontSize: 13, color: colors.text }}>Enemy Skip Chance</span>
+          </div>
+          {[
+            { key: "ts", icon: "_tournPts.png", label: "Tournament", val: tournSkipInput, set: setTournSkipInput, max: wave_skip.sources[0].maxLevel, amtPer: wave_skip.sources[0].amtPerLevel },
+            { key: "rs", icon: "_rune_2.png",   label: "Runes",      val: runesSkipInput, set: setRunesSkipInput, max: wave_skip.sources[1].maxLevel, amtPer: wave_skip.sources[1].amtPerLevel },
+          ].map(({ key, icon, label, val, set, max, amtPer }) => {
+            const over = (parseInt(val) || 0) > max;
+            const pct = (parseInt(val) || 0) * amtPer * 100;
+            return (
+              <div key={key} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl(icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{label}</span>
+                  <input type="number" min={0} max={max} value={val} onChange={e => set(e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {max}</span>
+                  <span style={{ fontSize: 11, color: pct > 0 ? colors.gold : colors.muted, marginLeft: "auto" }}>{pct.toFixed(1)}%</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {max}</div>}
+              </div>
+            );
+          })}
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+            <span style={{ fontSize: 12, color: colors.muted }}>Skip chance: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: result.skipChance > 0 ? colors.gold : colors.muted }}>
+              {result.skipChance.toFixed(2)}%
+            </span>
+          </div>
+        </div>
+
+        {/* Right tile: Wave Perk Effect Upgrades + Map Perk Upgrades */}
+        <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+
+          {/* — Wave Perk Effect Upgrades — */}
+          <div style={{ marginBottom: 8, display: "flex", alignItems: "center", gap: 6 }}>
+            <img src={getIconUrl("flagSword.png")} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: colors.text }}>Wave Perk Effect Upgrades</span>
+            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+              <button onClick={() => { const next = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, String(s.maxLevel)])); setWpeLevels(next); localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next)); updateSnowLevel(String(SNOW_FORT_WPE.maxLevel)); }} style={{ background: colors.accent + "22", border: `1px solid ${colors.accent}44`, color: colors.accent, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Max</button>
+              <button onClick={() => { const next = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""])); setWpeLevels(next); localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next)); updateSnowLevel(""); }} style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Clear</button>
+            </div>
+          </div>
+          {WAVE_PERK_EFFECT_SOURCES.map(s => {
+            const lv = parseInt(wpeLevels[s.key]) || 0;
+            const over = lv > s.maxLevel;
+            return (
+              <div key={s.key} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl(s.icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{s.label}</span>
+                  <input type="number" min={0} max={s.maxLevel} value={wpeLevels[s.key] ?? ""} onChange={e => setWpeLevel(s.key, e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {s.maxLevel}</span>
+                  <span style={{ fontSize: 11, color: colors.positive, marginLeft: "auto" }}>×{(1 + Math.min(lv, s.maxLevel) * s.statAmt / 100).toFixed(2)}</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {s.maxLevel}</div>}
+              </div>
+            );
+          })}
+          {/* Snow Fort WPE row */}
+          {(() => {
+            const over = snowLevel !== "" && parseInt(snowLevel) > SNOW_FORT_WPE.maxLevel;
+            const snLv = Math.min(Math.max(0, parseInt(snowLevel) || 0), SNOW_FORT_WPE.maxLevel);
+            const snRaw = snLv > 0 ? (SNOW_FORT_WPE.baseAmt + SNOW_FORT_WPE.statAmt * snLv) / 100 * result.mapPerkMult : 0;
+            return (
+              <div style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl("icon_snow.png")} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>Snow Fort</span>
+                  <input type="number" min={0} max={SNOW_FORT_WPE.maxLevel} value={snowLevel} onChange={e => updateSnowLevel(e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {SNOW_FORT_WPE.maxLevel}</span>
+                  <span style={{ fontSize: 11, color: colors.positive, marginLeft: "auto" }}>×{(1 + snRaw).toFixed(2)}</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {SNOW_FORT_WPE.maxLevel}</div>}
+              </div>
+            );
+          })()}
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6, marginBottom: 10 }}>
+            <span style={{ fontSize: 12, color: colors.muted }}>WPE Multiplier: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: result.wpeMult > 1.001 ? colors.positive : colors.muted }}>×{result.wpeMult.toFixed(2)}</span>
+          </div>
+
+          {/* — Map Perk Upgrades — */}
+          <div style={{ borderTop: `1px solid ${colors.border}`, paddingTop: 10, marginBottom: 8, display: "flex", alignItems: "center", gap: 8 }}>
+            <img src={getIconUrl("Icon_Map_0.png")} alt="" style={{ width: 15, height: 15, objectFit: "contain" }} />
+            <span style={{ fontWeight: 700, fontSize: 13, color: colors.text }}>Map Perk Upgrades</span>
+            <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+              <button onClick={() => { const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, String(u.maxLevel)])); setMpLevels(next); localStorage.setItem("mapPerkUpgrades", JSON.stringify(next)); }} style={{ background: colors.accent + "22", border: `1px solid ${colors.accent}44`, color: colors.accent, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Max</button>
+              <button onClick={() => { const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, ""])); setMpLevels(next); localStorage.setItem("mapPerkUpgrades", JSON.stringify(next)); }} style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Clear</button>
+            </div>
+          </div>
+          {MAP_PERK_UPGRADE_SOURCES.map(upg => {
+            const over = mpLevels[upg.id] !== "" && parseInt(mpLevels[upg.id]) > upg.maxLevel;
+            const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+            return (
+              <div key={upg.id} style={{ marginBottom: 7 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <img src={getIconUrl(upg.icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, color: colors.muted, minWidth: 80 }}>{upg.label}</span>
+                  <input type="number" min={0} max={upg.maxLevel} value={mpLevels[upg.id]} onChange={e => setMpLevel(upg.id, e.target.value)} onKeyDown={handleKeyDown}
+                    style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }} />
+                  <span style={{ fontSize: 11, color: colors.muted }}>/ {upg.maxLevel}</span>
+                  <span style={{ fontSize: 11, color: lv > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>+{upg.statAmt * lv}%</span>
+                </div>
+                {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {upg.maxLevel}</div>}
+              </div>
+            );
+          })}
+          <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+            <span style={{ fontSize: 12, color: colors.muted }}>Map perk multiplier: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: result.mapPerkMult > 1.0001 ? colors.positive : colors.muted }}>{result.mapPerkMult.toFixed(4)}×</span>
+          </div>
+        </div>
       </div>
 
       {/* Apply + Clear */}
@@ -3716,6 +3940,358 @@ function PlayerBackgroundsView() {
           </div>
         </div>
       ))}
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// WAVE PERK MODAL
+// ─────────────────────────────────────────────
+function WavePerkModal({ item, multiplier, onClose }) {
+  const thStyle = {
+    padding: "8px 16px", color: colors.muted, fontWeight: 700, fontSize: 12,
+    textAlign: "left", borderBottom: `1px solid ${colors.border}`,
+    letterSpacing: "0.06em", textTransform: "uppercase",
+  };
+  const hasBoost = multiplier > 1.0001;
+  const effectiveAmt = item.statAmt * multiplier;
+
+  const rows = useMemo(() => {
+    const out = [];
+    for (let s = 1; s <= item.maxStacks; s++) {
+      out.push({ stacks: s, perStack: effectiveAmt, total: effectiveAmt * s });
+    }
+    return out;
+  }, [item, effectiveAmt]);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}>
+      <div className="modal-box" style={{ background: colors.bg, border: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
+
+        {/* Header */}
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: item.bgColor, border: `2px solid ${item.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={getIconUrl(item.icon)} alt="" style={{ width: 30, height: 30, objectFit: "contain" }} />
+            </div>
+            <div>
+              <div style={{ fontSize: 17, fontWeight: 800, color: colors.text }}>{item.name}</div>
+              <div style={{ fontSize: 13, color: colors.positive, marginTop: 2 }}>
+                {effectiveAmt.toFixed(2)} per stack
+                {hasBoost && <span style={{ color: colors.muted }}> (base {item.statAmt})</span>}
+              </div>
+            </div>
+          </div>
+          <button onClick={onClose} style={{ background: "none", border: "none", color: colors.muted, fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 4px" }}>✕</button>
+        </div>
+
+        {/* Summary */}
+        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", gap: 24, flexWrap: "wrap" }}>
+          <div>
+            <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Max Stacks</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: colors.text }}>{item.maxStacks}</div>
+          </div>
+          <div>
+            <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Max Total</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: colors.gold }}>{(effectiveAmt * item.maxStacks).toFixed(2)}</div>
+          </div>
+          {hasBoost && (
+            <div>
+              <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Effect Multiplier</div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: colors.accent }}>{multiplier.toFixed(4)}×</div>
+            </div>
+          )}
+        </div>
+
+        {/* Table */}
+        <div style={{ overflowY: "auto", flex: 1 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead style={{ position: "sticky", top: 0, background: colors.panel }}>
+              <tr>
+                <th style={thStyle}>Stacks</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Per Stack</th>
+                <th style={{ ...thStyle, textAlign: "right" }}>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r.stacks} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
+                  <td style={{ padding: "7px 16px", color: colors.accent, fontWeight: 600 }}>{r.stacks}</td>
+                  <td style={{ padding: "7px 16px", color: colors.text, textAlign: "right" }}>{r.perStack.toFixed(2)}</td>
+                  <td style={{ padding: "7px 16px", color: colors.gold, fontWeight: 600, textAlign: "right" }}>{r.total.toFixed(2)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+      </div>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────
+// WAVE PERKS VIEW
+// ─────────────────────────────────────────────
+const WAVE_PERK_EFFECT_SOURCES = [
+  { key: "runes",      label: "Runes",      statAmt: 2,  maxLevel: 10, icon: "_rune_2.png"    },
+  { key: "mastery",    label: "Mastery",    statAmt: 5,  maxLevel: 5,  icon: "_mastery_2.png" },
+  { key: "tickets",    label: "Tickets",    statAmt: 2,  maxLevel: 10, icon: "_ticket.png"    },
+  { key: "tournament", label: "Tournament", statAmt: 2,  maxLevel: 10, icon: "_tournPts.png"  },
+];
+
+// Snow Fort Wave Perk Effect perk: baseAmt=3, statAmt=1, maxLevel=5
+const SNOW_FORT_WPE = { baseAmt: 3, statAmt: 1, maxLevel: 5 };
+
+function WavePerksView() {
+  const isMobile = useIsMobile();
+  const [selectedPerk, setSelectedPerk] = useState(null);
+
+  const [levels, setLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("wavePerkEffectLevels"));
+      if (saved && typeof saved === "object") {
+        const defaults = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+        return { ...defaults, ...saved };
+      }
+    } catch {}
+    return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+  });
+
+  const [snowLevel, setSnowLevel] = useState(() => {
+    try { return localStorage.getItem("wavePerkSnowLevel") ?? ""; } catch { return ""; }
+  });
+  // Shared with AllMapsView via same localStorage key
+  const [mpLevels, setMpLevels] = useState(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
+      if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
+    } catch {}
+    return { runes: "", mastery: "", ultimus: "" };
+  });
+
+  function setLevel(key, val) {
+    setLevels(prev => {
+      const next = { ...prev, [key]: val };
+      localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function setMpLevel(id, val) {
+    setMpLevels(prev => {
+      const next = { ...prev, [id]: val };
+      localStorage.setItem("mapPerkUpgrades", JSON.stringify(next));
+      return next;
+    });
+  }
+
+  function updateSnowLevel(val) {
+    setSnowLevel(val);
+    localStorage.setItem("wavePerkSnowLevel", val);
+  }
+
+  function isOverMax(key) {
+    const src = WAVE_PERK_EFFECT_SOURCES.find(s => s.key === key);
+    const n = parseInt(levels[key]);
+    return !isNaN(n) && levels[key] !== "" && n > src.maxLevel;
+  }
+
+  function isMpOverMax(id) {
+    const src = MAP_PERK_UPGRADE_SOURCES.find(u => u.id === id);
+    const n = parseInt(mpLevels[id]);
+    return !isNaN(n) && mpLevels[id] !== "" && n > src.maxLevel;
+  }
+
+  function setAllMax() {
+    const next = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, String(s.maxLevel)]));
+    localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next));
+    setLevels(next);
+    updateSnowLevel(String(SNOW_FORT_WPE.maxLevel));
+  }
+  function clearAll() {
+    const next = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+    localStorage.setItem("wavePerkEffectLevels", JSON.stringify(next));
+    setLevels(next);
+    updateSnowLevel("");
+  }
+
+  const mapPerkMult = MAP_PERK_UPGRADE_SOURCES.reduce((acc, upg) => {
+    const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+    return acc * (1 + upg.statAmt * lv / 100);
+  }, 1);
+
+  const snowLv = Math.min(Math.max(0, parseInt(snowLevel) || 0), SNOW_FORT_WPE.maxLevel);
+  const snowRaw = snowLv > 0 ? (SNOW_FORT_WPE.baseAmt + SNOW_FORT_WPE.statAmt * snowLv) / 100 : 0;
+  const snowBonus = snowRaw * mapPerkMult;
+  const snowOverMax = snowLevel !== "" && parseInt(snowLevel) > SNOW_FORT_WPE.maxLevel;
+
+  const multiplier = WAVE_PERK_EFFECT_SOURCES.reduce((acc, s) => {
+    const lv = Math.min(Math.max(0, parseInt(levels[s.key]) || 0), s.maxLevel);
+    return acc * (1 + lv * s.statAmt / 100);
+  }, 1) * (1 + snowBonus);
+  const bonusPct = (multiplier - 1) * 100;
+  const hasBoost = multiplier > 1.0001;
+
+  const smallInput = {
+    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
+    color: colors.text, padding: "5px 8px", fontSize: 13, fontFamily: "inherit",
+    width: 68, textAlign: "center", outline: "none",
+  };
+
+  const bannerStyle = (rarity) => {
+    const rc = RARITY_COLORS[rarity] ?? RARITY_COLORS.Common;
+    return { background: `linear-gradient(180deg, ${rc.bg}cc 0%, ${rc.bg}88 100%)`, border: `1px solid ${rc.border}`, borderRadius: 8, padding: "8px 20px", marginBottom: 14, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" };
+  };
+  return (
+    <div>
+      <div style={{ marginBottom: 16, display: "flex", alignItems: "center", gap: 12 }}>
+        <img src={getIconUrl("flagSword.png")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Wave Perks</div>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 16, marginBottom: 20, alignItems: "flex-start" }}>
+        {/* Wave Perk Effect upgrades + Snow Fort perk */}
+        <div style={{ minWidth: isMobile ? "100%" : 320 }}>
+          <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+              <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>Wave Perk Effect</span>
+              <div style={{ display: "flex", gap: 6 }}>
+                <button onClick={setAllMax} style={{ background: colors.accent + "22", border: `1px solid ${colors.accent}44`, color: colors.accent, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Max</button>
+                <button onClick={clearAll} style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Clear</button>
+              </div>
+            </div>
+
+            {WAVE_PERK_EFFECT_SOURCES.map(s => {
+              const over = isOverMax(s.key);
+              const lv = Math.min(Math.max(0, parseInt(levels[s.key]) || 0), s.maxLevel);
+              const pct = s.statAmt * lv;
+              return (
+                <div key={s.key} style={{ marginBottom: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <img src={getIconUrl(s.icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: colors.muted, minWidth: 80 }}>{s.label}</span>
+                    <input type="number" min={0} max={s.maxLevel}
+                      value={levels[s.key]}
+                      onChange={e => setLevel(s.key, e.target.value)}
+                      style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }}
+                    />
+                    <span style={{ fontSize: 12, color: colors.muted }}>/ {s.maxLevel}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>+{pct}%</span>
+                  </div>
+                  {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {s.maxLevel}</div>}
+                </div>
+              );
+            })}
+
+            <div style={{ marginBottom: 7 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 13, color: colors.muted, minWidth: 80, display: "flex", alignItems: "center", gap: 4 }}>
+                  <img src={getIconUrl("icon_snow.png")} alt="" style={{ width: 13, height: 13, objectFit: "contain" }} />
+                  Snow Fort
+                </span>
+                <input type="number" min={0} max={SNOW_FORT_WPE.maxLevel}
+                  value={snowLevel}
+                  onChange={e => updateSnowLevel(e.target.value)}
+                  style={{ ...smallInput, border: `1px solid ${snowOverMax ? "#e05555" : colors.border}`, color: snowOverMax ? "#e05555" : colors.text }}
+                />
+                <span style={{ fontSize: 12, color: colors.muted }}>/ {SNOW_FORT_WPE.maxLevel}</span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: snowLv > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>
+                  {snowLv > 0 ? `+${(snowBonus * 100).toFixed(2)}%` : "—"}
+                </span>
+              </div>
+              {snowOverMax && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 88 }}>Max is {SNOW_FORT_WPE.maxLevel}</div>}
+              {mapPerkMult > 1.0001 && snowLv > 0 && (
+                <div style={{ fontSize: 11, color: colors.muted, marginTop: 2, paddingLeft: 88 }}>
+                  base +{(snowRaw * 100).toFixed(0)}% ×{mapPerkMult.toFixed(2)} map perk mult
+                </div>
+              )}
+            </div>
+
+            <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+              <span style={{ fontSize: 13, color: colors.muted }}>Total bonus: </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: hasBoost ? colors.positive : colors.muted }}>+{bonusPct.toFixed(2)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Map Perk Upgrades (affects Snow Fort perk value) */}
+        <div style={{ minWidth: isMobile ? "100%" : 280 }}>
+          <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px" }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <img src={getIconUrl("Icon_Map_0.png")} alt="" style={{ width: 20, height: 20, objectFit: "contain" }} />
+              <span style={{ fontWeight: 700, fontSize: 14, color: colors.text }}>Map Perk Upgrades</span>
+              <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
+                <button onClick={() => { const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, String(u.maxLevel)])); setMpLevels(next); localStorage.setItem("mapPerkUpgrades", JSON.stringify(next)); }} style={{ background: colors.accent + "22", border: `1px solid ${colors.accent}44`, color: colors.accent, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Max</button>
+                <button onClick={() => { const next = Object.fromEntries(MAP_PERK_UPGRADE_SOURCES.map(u => [u.id, ""])); setMpLevels(next); localStorage.setItem("mapPerkUpgrades", JSON.stringify(next)); }} style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Clear</button>
+              </div>
+            </div>
+
+            {MAP_PERK_UPGRADE_SOURCES.map(upg => {
+              const over = isMpOverMax(upg.id);
+              const lv = Math.min(Math.max(0, parseInt(mpLevels[upg.id]) || 0), upg.maxLevel);
+              const pct = upg.statAmt * lv;
+              return (
+                <div key={upg.id} style={{ marginBottom: 7 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                    <img src={getIconUrl(upg.icon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", flexShrink: 0 }} />
+                    <span style={{ fontSize: 13, color: colors.muted, minWidth: 80 }}>{upg.label}</span>
+                    <input type="number" min={0} max={upg.maxLevel}
+                      value={mpLevels[upg.id]}
+                      onChange={e => setMpLevel(upg.id, e.target.value)}
+                      style={{ ...smallInput, border: `1px solid ${over ? "#e05555" : colors.border}`, color: over ? "#e05555" : colors.text }}
+                    />
+                    <span style={{ fontSize: 12, color: colors.muted }}>/ {upg.maxLevel}</span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: pct > 0 ? colors.positive : colors.muted, marginLeft: "auto" }}>+{pct}%</span>
+                  </div>
+                  {over && <div style={{ fontSize: 11, color: "#e05555", marginTop: 3, paddingLeft: 26 }}>Max is {upg.maxLevel}</div>}
+                </div>
+              );
+            })}
+
+            <div style={{ borderTop: `1px solid ${colors.border}44`, marginTop: 6, paddingTop: 6 }}>
+              <span style={{ fontSize: 13, color: colors.muted }}>Map perk multiplier: </span>
+              <span style={{ fontSize: 14, fontWeight: 700, color: mapPerkMult > 1.0001 ? colors.positive : colors.muted }}>{mapPerkMult.toFixed(4)}×</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {wavePerksData.note && (
+        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20, padding: "8px 12px", background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 6 }}>
+          {wavePerksData.note}
+        </div>
+      )}
+      {Object.entries(wavePerksData.groups).map(([groupName, items]) => {
+        const rc = RARITY_COLORS[groupName] ?? RARITY_COLORS.Common;
+        return (
+          <div key={groupName} style={{ marginBottom: 32 }}>
+            <div style={bannerStyle(groupName)}>
+              <span style={{ fontSize: 14, fontWeight: 800, color: rc.text, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>{groupName}</span>
+            </div>
+            <div className="card-grid">
+              {items.map(item => (
+                <div key={item.id} onClick={() => setSelectedPerk(item)} style={{ background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 8, padding: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.2)", display: "flex", gap: 12, alignItems: "center", cursor: "pointer" }}>
+                  <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, background: item.bgColor, border: `2px solid ${item.borderColor}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                    <img src={getIconUrl(item.icon)} alt="" style={{ width: 36, height: 36, objectFit: "contain" }} />
+                  </div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ color: colors.text, fontWeight: 700, fontSize: 15, lineHeight: 1.2, marginBottom: 4 }}>{item.name}</div>
+                    <div style={{ fontSize: 13, color: colors.muted, marginBottom: 2 }}>
+                      Per stack <span style={{ color: item.statAmt < 0 ? colors.positive : colors.accent, fontWeight: 700 }}>{(item.statAmt * multiplier).toFixed(2)}</span>
+                      {hasBoost && <span style={{ fontSize: 11, color: colors.muted }}> (base {item.statAmt})</span>}
+                    </div>
+                    <div style={{ fontSize: 13, color: colors.muted }}>
+                      Max stacks <span style={{ color: colors.gold, fontWeight: 700 }}>{item.maxStacks}</span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })}
+      {selectedPerk && <WavePerkModal item={selectedPerk} multiplier={multiplier} onClose={() => setSelectedPerk(null)} />}
     </div>
   );
 }
@@ -4330,6 +4906,7 @@ export default function App() {
           {activeKey === "allMaps"    && <AllMapsView />}
           {activeKey === "mapPerks"   && <MapPerksView />}
           {activeKey === "battpassExp" && <BattlepassExpView />}
+          {activeKey === "wavePerks"         && <WavePerksView />}
           {activeKey === "challenges"        && <ChallengesView />}
           {activeKey === "playerIcons"       && <PlayerIconsView />}
           {activeKey === "playerBackgrounds" && <PlayerBackgroundsView />}
