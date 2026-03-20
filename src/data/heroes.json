@@ -1,4 +1,8 @@
 {
+  "levelCostFormula": {
+    "baseCost": 10,
+    "formulaNote": "Iterative: cost(1→2) = baseCost = 10. Each subsequent level: cost = round((prevCost + baseCost) * (1 + 0.065 * heroLevelCostFactor)). heroLevelCostFactor = (1 - ticketHeroLevelCost*0.005) * (1 - runeHeroLevelCost*0.005) * (1 - ultimusHeroLevelCostReduction*0.005) * (1 - masteryHeroLevelCost*0.005). Default heroLevelCostFactor = 1.0 (no upgrades), giving multiplier 1.065 per level. Cumulative 1→10: 715, 1→25: 5566, 1→100: 1,439,759 (at default factor)."
+  },
   "masteryExpFormula": {
     "formulaNote": "exp(L) = baseAmount * 24 * L * mult. Multipliers (cumulative): x1.1 at L>=6, x1.1 at L>=9 (x1.21 total), x1.2 at L>=11 (x1.452 total). maxLevel=10 per hero. After maxing, L is set to 11 and repeats indefinitely.",
     "breakpoints": [
@@ -510,7 +514,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 5,
+      "baseCost": 10
     },
     {
       "id": "apprentice",
@@ -770,8 +776,8 @@
           "hero1": "druid",
           "hero2": "hunter",
           "hero3": null,
-          "amount": 4,
-          "description": "+4% Skill Cooldown",
+          "amount": -4,
+          "description": "-4% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -1008,7 +1014,9 @@
       "type": "debuff",
       "typeSubtype": [
         "slow"
-      ]
+      ],
+      "unlockCost": 5,
+      "baseCost": 10
     },
     {
       "id": "scout",
@@ -1503,7 +1511,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 5,
+      "baseCost": 10
     },
     {
       "id": "viking",
@@ -2001,7 +2011,9 @@
       "type": "buff",
       "typeSubtype": [
         "attackSpeed"
-      ]
+      ],
+      "unlockCost": 10,
+      "baseCost": 10
     },
     {
       "id": "druid",
@@ -2499,7 +2511,9 @@
       "type": "buff",
       "typeSubtype": [
         "damage"
-      ]
+      ],
+      "unlockCost": 10,
+      "baseCost": 10
     },
     {
       "id": "hunter",
@@ -2994,7 +3008,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "gold"
+      "type": "gold",
+      "unlockCost": 10,
+      "baseCost": 10
     },
     {
       "id": "ninja",
@@ -3489,7 +3505,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 50,
+      "baseCost": 10
     },
     {
       "id": "sorcerer",
@@ -3987,7 +4005,9 @@
       "type": "debuff",
       "typeSubtype": [
         "stun"
-      ]
+      ],
+      "unlockCost": 50,
+      "baseCost": 10
     },
     {
       "id": "forester",
@@ -4482,7 +4502,9 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 50,
+      "baseCost": 10
     },
     {
       "id": "assassin",
@@ -4742,8 +4764,8 @@
           "hero1": "forester",
           "hero2": "archer",
           "hero3": null,
-          "amount": 10,
-          "description": "+10% Skill Cooldown",
+          "amount": -10,
+          "description": "-10% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -4977,7 +4999,9 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 100,
+      "baseCost": 10
     },
     {
       "id": "witch",
@@ -5475,7 +5499,9 @@
       "type": "buff",
       "typeSubtype": [
         "experience"
-      ]
+      ],
+      "unlockCost": 100,
+      "baseCost": 10
     },
     {
       "id": "archer",
@@ -5973,7 +5999,9 @@
       "type": "buff",
       "typeSubtype": [
         "experience"
-      ]
+      ],
+      "unlockCost": 100,
+      "baseCost": 10
     },
     {
       "id": "peacekeeper",
@@ -6468,7 +6496,9 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 500,
+      "baseCost": 10
     },
     {
       "id": "wizard",
@@ -6966,7 +6996,9 @@
       "type": "buff",
       "typeSubtype": [
         "attackSpeed"
-      ]
+      ],
+      "unlockCost": 500,
+      "baseCost": 10
     },
     {
       "id": "ranger",
@@ -7461,7 +7493,9 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 500,
+      "baseCost": 10
     },
     {
       "id": "samurai",
@@ -7956,7 +7990,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 1000,
+      "baseCost": 10
     },
     {
       "id": "elementalist",
@@ -8454,7 +8490,9 @@
       "type": "debuff",
       "typeSubtype": [
         "confuse"
-      ]
+      ],
+      "unlockCost": 1000,
+      "baseCost": 10
     },
     {
       "id": "arbalest",
@@ -8698,8 +8736,8 @@
           "hero1": "samurai",
           "hero2": null,
           "hero3": null,
-          "amount": 2,
-          "description": "+2% Skill Cooldown",
+          "amount": -2,
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -8949,7 +8987,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "energy"
+      "type": "energy",
+      "unlockCost": 1000,
+      "baseCost": 10
     },
     {
       "id": "paladin",
@@ -9444,7 +9484,9 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 5000,
+      "baseCost": 10
     },
     {
       "id": "battlemage",
@@ -9768,8 +9810,8 @@
           "hero1": "ballista",
           "hero2": "warden",
           "hero3": null,
-          "amount": 30,
-          "description": "+30% Skill Cooldown",
+          "amount": -30,
+          "description": "-30% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -9942,7 +9984,9 @@
       "type": "buff",
       "typeSubtype": [
         "critChance"
-      ]
+      ],
+      "unlockCost": 5000,
+      "baseCost": 10
     },
     {
       "id": "sniper",
@@ -10437,7 +10481,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 5000,
+      "baseCost": 10
     },
     {
       "id": "gladiator",
@@ -10935,7 +10981,9 @@
       "type": "buff",
       "typeSubtype": [
         "damage"
-      ]
+      ],
+      "unlockCost": 10000,
+      "baseCost": 10
     },
     {
       "id": "spelldancer",
@@ -11433,7 +11481,9 @@
       "type": "buff",
       "typeSubtype": [
         "critDamage"
-      ]
+      ],
+      "unlockCost": 10000,
+      "baseCost": 10
     },
     {
       "id": "rogue",
@@ -11928,7 +11978,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "gold"
+      "type": "gold",
+      "unlockCost": 10000,
+      "baseCost": 10
     },
     {
       "id": "berserker",
@@ -12426,7 +12478,9 @@
       "type": "buff",
       "typeSubtype": [
         "multiTarget"
-      ]
+      ],
+      "unlockCost": 40000,
+      "baseCost": 10
     },
     {
       "id": "skymage",
@@ -12924,7 +12978,9 @@
       "type": "debuff",
       "typeSubtype": [
         "teleport"
-      ]
+      ],
+      "unlockCost": 40000,
+      "baseCost": 10
     },
     {
       "id": "ballista",
@@ -13184,8 +13240,8 @@
           "hero1": "berserker",
           "hero2": "chieftan",
           "hero3": null,
-          "amount": 4,
-          "description": "+4% Skill Cooldown",
+          "amount": -4,
+          "description": "-4% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13422,7 +13478,9 @@
       "type": "buff",
       "typeSubtype": [
         "experience"
-      ]
+      ],
+      "unlockCost": 40000,
+      "baseCost": 10
     },
     {
       "id": "chieftan",
@@ -13666,8 +13724,8 @@
           "hero1": "warlock",
           "hero2": null,
           "hero3": null,
-          "amount": 2,
-          "description": "+2% Skill Cooldown",
+          "amount": -2,
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13906,8 +13964,8 @@
           "hero1": "druid",
           "hero2": "elementalist",
           "hero3": "ranger",
-          "amount": 20,
-          "description": "+20% Skill Cooldown",
+          "amount": -20,
+          "description": "-20% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13917,7 +13975,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 80000,
+      "baseCost": 10
     },
     {
       "id": "warlock",
@@ -14415,7 +14475,9 @@
       "type": "buff",
       "typeSubtype": [
         "skillCooldown"
-      ]
+      ],
+      "unlockCost": 80000,
+      "baseCost": 10
     },
     {
       "id": "crusader",
@@ -14659,8 +14721,8 @@
           "hero1": "ballista",
           "hero2": null,
           "hero3": null,
-          "amount": 2,
-          "description": "+2% Skill Cooldown",
+          "amount": -2,
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -14910,7 +14972,9 @@
         "baseAmount": 550000,
         "maxLevel": 10
       },
-      "type": "gold"
+      "type": "gold",
+      "unlockCost": 80000,
+      "baseCost": 10
     },
     {
       "id": "champion",
@@ -15202,8 +15266,8 @@
           "hero1": "praetorian",
           "hero2": "rogue",
           "hero3": null,
-          "amount": 20,
-          "description": "+20% Skill Cooldown",
+          "amount": -20,
+          "description": "-20% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -15405,7 +15469,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "damage"
+      "type": "damage",
+      "unlockCost": 250000,
+      "baseCost": 10
     },
     {
       "id": "templar",
@@ -15903,7 +15969,9 @@
       "type": "buff",
       "typeSubtype": [
         "splashDamage"
-      ]
+      ],
+      "unlockCost": 250000,
+      "baseCost": 10
     },
     {
       "id": "captain",
@@ -16398,7 +16466,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "energy"
+      "type": "energy",
+      "unlockCost": 250000,
+      "baseCost": 10
     },
     {
       "id": "warlord",
@@ -16898,7 +16968,9 @@
         "damage",
         "attackSpeed",
         "splashDamage"
-      ]
+      ],
+      "unlockCost": 500000,
+      "baseCost": 10
     },
     {
       "id": "necromancer",
@@ -17398,7 +17470,9 @@
         "damage",
         "attackSpeed",
         "skillCooldown"
-      ]
+      ],
+      "unlockCost": 500000,
+      "baseCost": 10
     },
     {
       "id": "warden",
@@ -17898,7 +17972,9 @@
         "attackSpeed",
         "damage",
         "range"
-      ]
+      ],
+      "unlockCost": 500000,
+      "baseCost": 10
     },
     {
       "id": "praetorian",
@@ -18397,7 +18473,9 @@
       "typeSubtype": [
         "superCritChance",
         "superCritDamage"
-      ]
+      ],
+      "unlockCost": 2500000,
+      "baseCost": 10
     },
     {
       "id": "sovereign",
@@ -18892,7 +18970,9 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
-      "type": "gold"
+      "type": "gold",
+      "unlockCost": 2500000,
+      "baseCost": 10
     },
     {
       "id": "deadeye",
@@ -19392,7 +19472,9 @@
         "damage",
         "attackSpeed",
         "ultraCritChance"
-      ]
+      ],
+      "unlockCost": 2500000,
+      "baseCost": 10
     },
     {
       "id": "titan",
@@ -19891,7 +19973,9 @@
       "typeSubtype": [
         "superCritChance",
         "superCritDamage"
-      ]
+      ],
+      "unlockCost": 5000000,
+      "baseCost": 10
     },
     {
       "id": "dicemaster",
@@ -20391,7 +20475,9 @@
         "critChance",
         "superCritChance",
         "ultraCritChance"
-      ]
+      ],
+      "unlockCost": 5000000,
+      "baseCost": 10
     },
     {
       "id": "veteran",
@@ -20889,7 +20975,9 @@
       "type": "buff",
       "typeSubtype": [
         "experience"
-      ]
+      ],
+      "unlockCost": 5000000,
+      "baseCost": 10
     }
   ]
 }
