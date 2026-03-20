@@ -1,5 +1,8 @@
 import { mapById } from "./gameData";
 import {
+  LOADOUT_BUILDER_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY,
   LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY,
   LOADOUT_BUILDER_RANKS_STORAGE_KEY,
   LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY,
@@ -88,7 +91,10 @@ export function getLoadoutScopeSelectionKey(scopeId, scopeContext) {
 
 export function buildActiveLoadoutScope(activeKey, storage = localStorage) {
   switch (activeKey) {
-    case "loadoutBuilder": {
+    case "loadoutBuilder":
+    case "loadoutBuilderPlacement":
+    case "loadoutBuilderPerks":
+    case "loadoutBuilderSpell": {
       return {
         scopeId: LOADOUT_RECORD_SCOPE_MAP,
         scopeContext: normalizeLoadoutScopeContext(LOADOUT_RECORD_SCOPE_MAP, {
@@ -157,6 +163,15 @@ export function createComparableLoadoutScopePayload(payload, scopeId, scopeConte
         placementRanksByMap: {
           [mapId]: cloneValue(comparablePayload.sections.loadoutBuilder.placementRanksByMap?.[mapId] ?? {}),
         },
+        placementLevelsByMap: {
+          [mapId]: cloneValue(comparablePayload.sections.loadoutBuilder.placementLevelsByMap?.[mapId] ?? {}),
+        },
+        placementMasteryLevelsByMap: {
+          [mapId]: cloneValue(comparablePayload.sections.loadoutBuilder.placementMasteryLevelsByMap?.[mapId] ?? {}),
+        },
+        expandedMapsById: {
+          [mapId]: Boolean(comparablePayload.sections.loadoutBuilder.expandedMapsById?.[mapId]),
+        },
       },
       mapLoadout: {
         perksByMap: {
@@ -217,6 +232,18 @@ export function mergePayloadForLoadoutScope(basePayload, incomingPayload, scopeI
   nextPayload.sections.loadoutBuilder.placementRanksByMap = {
     ...nextPayload.sections.loadoutBuilder.placementRanksByMap,
     [mapId]: cloneValue(incomingPayload.sections?.loadoutBuilder?.placementRanksByMap?.[mapId] ?? {}),
+  };
+  nextPayload.sections.loadoutBuilder.placementLevelsByMap = {
+    ...nextPayload.sections.loadoutBuilder.placementLevelsByMap,
+    [mapId]: cloneValue(incomingPayload.sections?.loadoutBuilder?.placementLevelsByMap?.[mapId] ?? {}),
+  };
+  nextPayload.sections.loadoutBuilder.placementMasteryLevelsByMap = {
+    ...nextPayload.sections.loadoutBuilder.placementMasteryLevelsByMap,
+    [mapId]: cloneValue(incomingPayload.sections?.loadoutBuilder?.placementMasteryLevelsByMap?.[mapId] ?? {}),
+  };
+  nextPayload.sections.loadoutBuilder.expandedMapsById = {
+    ...nextPayload.sections.loadoutBuilder.expandedMapsById,
+    [mapId]: Boolean(incomingPayload.sections?.loadoutBuilder?.expandedMapsById?.[mapId]),
   };
 
   nextPayload.sections.mapLoadout.perksByMap = {
@@ -284,6 +311,9 @@ export function getLegacySelectedMapIdFromPayload(payload) {
 }
 
 export {
+  LOADOUT_BUILDER_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY,
   LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY,
   LOADOUT_BUILDER_RANKS_STORAGE_KEY,
   LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY,

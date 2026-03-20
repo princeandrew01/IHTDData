@@ -4,6 +4,7 @@ import {
   exportSavedLoadoutsBundle,
   getLoadoutExportScope,
   importLoadoutEntries,
+  LOADOUT_EXPORT_SCOPES,
   parseImportedLoadoutFile,
 } from "../../lib/loadoutSavedRepository";
 
@@ -111,6 +112,7 @@ export function SavesPage({
   onImportComplete,
 }) {
   const importInputRef = useRef(null);
+  const [selectedScopeId, setSelectedScopeId] = useState(() => LOADOUT_EXPORT_SCOPES[0]?.id ?? "full");
   const [selectedSaveIds, setSelectedSaveIds] = useState(() => []);
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [message, setMessage] = useState(null);
@@ -125,8 +127,10 @@ export function SavesPage({
   });
 
   useEffect(() => {
-    setSelectedSaveIds((current) => current.filter((saveId) => saves.some((save) => save.id === saveId)));
-  }, [saves]);
+    if (!LOADOUT_EXPORT_SCOPES.some((scope) => scope.id === selectedScopeId)) {
+      setSelectedScopeId(LOADOUT_EXPORT_SCOPES[0]?.id ?? "full");
+    }
+  }, [selectedScopeId]);
 
   useEffect(() => {
     if (!message) {
@@ -141,6 +145,18 @@ export function SavesPage({
     () => new Set(Object.values(currentSavedLoadoutSelections).filter(Boolean)),
     [currentSavedLoadoutSelections]
   );
+  const visibleScope = useMemo(
+    () => LOADOUT_EXPORT_SCOPES.find((scope) => scope.id === selectedScopeId) ?? LOADOUT_EXPORT_SCOPES[0],
+    [selectedScopeId]
+  );
+  const visibleSaves = useMemo(
+    () => saves.filter((save) => save.scopeId === selectedScopeId),
+    [saves, selectedScopeId]
+  );
+
+  useEffect(() => {
+    setSelectedSaveIds((current) => current.filter((saveId) => visibleSaves.some((save) => save.id === saveId)));
+  }, [visibleSaves]);
 
   function toggleSaveSelection(saveId) {
     setSelectedSaveIds((current) => (
@@ -374,9 +390,44 @@ export function SavesPage({
           </div>
         </div>
 
+        <div style={{ display: "grid", gap: 12 }}>
+          <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {LOADOUT_EXPORT_SCOPES.map((scope) => {
+              const isActive = scope.id === selectedScopeId;
+              const scopeCount = saves.filter((save) => save.scopeId === scope.id).length;
+              return (
+                <button
+                  key={scope.id}
+                  type="button"
+                  onClick={() => setSelectedScopeId(scope.id)}
+                  style={{
+                    background: isActive ? colors.accent : colors.header,
+                    color: isActive ? "#08111d" : colors.text,
+                    border: `1px solid ${isActive ? colors.accent : colors.border}`,
+                    borderRadius: 999,
+                    padding: "9px 14px",
+                    cursor: "pointer",
+                    fontFamily: "inherit",
+                    fontWeight: 800,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 8,
+                  }}
+                >
+                  <span>{scope.shortLabel}</span>
+                  <span style={{ opacity: isActive ? 0.72 : 0.8, fontSize: 12 }}>{scopeCount}</span>
+                </button>
+              );
+            })}
+          </div>
+          <div style={{ fontSize: 13, color: colors.muted, lineHeight: 1.55 }}>
+            {visibleScope?.description}
+          </div>
+        </div>
+
         <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
           <button
-            onClick={() => setSelectedSaveIds(saves.map((save) => save.id))}
+            onClick={() => setSelectedSaveIds(visibleSaves.map((save) => save.id))}
             style={{ background: "transparent", color: colors.muted, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "6px 12px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}
           >
             Select All
@@ -388,7 +439,7 @@ export function SavesPage({
             Clear Selection
           </button>
           <div style={{ fontSize: 12, color: colors.muted }}>
-            {selectedSaveIds.length} selected
+            {selectedSaveIds.length} selected in {visibleScope?.shortLabel ?? "scope"}
           </div>
           {message ? (
             <div style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: message.type === "error" ? "#ff9c95" : "#9ff3b0" }}>
@@ -398,9 +449,9 @@ export function SavesPage({
         </div>
       </div>
 
-      {saves.length ? (
+      {visibleSaves.length ? (
         <div style={{ display: "grid", gap: 14 }}>
-          {saves.map((save) => {
+          {visibleSaves.map((save) => {
             const isCurrent = currentSaveIds.has(save.id);
             const isSelected = selectedSaveIds.includes(save.id);
             return (
@@ -466,7 +517,7 @@ export function SavesPage({
         </div>
       ) : (
         <div style={{ border: `1px dashed ${colors.border}`, borderRadius: 18, padding: 28, background: colors.panel, color: colors.muted, textAlign: "center", lineHeight: 1.6 }}>
-          You do not have any saved loadouts yet. Use the header save button to create one, or import a bundle here.
+          No {visibleScope?.label?.toLowerCase() ?? "saved"} records are available right now. Use the save controls for that page or import a bundle here.
         </div>
       )}
 

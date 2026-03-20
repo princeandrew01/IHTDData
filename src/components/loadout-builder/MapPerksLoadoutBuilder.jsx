@@ -191,7 +191,7 @@ function PlacementBonusCard({ bonus, level, placementCount, selected, colors, fm
   );
 }
 
-export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt }) {
+export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt, isMapExpanded = false, onToggleMapExpanded }) {
   const [loadoutState, setLoadoutState] = useState(() => readMapLoadoutState(localStorage));
   const [selectedPlacementBonusId, setSelectedPlacementBonusId] = useState(null);
   const [activeRightTab, setActiveRightTab] = useState("perks");
@@ -361,8 +361,8 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt })
   return (
     <div style={{ display: "grid", gap: 18 }}>
       <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.35fr) minmax(320px, 460px)", gap: 20, alignItems: "start" }}>
-        <div style={{ display: "grid", gap: 14 }}>
-          <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14, display: "grid", gap: 10 }}>
+        <div style={{ display: isMapExpanded ? "contents" : "grid", gap: 14 }}>
+          <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14, display: "grid", gap: 10, order: 1 }}>
             <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
               <div>
                 <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 700 }}>Map Perks Loadout</div>
@@ -391,8 +391,8 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt })
             )}
           </div>
 
-          <div style={{ position: "relative" }}>
-            <MapStage map={selectedMap} colors={colors} getIconUrl={getIconUrl} minHeight={420}>
+          <div style={{ position: "relative", order: 2, gridColumn: isMapExpanded ? "1 / -1" : undefined }}>
+            <MapStage map={selectedMap} colors={colors} getIconUrl={getIconUrl} minHeight={isMapExpanded ? 560 : 420}>
               {({ spotSize }) => (
                 <>
                   {selectedMap.spots.map((spot) => {
@@ -434,6 +434,26 @@ export function MapPerksLoadoutBuilder({ colors, selectedMap, getIconUrl, fmt })
                 </>
               )}
             </MapStage>
+            <button
+              type="button"
+              onClick={onToggleMapExpanded}
+              style={{
+                position: "absolute",
+                top: 12,
+                left: 12,
+                zIndex: 8,
+                background: "rgba(8,17,29,0.92)",
+                color: colors.text,
+                border: `1px solid ${colors.border}`,
+                borderRadius: 10,
+                padding: "8px 10px",
+                fontWeight: 800,
+                cursor: "pointer",
+                boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+              }}
+            >
+              {isMapExpanded ? "Collapse Map" : "Expand Map"}
+            </button>
           </div>
 
           <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>

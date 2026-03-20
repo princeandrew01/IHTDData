@@ -209,7 +209,7 @@ export function CoordFinderPage({ colors, getIconUrl, maps, heroes, onMapSpotsCh
           </div>
           <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
             <button type="button" onClick={startAddSpot} style={{ background: colors.accent, color: "#08111a", border: `1px solid ${colors.accent}`, borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer" }}>Add Spot</button>
-            <button type="button" onClick={() => onNavigate("loadoutBuilder")} style={{ background: colors.header, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 14px", fontWeight: 700, cursor: "pointer" }}>Open Builder</button>
+            <button type="button" onClick={() => onNavigate("loadoutBuilderPlacement")} style={{ background: colors.header, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 14px", fontWeight: 700, cursor: "pointer" }}>Open Builder</button>
           </div>
         </div>
       </div>

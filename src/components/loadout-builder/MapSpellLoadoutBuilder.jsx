@@ -292,7 +292,7 @@ export function MapSpellLoadoutBuilder({ colors, selectedMap, getIconUrl }) {
                           <SpellIcon spell={spell} colors={colors} getIconUrl={getIconUrl} size={38} />
                           <div style={{ minWidth: 0, flex: 1 }}>
                             <div style={{ fontSize: 14, fontWeight: 800, color: colors.text }}>{spell.name}</div>
-                            <div style={{ fontSize: 11, color: colors.muted }}>Level {formatLevel(spellState.level)} / {spell.maxLevel ?? 0}</div>
+                            <div style={{ fontSize: 11, color: colors.muted }}>Level {formatLevel(spellState.level)} / {formatLevel(spell.maxLevel ?? 0)}</div>
                           </div>
                         </div>
                         <button

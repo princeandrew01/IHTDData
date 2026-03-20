@@ -43,6 +43,7 @@ import {
   updateSavedLoadout,
 } from "./lib/loadoutSavedRepository";
 import { buildActiveLoadoutScope, buildComparableLoadoutScopePayload, createComparableLoadoutScopePayload, getLoadoutScopeDisplayName, LOADOUT_RECORD_SCOPE_FULL } from "./lib/loadoutScope";
+import { readMapLoadoutBuilderMode } from "./lib/mapLoadout";
 
 const loadSecondaryViews = () => import("./views/secondaryViews.jsx");
 const HomeView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.HomeView })));
@@ -97,6 +98,21 @@ const SECTIONS = [
 ];
 
 const SECTION_MAP = Object.fromEntries(SECTIONS.map((section) => [section.key, section]));
+const MAP_LOADOUT_ROUTE_TO_MODE = Object.freeze({
+  loadoutBuilderPlacement: "hero",
+  loadoutBuilderPerks: "perks",
+  loadoutBuilderSpell: "spell",
+});
+const MAP_LOADOUT_ROUTE_KEYS = new Set(["loadoutBuilder", ...Object.keys(MAP_LOADOUT_ROUTE_TO_MODE)]);
+const PAGE_HEADER_SAVE_ROUTE_KEYS = new Set(["heroLoadout", "statsLoadout", "playerLoadout", "statsHub", "saves", ...MAP_LOADOUT_ROUTE_KEYS]);
+
+function getMapLoadoutModeFromRoute(activeKey, storage = localStorage) {
+  if (activeKey === "loadoutBuilder") {
+    return readMapLoadoutBuilderMode(storage);
+  }
+
+  return MAP_LOADOUT_ROUTE_TO_MODE[activeKey] ?? "hero";
+}
 
 const REWARD_UNIT_SYMBOL = Object.fromEntries(
   Object.values(STAT_UNITS).map((value) => [value.label.toLowerCase(), value.unit])
@@ -158,7 +174,15 @@ const NAV_GROUPS = [
     label: "Loadout",
     items: [
       { key: "statsHub", label: "Stats Hub", menuIcon: "_attributePoints_0.png" },
-      { key: "loadoutBuilder", label: "Map Loadouts", menuIcon: "tower2.png" },
+      {
+        key: "loadoutBuilderMenu",
+        label: "Map Loadouts",
+        children: [
+          { key: "loadoutBuilderPlacement", label: "Placement Loadout", menuIcon: "tower2.png" },
+          { key: "loadoutBuilderPerks", label: "Map Perks Loadout", menuIcon: "_starEmpty_0.png" },
+          { key: "loadoutBuilderSpell", label: "Spell Loadout", menuIcon: "_energy.png" },
+        ],
+      },
       { key: "heroLoadout", label: "Hero Loadout", menuIcon: "_heroHelm.png" },
       { key: "statsLoadout", label: "Upgrades Loadout", menuIcon: "_heroes.png" },
       { key: "playerLoadout", label: "Player Loadout", menuIcon: "_background.png" },
@@ -4635,10 +4659,23 @@ function TechTreeView({ onOpen }) {
 // SIDEBAR
 // ─────────────────────────────────────────────
 function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
+  function itemContainsActiveKey(item, key) {
+    if (item.key === key) {
+      return true;
+    }
+
+    return (item.children ?? []).some((child) => itemContainsActiveKey(child, key));
+  }
+
   const [open, setOpen] = useState(() => {
     const initial = {};
     for (const group of navGroups) {
-      initial[group.label] = group.items.some(item => item.key === activeKey);
+      initial[group.label] = group.items.some((item) => itemContainsActiveKey(item, activeKey));
+      for (const item of group.items) {
+        if (item.children?.length) {
+          initial[`submenu:${item.key}`] = itemContainsActiveKey(item, activeKey);
+        }
+      }
     }
     return initial;
   });
@@ -4649,9 +4686,17 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
       const next = { ...current };
 
       for (const group of navGroups) {
-        if (group.items.some((item) => item.key === activeKey) && !next[group.label]) {
+        if (group.items.some((item) => itemContainsActiveKey(item, activeKey)) && !next[group.label]) {
           next[group.label] = true;
           changed = true;
+        }
+
+        for (const item of group.items) {
+          const submenuKey = `submenu:${item.key}`;
+          if (item.children?.length && itemContainsActiveKey(item, activeKey) && !next[submenuKey]) {
+            next[submenuKey] = true;
+            changed = true;
+          }
         }
       }
 
@@ -4659,13 +4704,90 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
     });
   }, [activeKey, navGroups]);
 
-  function toggleGroup(label) {
-    setOpen(prev => ({ ...prev, [label]: !prev[label] }));
+  function toggleOpen(key) {
+    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
   function handleSelect(key) {
     onSelect(key);
     onClose?.();
+  }
+
+  function renderNavItem(navItem, depth = 0) {
+    const sectionData = navItem.key ? SECTION_MAP[navItem.key]?.data : null;
+    const label = navItem.label ?? sectionData?.label ?? navItem.key;
+    const menuIcon = navItem.menuIcon ?? sectionData?.menuIcon;
+    const hasChildren = Boolean(navItem.children?.length);
+    const isActive = hasChildren
+      ? navItem.children.some((child) => itemContainsActiveKey(child, activeKey))
+      : activeKey === navItem.key;
+    const submenuKey = `submenu:${navItem.key}`;
+    const paddingLeft = 20 + depth * 16;
+
+    if (hasChildren) {
+      return (
+        <div key={navItem.key}>
+          <button
+            onClick={() => toggleOpen(submenuKey)}
+            style={{
+              width: "100%",
+              background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none",
+              border: "none",
+              borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent",
+              cursor: "pointer",
+              padding: `9px 16px 9px ${paddingLeft}px`,
+              textAlign: "left",
+              color: isActive ? colors.accent : colors.text,
+              fontSize: 14,
+              fontWeight: isActive ? 700 : 500,
+              transition: "color 0.15s, background 0.15s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span style={{ minWidth: 0 }}>{label}</span>
+              {menuIcon ? (
+                <img src={getIconUrl(menuIcon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
+              ) : null}
+            </span>
+            <span style={{ fontSize: 10, opacity: 0.7, flexShrink: 0 }}>{open[submenuKey] ? "▲" : "▼"}</span>
+          </button>
+          {open[submenuKey] && navItem.children.map((child) => renderNavItem(child, depth + 1))}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={navItem.key}
+        onClick={() => handleSelect(navItem.key)}
+        style={{
+          width: "100%",
+          background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none",
+          border: "none",
+          borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent",
+          cursor: "pointer",
+          padding: `9px 16px 9px ${paddingLeft}px`,
+          textAlign: "left",
+          color: isActive ? colors.accent : colors.text,
+          fontSize: depth > 0 ? 13 : 14,
+          fontWeight: isActive ? 700 : 500,
+          transition: "color 0.15s, background 0.15s",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
+        <span>{label}</span>
+        {menuIcon && (
+          <img src={getIconUrl(menuIcon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
+        )}
+      </button>
+    );
   }
 
   return (
@@ -4682,27 +4804,13 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
           </button>
         );
       })()}
-      {navGroups.map(group => (
+      {navGroups.map((group) => (
         <div key={group.label} style={{ marginBottom: 4 }}>
-          <button onClick={() => toggleGroup(group.label)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", color: colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <button onClick={() => toggleOpen(group.label)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", color: colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {group.label}
             <span style={{ fontSize: 10, opacity: 0.7 }}>{open[group.label] ? "▲" : "▼"}</span>
           </button>
-          {open[group.label] && group.items.map(navItem => {
-            const sectionData = SECTION_MAP[navItem.key]?.data;
-            const label = navItem.label ?? sectionData?.label ?? navItem.key;
-            const menuIcon = navItem.menuIcon ?? sectionData?.menuIcon;
-            const isActive = activeKey === navItem.key;
-            return (
-              <button key={navItem.key} onClick={() => handleSelect(navItem.key)}
-                style={{ width: "100%", background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none", border: "none", borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent", cursor: "pointer", padding: "9px 16px 9px 20px", textAlign: "left", color: isActive ? colors.accent : colors.text, fontSize: 14, fontWeight: isActive ? 700 : 500, transition: "color 0.15s, background 0.15s", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <span>{label}</span>
-                {menuIcon && (
-                  <img src={getIconUrl(menuIcon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
-                )}
-              </button>
-            );
-          })}
+          {open[group.label] && group.items.map((navItem) => renderNavItem(navItem))}
         </div>
       ))}
     </div>
@@ -4713,9 +4821,11 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
 // MAIN APP
 // ─────────────────────────────────────────────
 export default function App() {
-  const fmt = useFmt();
   const [activeKey,    setActiveKey]    = useState(
-    () => localStorage.getItem("activeKey") ?? "home"
+    () => {
+      const storedActiveKey = localStorage.getItem("activeKey") ?? "home";
+      return storedActiveKey === "loadoutBuilder" ? "loadoutBuilderPlacement" : storedActiveKey;
+    }
   );
   const [modalItem,    setModalItem]    = useState(null);
   const [modalFormula, setModalFormula] = useState(null);
@@ -4727,6 +4837,7 @@ export default function App() {
   const [notation,     setNotation]     = useState(
     () => localStorage.getItem("notation") ?? "scientific"
   );
+  const fmt = useMemo(() => (n) => formatBigNum(n, notation), [notation]);
   const [mapSpotsById, setMapSpotsById] = useState(() => getInitialMapSpotsById());
   const [loadoutImportVersion, setLoadoutImportVersion] = useState(0);
   const [isLoadoutRuntimeReady, setIsLoadoutRuntimeReady] = useState(false);
@@ -4775,11 +4886,15 @@ export default function App() {
     () => getLoadoutScopeDisplayName(activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext),
     [activeLoadoutScope]
   );
+  const compactActiveLoadoutScopeLabel = useMemo(
+    () => activeLoadoutScopeLabel.replace(/\s+Page$/, ""),
+    [activeLoadoutScopeLabel]
+  );
   const saveButtonBaseLabel = activeLoadoutScope.scopeId === LOADOUT_RECORD_SCOPE_FULL
     ? "Loadout"
     : activeLoadoutScope.scopeId === "mapLoadoutMap"
       ? "Map Preset"
-      : activeLoadoutScopeLabel;
+      : compactActiveLoadoutScopeLabel;
 
   const saveButtonLabel = !currentSavedLoadoutId
     ? `Save ${saveButtonBaseLabel}`
@@ -4790,8 +4905,15 @@ export default function App() {
         : "Saved";
   const saveScopeBadgeLabel = activeLoadoutScope.scopeId === LOADOUT_RECORD_SCOPE_FULL
     ? "Whole Save"
-    : activeLoadoutScopeLabel;
+    : compactActiveLoadoutScopeLabel;
   const isSaveButtonPassive = Boolean(currentSavedLoadoutId && !isCurrentSavedLoadoutDirty);
+  const shouldShowHeaderSaveGroup = !PAGE_HEADER_SAVE_ROUTE_KEYS.has(activeKey);
+  const pageSaveButton = {
+    label: saveButtonBusy ? "Saving..." : saveButtonLabel,
+    onClick: handleSaveButtonClick,
+    busy: saveButtonBusy,
+    passive: isSaveButtonPassive,
+  };
 
   useEffect(() => {
     let isCancelled = false;
@@ -5074,38 +5196,40 @@ export default function App() {
               })}
             </div>
           </div>
-          <div className="app-header-toolbar__group app-header-toolbar__group--save">
-            <div className="app-header-toolbar__save-meta">
-              <span className="app-header-toolbar__label" style={{ color: colors.muted }}>Save</span>
-              {currentSavedLoadout ? (
-                <span className="app-header-toolbar__value" style={{ color: colors.text }} title={currentSavedLoadout.name}>
-                  {currentSavedLoadout.name}
-                </span>
-              ) : (
-                <span className="app-header-toolbar__value" style={{ color: colors.text }}>{saveButtonBaseLabel}</span>
-              )}
-              <span className="app-header-toolbar__meta-text" style={{ color: colors.muted }}>{saveScopeBadgeLabel}</span>
-              {saveButtonMessage ? (
-                <span className={`app-header-toolbar__message app-header-toolbar__message--${saveButtonMessage.type}`}>
-                  {saveButtonMessage.text}
-                </span>
-              ) : null}
+          {shouldShowHeaderSaveGroup ? (
+            <div className="app-header-toolbar__group app-header-toolbar__group--save">
+              <div className="app-header-toolbar__save-meta">
+                <span className="app-header-toolbar__label" style={{ color: colors.muted }}>Save</span>
+                {currentSavedLoadout ? (
+                  <span className="app-header-toolbar__value" style={{ color: colors.text }} title={currentSavedLoadout.name}>
+                    {currentSavedLoadout.name}
+                  </span>
+                ) : (
+                  <span className="app-header-toolbar__value" style={{ color: colors.text }}>{saveButtonBaseLabel}</span>
+                )}
+                <span className="app-header-toolbar__meta-text" style={{ color: colors.muted }}>{saveScopeBadgeLabel}</span>
+                {saveButtonMessage ? (
+                  <span className={`app-header-toolbar__message app-header-toolbar__message--${saveButtonMessage.type}`}>
+                    {saveButtonMessage.text}
+                  </span>
+                ) : null}
+              </div>
+              <div className="app-header-toolbar__save-actions">
+                <button
+                  onClick={handleSaveButtonClick}
+                  className={`app-header-toolbar__save-button${isSaveButtonPassive ? " app-header-toolbar__save-button--passive" : ""}`}
+                  style={{
+                    background: isSaveButtonPassive ? colors.header : colors.accent,
+                    color: isSaveButtonPassive ? colors.muted : "#08111d",
+                    borderColor: isSaveButtonPassive ? colors.border : colors.accent,
+                    cursor: saveButtonBusy ? "wait" : isSaveButtonPassive ? "default" : "pointer",
+                  }}
+                >
+                  {saveButtonBusy ? "Saving..." : saveButtonLabel}
+                </button>
+              </div>
             </div>
-            <div className="app-header-toolbar__save-actions">
-              <button
-                onClick={handleSaveButtonClick}
-                className={`app-header-toolbar__save-button${isSaveButtonPassive ? " app-header-toolbar__save-button--passive" : ""}`}
-                style={{
-                  background: isSaveButtonPassive ? colors.header : colors.accent,
-                  color: isSaveButtonPassive ? colors.muted : "#08111d",
-                  borderColor: isSaveButtonPassive ? colors.border : colors.accent,
-                  cursor: saveButtonBusy ? "wait" : isSaveButtonPassive ? "default" : "pointer",
-                }}
-              >
-                {saveButtonBusy ? "Saving..." : saveButtonLabel}
-              </button>
-            </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -5195,7 +5319,7 @@ export default function App() {
               <MapPerksView colors={colors} getIconUrl={getIconUrl} />
             </Suspense>
           )}
-          {activeKey === "loadoutBuilder" && (
+          {MAP_LOADOUT_ROUTE_KEYS.has(activeKey) && (
             <Suspense fallback={lazyFallback}>
               <LoadoutBuilderView
                 key={`loadout-builder-${loadoutImportVersion}`}
@@ -5210,6 +5334,8 @@ export default function App() {
                 onDeleteSave={handleDeleteSavedLoadout}
                 onUpdateSave={handleUpdateSavedLoadout}
                 onImportComplete={handleImportComplete}
+                forcedBuilderMode={getMapLoadoutModeFromRoute(activeKey)}
+                saveButton={pageSaveButton}
                 onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
               />
             </Suspense>
@@ -5227,6 +5353,7 @@ export default function App() {
                 onLoadSave={handleLoadSavedLoadout}
                 onDeleteSave={handleDeleteSavedLoadout}
                 onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
               />
             </Suspense>
           )}
@@ -5242,6 +5369,7 @@ export default function App() {
                 onLoadSave={handleLoadSavedLoadout}
                 onDeleteSave={handleDeleteSavedLoadout}
                 onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
               />
             </Suspense>
           )}
@@ -5257,6 +5385,7 @@ export default function App() {
                 onLoadSave={handleLoadSavedLoadout}
                 onDeleteSave={handleDeleteSavedLoadout}
                 onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
               />
             </Suspense>
           )}

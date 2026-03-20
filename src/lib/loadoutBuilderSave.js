@@ -1,7 +1,10 @@
 export const LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY = "ihtddata.loadoutBuilder.selectedMapId";
 export const LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY = "ihtddata.loadoutBuilder.placements.v1";
 export const LOADOUT_BUILDER_RANKS_STORAGE_KEY = "ihtddata.loadoutBuilder.ranks.v1";
-export const APP_SAVE_VERSION = 9;
+export const LOADOUT_BUILDER_LEVELS_STORAGE_KEY = "ihtddata.loadoutBuilder.levels.v1";
+export const LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY = "ihtddata.loadoutBuilder.masteryLevels.v1";
+export const LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY = "ihtddata.loadoutBuilder.expandedMaps.v1";
+export const APP_SAVE_VERSION = 11;
 
 import { normalizeStatsLoadoutState, readStatsLoadoutState, writeStatsLoadoutState } from "./statsLoadout";
 import { normalizeMapLoadoutState, readMapLoadoutState, writeMapLoadoutState } from "./mapLoadout";
@@ -15,6 +18,9 @@ function isObject(value) {
 export function readLoadoutBuilderState(storage = localStorage) {
   let placementsByMap = {};
   let placementRanksByMap = {};
+  let placementLevelsByMap = {};
+  let placementMasteryLevelsByMap = {};
+  let expandedMapsById = {};
 
   try {
     const parsedPlacements = JSON.parse(storage.getItem(LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY) ?? "{}");
@@ -34,10 +40,40 @@ export function readLoadoutBuilderState(storage = localStorage) {
     placementRanksByMap = {};
   }
 
+  try {
+    const parsedLevels = JSON.parse(storage.getItem(LOADOUT_BUILDER_LEVELS_STORAGE_KEY) ?? "{}");
+    if (isObject(parsedLevels)) {
+      placementLevelsByMap = parsedLevels;
+    }
+  } catch {
+    placementLevelsByMap = {};
+  }
+
+  try {
+    const parsedMasteries = JSON.parse(storage.getItem(LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY) ?? "{}");
+    if (isObject(parsedMasteries)) {
+      placementMasteryLevelsByMap = parsedMasteries;
+    }
+  } catch {
+    placementMasteryLevelsByMap = {};
+  }
+
+  try {
+    const parsedExpandedMaps = JSON.parse(storage.getItem(LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY) ?? "{}");
+    if (isObject(parsedExpandedMaps)) {
+      expandedMapsById = parsedExpandedMaps;
+    }
+  } catch {
+    expandedMapsById = {};
+  }
+
   return {
     selectedMapId: storage.getItem(LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY) ?? "",
     placementsByMap,
     placementRanksByMap,
+    placementLevelsByMap,
+    placementMasteryLevelsByMap,
+    expandedMapsById,
   };
 }
 
@@ -100,6 +136,18 @@ export function createComparableAppSavePayload(payload) {
             return JSON.stringify(payload?.sections?.loadoutBuilder?.placementRanksByMap ?? {});
           }
 
+          if (key === LOADOUT_BUILDER_LEVELS_STORAGE_KEY) {
+            return JSON.stringify(payload?.sections?.loadoutBuilder?.placementLevelsByMap ?? {});
+          }
+
+          if (key === LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY) {
+            return JSON.stringify(payload?.sections?.loadoutBuilder?.placementMasteryLevelsByMap ?? {});
+          }
+
+          if (key === LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY) {
+            return JSON.stringify(payload?.sections?.loadoutBuilder?.expandedMapsById ?? {});
+          }
+
           return null;
         },
       }),
@@ -149,6 +197,18 @@ export function validateAppSavePayload(payload) {
     return { ok: false, message: "Loadout builder placement ranks must be an object when provided." };
   }
 
+  if (loadoutBuilder.placementLevelsByMap !== undefined && !isObject(loadoutBuilder.placementLevelsByMap)) {
+    return { ok: false, message: "Loadout builder placement levels must be an object when provided." };
+  }
+
+  if (loadoutBuilder.placementMasteryLevelsByMap !== undefined && !isObject(loadoutBuilder.placementMasteryLevelsByMap)) {
+    return { ok: false, message: "Loadout builder placement mastery levels must be an object when provided." };
+  }
+
+  if (loadoutBuilder.expandedMapsById !== undefined && !isObject(loadoutBuilder.expandedMapsById)) {
+    return { ok: false, message: "Loadout builder expanded map states must be an object when provided." };
+  }
+
   const statsLoadout = payload.sections.statsLoadout;
   if (statsLoadout !== undefined && !isObject(statsLoadout)) {
     return { ok: false, message: "Stats loadout data must be an object when provided." };
@@ -187,6 +247,9 @@ export function applyAppSavePayload(payload, storage = localStorage) {
   storage.setItem(LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY, loadoutBuilder.selectedMapId ?? "");
   storage.setItem(LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY, JSON.stringify(loadoutBuilder.placementsByMap ?? {}));
   storage.setItem(LOADOUT_BUILDER_RANKS_STORAGE_KEY, JSON.stringify(loadoutBuilder.placementRanksByMap ?? {}));
+  storage.setItem(LOADOUT_BUILDER_LEVELS_STORAGE_KEY, JSON.stringify(loadoutBuilder.placementLevelsByMap ?? {}));
+  storage.setItem(LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY, JSON.stringify(loadoutBuilder.placementMasteryLevelsByMap ?? {}));
+  storage.setItem(LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY, JSON.stringify(loadoutBuilder.expandedMapsById ?? {}));
 
   const statsLoadout = payload.sections.statsLoadout === undefined
     ? normalizeStatsLoadoutState({})

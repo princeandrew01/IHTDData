@@ -33,6 +33,7 @@ export function ScopedLoadoutPresetsPanel({
   onLoadSave,
   onDeleteSave,
   onImportComplete,
+  compact = false,
 }) {
   const importInputRef = useRef(null);
   const [busyAction, setBusyAction] = useState("");
@@ -133,11 +134,7 @@ export function ScopedLoadoutPresetsPanel({
         onChange={handleImportChange}
       />
 
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-        <div style={{ display: "grid", gap: 4 }}>
-          <div style={{ fontSize: 11, color: colors.muted, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{title}</div>
-          <div style={{ fontSize: 12, color: colors.muted }}>{presets.length} preset{presets.length === 1 ? "" : "s"} saved for this page.</div>
-        </div>
+      {compact ? (
         <button
           type="button"
           onClick={() => setIsOpen(true)}
@@ -146,15 +143,39 @@ export function ScopedLoadoutPresetsPanel({
             color: colors.text,
             border: `1px solid ${colors.border}`,
             borderRadius: 10,
-            padding: "9px 14px",
+            padding: "10px 14px",
             cursor: "pointer",
             fontWeight: 800,
             fontFamily: "inherit",
+            minHeight: 44,
           }}
         >
           Presets
         </button>
-      </div>
+      ) : (
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+          <div style={{ display: "grid", gap: 4 }}>
+            <div style={{ fontSize: 11, color: colors.muted, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>{title}</div>
+            <div style={{ fontSize: 12, color: colors.muted }}>{presets.length} preset{presets.length === 1 ? "" : "s"} saved for this page.</div>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpen(true)}
+            style={{
+              background: colors.header,
+              color: colors.text,
+              border: `1px solid ${colors.border}`,
+              borderRadius: 10,
+              padding: "9px 14px",
+              cursor: "pointer",
+              fontWeight: 800,
+              fontFamily: "inherit",
+            }}
+          >
+            Presets
+          </button>
+        </div>
+      )}
 
       {isOpen ? (
         <PresetsModalShell

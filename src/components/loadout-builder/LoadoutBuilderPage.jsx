@@ -3,7 +3,14 @@ import { DndContext, DragOverlay, PointerSensor, useDraggable, useDroppable, use
 import { MapStage, OverlayAnchor, HeroToken } from "../map/MapStage";
 import { mapsData } from "../../lib/gameData";
 import { HERO_ATTRIBUTE_DEFINITIONS, getHeroAttributeTotalValue, readHeroLoadoutState } from "../../lib/heroLoadout";
-import { LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY, LOADOUT_BUILDER_RANKS_STORAGE_KEY, LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY } from "../../lib/loadoutBuilderSave";
+import {
+  LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY,
+  LOADOUT_BUILDER_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY,
+  LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY,
+  LOADOUT_BUILDER_RANKS_STORAGE_KEY,
+  LOADOUT_BUILDER_SELECTED_MAP_STORAGE_KEY,
+} from "../../lib/loadoutBuilderSave";
 import { buildGlobalLoadoutStatModel } from "../../lib/loadoutStatEngine";
 import { getPerkCurrentBonus, getPlacementBonusValue, readMapLoadoutBuilderMode, readMapLoadoutState, writeMapLoadoutBuilderMode } from "../../lib/mapLoadout";
 import { readPlayerLoadoutState } from "../../lib/playerLoadout";
@@ -351,17 +358,74 @@ function getHeroAttributeBonusTotals(levelsByAttributeId, scope) {
   return totals;
 }
 
-function buildPlacementRanksState(spots, existingRanks = {}) {
+function parseNonNegativeInteger(value, fallback = 0) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : fallback;
+}
+
+function buildPlacementRanksState(heroes, spots, placements, existingRanks = {}) {
   const nextRanks = {};
-  spots.forEach((spot) => {
-    nextRanks[spot.id] = Math.max(0, Number.parseInt(existingRanks?.[spot.id], 10) || 0);
+
+  heroes.forEach((hero) => {
+    if (Object.prototype.hasOwnProperty.call(existingRanks ?? {}, hero.id)) {
+      nextRanks[hero.id] = parseNonNegativeInteger(existingRanks[hero.id], 0);
+      return;
+    }
+
+    const fallbackSpotId = spots.find((spot) => placements?.[spot.id] === hero.id && Object.prototype.hasOwnProperty.call(existingRanks ?? {}, spot.id))?.id;
+    if (fallbackSpotId) {
+      nextRanks[hero.id] = parseNonNegativeInteger(existingRanks[fallbackSpotId], 0);
+    }
   });
+
   return nextRanks;
 }
 
-function normalizePlacementRanksByMap(maps, storedRanks) {
+function normalizePlacementRanksByMap(maps, heroes, storedRanks, storedPlacements) {
   return Object.fromEntries(
-    maps.map((map) => [map.id, buildPlacementRanksState(map.spots, storedRanks?.[map.id])])
+    maps.map((map) => [
+      map.id,
+      buildPlacementRanksState(heroes, map.spots, storedPlacements?.[map.id], storedRanks?.[map.id]),
+    ])
+  );
+}
+
+function buildPlacementLevelsState(spots, existingLevels = {}) {
+  const nextLevels = {};
+
+  spots.forEach((spot) => {
+    if (Object.prototype.hasOwnProperty.call(existingLevels ?? {}, spot.id)) {
+      nextLevels[spot.id] = parseNonNegativeInteger(existingLevels[spot.id], 0);
+    }
+  });
+
+  return nextLevels;
+}
+
+function normalizePlacementLevelsByMap(maps, storedLevels) {
+  return Object.fromEntries(
+    maps.map((map) => [map.id, buildPlacementLevelsState(map.spots, storedLevels?.[map.id])])
+  );
+}
+
+function buildPlacementMasteryLevelsState(heroes, existingMasteries = {}) {
+  const nextMasteries = {};
+
+  heroes.forEach((hero) => {
+    if (!Object.prototype.hasOwnProperty.call(existingMasteries ?? {}, hero.id)) {
+      return;
+    }
+
+    const maxLevel = hero.masteryExp?.maxLevel ?? 0;
+    nextMasteries[hero.id] = Math.min(parseNonNegativeInteger(existingMasteries[hero.id], 0), maxLevel);
+  });
+
+  return nextMasteries;
+}
+
+function normalizePlacementMasteryLevelsByMap(maps, heroes, storedMasteries) {
+  return Object.fromEntries(
+    maps.map((map) => [map.id, buildPlacementMasteryLevelsState(heroes, storedMasteries?.[map.id])])
   );
 }
 
@@ -1160,6 +1224,8 @@ export function LoadoutBuilderPage({
   onDeleteSave,
   onUpdateSave,
   onImportComplete,
+  forcedBuilderMode,
+  saveButton,
 }) {
   const statsLoadoutState = useMemo(() => readStatsLoadoutState(localStorage), []);
   const playerLoadoutState = useMemo(() => readPlayerLoadoutState(localStorage), []);
@@ -1177,10 +1243,35 @@ export function LoadoutBuilderPage({
   });
   const [placementRanksByMap, setPlacementRanksByMap] = useState(() => {
     try {
+      const parsedPlacements = JSON.parse(localStorage.getItem(LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY) ?? "null");
       const parsed = JSON.parse(localStorage.getItem(LOADOUT_BUILDER_RANKS_STORAGE_KEY) ?? "null");
-      return normalizePlacementRanksByMap(maps, parsed);
+      return normalizePlacementRanksByMap(maps, heroes, parsed, parsedPlacements);
     } catch {
-      return normalizePlacementRanksByMap(maps, {});
+      return normalizePlacementRanksByMap(maps, heroes, {}, {});
+    }
+  });
+  const [placementLevelsByMap, setPlacementLevelsByMap] = useState(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOADOUT_BUILDER_LEVELS_STORAGE_KEY) ?? "null");
+      return normalizePlacementLevelsByMap(maps, parsed);
+    } catch {
+      return normalizePlacementLevelsByMap(maps, {});
+    }
+  });
+  const [placementMasteryLevelsByMap, setPlacementMasteryLevelsByMap] = useState(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY) ?? "null");
+      return normalizePlacementMasteryLevelsByMap(maps, heroes, parsed);
+    } catch {
+      return normalizePlacementMasteryLevelsByMap(maps, heroes, {});
+    }
+  });
+  const [expandedMapsById, setExpandedMapsById] = useState(() => {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY) ?? "null");
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch {
+      return {};
     }
   });
   const [searchValue, setSearchValue] = useState("");
@@ -1280,8 +1371,10 @@ export function LoadoutBuilderPage({
       return;
     }
     setPlacementsByMap((current) => normalizePlacementsByMap(maps, current));
-    setPlacementRanksByMap((current) => normalizePlacementRanksByMap(maps, current));
-  }, [maps, selectedMap]);
+    setPlacementRanksByMap((current) => normalizePlacementRanksByMap(maps, heroes, current, placementsByMap));
+    setPlacementLevelsByMap((current) => normalizePlacementLevelsByMap(maps, current));
+    setPlacementMasteryLevelsByMap((current) => normalizePlacementMasteryLevelsByMap(maps, heroes, current));
+  }, [heroes, maps, placementsByMap, selectedMap]);
 
   useEffect(() => {
     if (selectedMap?.id) {
@@ -1295,6 +1388,12 @@ export function LoadoutBuilderPage({
   }, [builderMode]);
 
   useEffect(() => {
+    if (forcedBuilderMode && forcedBuilderMode !== builderMode) {
+      setBuilderMode(forcedBuilderMode);
+    }
+  }, [builderMode, forcedBuilderMode]);
+
+  useEffect(() => {
     localStorage.setItem(LOADOUT_BUILDER_PLACEMENTS_STORAGE_KEY, JSON.stringify(placementsByMap));
     schedulePersistLoadoutRuntime(localStorage);
   }, [placementsByMap]);
@@ -1303,6 +1402,29 @@ export function LoadoutBuilderPage({
     localStorage.setItem(LOADOUT_BUILDER_RANKS_STORAGE_KEY, JSON.stringify(placementRanksByMap));
     schedulePersistLoadoutRuntime(localStorage);
   }, [placementRanksByMap]);
+
+  useEffect(() => {
+    localStorage.setItem(LOADOUT_BUILDER_LEVELS_STORAGE_KEY, JSON.stringify(placementLevelsByMap));
+    schedulePersistLoadoutRuntime(localStorage);
+  }, [placementLevelsByMap]);
+
+  useEffect(() => {
+    localStorage.setItem(LOADOUT_BUILDER_MASTERY_LEVELS_STORAGE_KEY, JSON.stringify(placementMasteryLevelsByMap));
+    schedulePersistLoadoutRuntime(localStorage);
+  }, [placementMasteryLevelsByMap]);
+
+  useEffect(() => {
+    const validMapIds = new Set(maps.map((map) => map.id));
+    setExpandedMapsById((current) => {
+      const next = Object.fromEntries(Object.entries(current).filter(([mapId]) => validMapIds.has(mapId)));
+      return Object.keys(next).length === Object.keys(current).length ? current : next;
+    });
+  }, [maps]);
+
+  useEffect(() => {
+    localStorage.setItem(LOADOUT_BUILDER_EXPANDED_MAPS_STORAGE_KEY, JSON.stringify(expandedMapsById));
+    schedulePersistLoadoutRuntime(localStorage);
+  }, [expandedMapsById]);
 
   useEffect(() => {
     if (builderMode !== "hero") {
@@ -1330,7 +1452,10 @@ export function LoadoutBuilderPage({
     []
   );
   const placements = selectedMap ? placementsByMap[selectedMap.id] ?? buildPlacementState(selectedMap.spots) : {};
-  const placementRanks = selectedMap ? placementRanksByMap[selectedMap.id] ?? buildPlacementRanksState(selectedMap.spots) : {};
+  const placementRanks = selectedMap ? placementRanksByMap[selectedMap.id] ?? buildPlacementRanksState(heroes, selectedMap.spots, placements) : {};
+  const placementLevels = selectedMap ? placementLevelsByMap[selectedMap.id] ?? buildPlacementLevelsState(selectedMap.spots) : {};
+  const placementMasteryLevels = selectedMap ? placementMasteryLevelsByMap[selectedMap.id] ?? buildPlacementMasteryLevelsState(heroes) : {};
+  const isSelectedMapExpanded = selectedMap ? Boolean(expandedMapsById[selectedMap.id]) : false;
   const heroSearchIndex = useMemo(
     () => Object.fromEntries(upgradedHeroes.map((hero) => [hero.id, buildHeroSearchIndex(hero)])),
     [upgradedHeroes]
@@ -1443,8 +1568,12 @@ export function LoadoutBuilderPage({
         const globalAttributeBonuses = getHeroAttributeBonusTotals(heroAttributeLevels, "global");
         const milestoneEffectBonusPct = (selectedMapGlobalBonuses.milestoneBonus ?? 0) + (placementTotals.milestoneBonus ?? 0);
         const synergyEffectBonusPct = (selectedMapGlobalBonuses.synergyBonus ?? 0) + (placementTotals.synergyBonus ?? 0);
-        const currentRank = Math.max(0, Number.parseInt(placementRanks[spotId], 10) || 0);
-        const currentLevel = Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[heroId], 10) || 0);
+        const defaultRank = Math.max(0, Number.parseInt(heroLoadoutState.rankByHero?.[heroId], 10) || 0);
+        const defaultLevel = Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[heroId], 10) || 0);
+        const defaultMastery = Math.max(0, Number.parseInt(heroLoadoutState.masteryLevelByHero?.[heroId], 10) || 0);
+        const currentRank = Object.prototype.hasOwnProperty.call(placementRanks, heroId) ? parseNonNegativeInteger(placementRanks[heroId], defaultRank) : defaultRank;
+        const currentLevel = Object.prototype.hasOwnProperty.call(placementLevels, spotId) ? parseNonNegativeInteger(placementLevels[spotId], defaultLevel) : defaultLevel;
+        const currentMastery = Object.prototype.hasOwnProperty.call(placementMasteryLevels, heroId) ? parseNonNegativeInteger(placementMasteryLevels[heroId], defaultMastery) : defaultMastery;
 
         return {
           spotId,
@@ -1452,6 +1581,10 @@ export function LoadoutBuilderPage({
           heroId,
           currentRank,
           currentLevel,
+          currentMastery,
+          defaultRank,
+          defaultLevel,
+          defaultMastery,
           baseHero,
           placedBonus,
           placementTotals,
@@ -1611,6 +1744,7 @@ export function LoadoutBuilderPage({
           skill: upgradeStats.adjustedSkill,
           currentRank: entry.currentRank,
           currentLevel: entry.currentLevel,
+          currentMastery: entry.currentMastery,
           placementBonus: entry.placedBonus,
           activeMilestones: entry.activeMilestones,
           inactiveMilestones: entry.inactiveMilestones,
@@ -1619,7 +1753,7 @@ export function LoadoutBuilderPage({
         },
       };
     });
-  }, [heroLoadoutState.attributeLevelsByHero, heroLoadoutState.levelByHero, heroes, placementBonusDefinitionsById, placementRanks, placements, selectedMap, selectedMapGlobalBonuses, selectedMapPlacementBonuses, selectedMapPlacementBonusLevels, statsLoadoutBonuses]);
+  }, [heroLoadoutState.attributeLevelsByHero, heroLoadoutState.levelByHero, heroLoadoutState.masteryLevelByHero, heroLoadoutState.rankByHero, heroes, placementBonusDefinitionsById, placementLevels, placementMasteryLevels, placementRanks, placements, selectedMap, selectedMapGlobalBonuses, selectedMapPlacementBonuses, selectedMapPlacementBonusLevels, statsLoadoutBonuses]);
 
   const previewFocusedHero = useMemo(() => {
     const baseHero = heroes.find((hero) => hero.id === inspectedHeroId) ?? null;
@@ -1639,6 +1773,7 @@ export function LoadoutBuilderPage({
       skill: upgradeStats.adjustedSkill,
       currentRank: Math.max(0, Number.parseInt(heroLoadoutState.rankByHero?.[baseHero.id], 10) || 0),
       currentLevel: Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[baseHero.id], 10) || 0),
+      currentMastery: Math.max(0, Number.parseInt(heroLoadoutState.masteryLevelByHero?.[baseHero.id], 10) || 0),
       placementBonus: null,
       activeMilestones: (baseHero.milestones ?? [])
         .filter((milestone) => (milestone.requirement ?? 0) <= (Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[baseHero.id], 10) || 0)))
@@ -1649,7 +1784,7 @@ export function LoadoutBuilderPage({
       activeSynergies: [],
       inactiveSynergies: (baseHero.synergies ?? []).map((synergy) => enrichProgressionEffect(synergy, "synergy", selectedMapGlobalBonuses.synergyBonus ?? 0, fmt)),
     };
-  }, [heroLoadoutState.attributeLevelsByHero, heroLoadoutState.levelByHero, heroLoadoutState.rankByHero, heroes, inspectedHeroId, selectedMapGlobalBonuses, statsLoadoutBonuses]);
+  }, [heroLoadoutState.attributeLevelsByHero, heroLoadoutState.levelByHero, heroLoadoutState.masteryLevelByHero, heroLoadoutState.rankByHero, heroes, inspectedHeroId, selectedMapGlobalBonuses, statsLoadoutBonuses]);
 
   const focusedHero = placedEntries.find((entry) => entry.spotId === inspectedHeroSpotId)?.hero
     ?? previewFocusedHero
@@ -1689,7 +1824,29 @@ export function LoadoutBuilderPage({
 
     setPlacementRanksByMap((current) => ({
       ...current,
-      [selectedMap.id]: updater(buildPlacementRanksState(selectedMap.spots, current[selectedMap.id])),
+      [selectedMap.id]: updater(buildPlacementRanksState(heroes, selectedMap.spots, placements, current[selectedMap.id])),
+    }));
+  }
+
+  function updatePlacementLevels(updater) {
+    if (!selectedMap) {
+      return;
+    }
+
+    setPlacementLevelsByMap((current) => ({
+      ...current,
+      [selectedMap.id]: updater(buildPlacementLevelsState(selectedMap.spots, current[selectedMap.id])),
+    }));
+  }
+
+  function updatePlacementMasteries(updater) {
+    if (!selectedMap) {
+      return;
+    }
+
+    setPlacementMasteryLevelsByMap((current) => ({
+      ...current,
+      [selectedMap.id]: updater(buildPlacementMasteryLevelsState(heroes, current[selectedMap.id])),
     }));
   }
 
@@ -1731,22 +1888,36 @@ export function LoadoutBuilderPage({
       return next;
     });
 
-    updatePlacementRanks((current) => {
+    updatePlacementLevels((current) => {
       const next = { ...current };
-      const targetRank = next[targetSpotId] ?? 0;
+      const targetLevel = next[targetSpotId];
 
       if (sourceSpotId) {
         if (sourceSpotId === targetSpotId) {
           return next;
         }
 
-        const sourceRank = next[sourceSpotId] ?? 0;
-        next[sourceSpotId] = displacedHeroId ? targetRank : 0;
-        next[targetSpotId] = sourceRank;
+        const sourceLevel = next[sourceSpotId];
+
+        if (displacedHeroId) {
+          if (targetLevel == null) {
+            delete next[sourceSpotId];
+          } else {
+            next[sourceSpotId] = targetLevel;
+          }
+        } else {
+          delete next[sourceSpotId];
+        }
+
+        if (sourceLevel == null) {
+          delete next[targetSpotId];
+        } else {
+          next[targetSpotId] = sourceLevel;
+        }
         return next;
       }
 
-      next[targetSpotId] = 0;
+      delete next[targetSpotId];
       return next;
     });
   }
@@ -1756,23 +1927,74 @@ export function LoadoutBuilderPage({
       setInspectedHeroSpotId(null);
     }
     updatePlacements((current) => ({ ...current, [spotId]: null }));
-    updatePlacementRanks((current) => ({ ...current, [spotId]: 0 }));
+    updatePlacementLevels((current) => {
+      const next = { ...current };
+      delete next[spotId];
+      return next;
+    });
   }
 
   function clearSelectedMap() {
     updatePlacements((current) => Object.fromEntries(Object.keys(current).map((spotId) => [spotId, null])));
-    updatePlacementRanks((current) => Object.fromEntries(Object.keys(current).map((spotId) => [spotId, 0])));
+    updatePlacementRanks(() => ({}));
+    updatePlacementLevels(() => ({}));
+    updatePlacementMasteries(() => ({}));
     setSelectedHeroAction(null);
     setHoveredMapHeroSpotId(null);
     setInspectedHeroSpotId(null);
   }
 
-  function setSpotRank(spotId, rawValue) {
-    const parsed = rawValue === "" ? 0 : Number.parseInt(rawValue, 10);
-    const nextRank = Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
-    updatePlacementRanks((current) => ({
+  function setSpotLevel(spotId, heroId, rawValue) {
+    const nextLevel = parseNonNegativeInteger(rawValue === "" ? 0 : rawValue, 0);
+    const defaultLevel = Math.max(0, Number.parseInt(heroLoadoutState.levelByHero?.[heroId], 10) || 0);
+    updatePlacementLevels((current) => {
+      const next = { ...current };
+      if (nextLevel === defaultLevel) {
+        delete next[spotId];
+      } else {
+        next[spotId] = nextLevel;
+      }
+      return next;
+    });
+  }
+
+  function setHeroRank(heroId, rawValue) {
+    const nextRank = parseNonNegativeInteger(rawValue === "" ? 0 : rawValue, 0);
+    const defaultRank = Math.max(0, Number.parseInt(heroLoadoutState.rankByHero?.[heroId], 10) || 0);
+    updatePlacementRanks((current) => {
+      const next = { ...current };
+      if (nextRank === defaultRank) {
+        delete next[heroId];
+      } else {
+        next[heroId] = nextRank;
+      }
+      return next;
+    });
+  }
+
+  function setHeroMastery(heroId, rawValue) {
+    const maxLevel = heroes.find((hero) => hero.id === heroId)?.masteryExp?.maxLevel ?? 0;
+    const nextMastery = Math.min(parseNonNegativeInteger(rawValue === "" ? 0 : rawValue, 0), maxLevel);
+    const defaultMastery = Math.max(0, Number.parseInt(heroLoadoutState.masteryLevelByHero?.[heroId], 10) || 0);
+    updatePlacementMasteries((current) => {
+      const next = { ...current };
+      if (nextMastery === defaultMastery) {
+        delete next[heroId];
+      } else {
+        next[heroId] = nextMastery;
+      }
+      return next;
+    });
+  }
+
+  function toggleMapExpansion() {
+    if (!selectedMap) {
+      return;
+    }
+
+    setExpandedMapsById((current) => ({
       ...current,
-      [spotId]: nextRank,
+      [selectedMap.id]: !current[selectedMap.id],
     }));
   }
 
@@ -1852,7 +2074,7 @@ export function LoadoutBuilderPage({
 
   const mapHasSpots = Boolean(selectedMap?.spots.length);
   const placedCount = placedEntries.length;
-  const openCount = selectedMap ? selectedMap.spots.length - placedCount : 0;
+  const totalSpotCount = selectedMap?.spots?.length ?? 10;
   const effectSubtabs = typeFilters.some((type) => type === "buff" || type === "debuff")
     ? FILTER_SUBTABS.effects
     : FILTER_SUBTABS.effects.filter((subtab) => subtab.id !== "subtype");
@@ -1881,77 +2103,61 @@ export function LoadoutBuilderPage({
     <div style={{ display: "grid", gap: 20 }}>
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragCancel={handleDragCancel} onDragEnd={handleDragEnd}>
         <div style={{ display: "grid", gap: 14 }}>
-          <MapLoadoutPresetsPanel
-            colors={colors}
-            selectedMap={selectedMap}
-            presets={selectedMapSavedLoadouts}
-            heroPresets={heroSavedLoadouts}
-            currentSavedLoadoutId={currentSavedLoadoutId}
-            onLoadSave={onLoadSave}
-            onDeleteSave={onDeleteSave}
-            onUpdateSave={onUpdateSave}
-            onImportComplete={onImportComplete}
-          />
-
           <div style={{
             display: "grid",
             gap: 14,
             background: colors.panel,
             border: `1px solid ${colors.border}`,
             borderRadius: 14,
-            padding: 14,
+            padding: 18,
           }}>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "stretch" }}>
-              <label style={{ display: "grid", gap: 6, color: colors.muted, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", minWidth: 220 }}>
-                Active Map
-                <select value={selectedMap?.id ?? ""} onChange={(event) => setSelectedMapId(event.target.value)} style={{ minWidth: 220, background: "#0f2640", border: `1px solid ${colors.border}`, color: colors.text, borderRadius: 10, padding: "10px 12px", font: "inherit" }}>
-                  {maps.map((map) => (
-                    <option key={map.id} value={map.id}>{map.name}</option>
-                  ))}
-                </select>
-              </label>
-
-              <div style={{ display: "grid", gap: 6, color: colors.muted, fontSize: 12, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", minWidth: 260 }}>
-                Builder
-                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                  {[
-                    { id: "hero", label: "Placement Loadout" },
-                    { id: "perks", label: "Map Perks Loadout" },
-                    { id: "spell", label: "Spell Loadout" },
-                  ].map((mode) => (
-                    <button
-                      key={mode.id}
-                      type="button"
-                      onClick={() => setBuilderMode(mode.id)}
-                      style={{
-                        background: builderMode === mode.id ? "rgba(245,146,30,0.16)" : colors.header,
-                        color: builderMode === mode.id ? colors.accent : colors.text,
-                        border: `1px solid ${builderMode === mode.id ? colors.accent : colors.border}`,
-                        borderRadius: 10,
-                        padding: "10px 14px",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {mode.label}
-                    </button>
-                  ))}
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+              <div style={{ display: "grid", gap: 6, minWidth: 0 }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>Map Loadouts</div>
+                <div style={{ fontSize: 13, color: colors.muted, lineHeight: 1.5 }}>
+                  {selectedMap ? `${selectedMap.name} · ${builderMode === "hero" ? "Placement Loadout" : builderMode === "perks" ? "Map Perks Loadout" : "Spell Loadout"}` : "Choose a map to start building."}
                 </div>
               </div>
 
-              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginLeft: "auto", alignItems: "stretch" }}>
-                {[
-                  { label: "Placed", value: placedCount },
-                  { label: "Open Spots", value: openCount },
-                ].map((stat) => (
-                  <div key={stat.label} style={{ padding: "10px 12px", background: colors.header, borderRadius: 10, border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", gap: 10, minHeight: 44 }}>
-                    <div style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>{stat.label}</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: colors.text, lineHeight: 1 }}>{stat.value}</div>
-                  </div>
-                ))}
-                <button type="button" onClick={clearSelectedMap} style={{ background: colors.header, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 14px", fontWeight: 700, cursor: "pointer", minHeight: 44 }}>
-                  Clear Map
-                </button>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+                <label style={{ display: "grid", gap: 6, color: colors.muted, fontSize: 11, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase", minWidth: 220 }}>
+                  Active Map
+                  <select value={selectedMap?.id ?? ""} onChange={(event) => setSelectedMapId(event.target.value)} style={{ minWidth: 220, background: "#0f2640", border: `1px solid ${colors.border}`, color: colors.text, borderRadius: 10, padding: "10px 12px", font: "inherit" }}>
+                    {maps.map((map) => (
+                      <option key={map.id} value={map.id}>{map.name}</option>
+                    ))}
+                  </select>
+                </label>
+                <MapLoadoutPresetsPanel
+                  colors={colors}
+                  selectedMap={selectedMap}
+                  presets={selectedMapSavedLoadouts}
+                  heroPresets={heroSavedLoadouts}
+                  currentSavedLoadoutId={currentSavedLoadoutId}
+                  onLoadSave={onLoadSave}
+                  onDeleteSave={onDeleteSave}
+                  onUpdateSave={onUpdateSave}
+                  onImportComplete={onImportComplete}
+                  compact
+                />
+                {saveButton ? (
+                  <button
+                    type="button"
+                    onClick={saveButton.onClick}
+                    style={{
+                      background: saveButton.passive ? colors.header : colors.accent,
+                      color: saveButton.passive ? colors.muted : "#08111d",
+                      border: `1px solid ${saveButton.passive ? colors.border : colors.accent}`,
+                      borderRadius: 10,
+                      padding: "10px 14px",
+                      fontWeight: 800,
+                      cursor: saveButton.busy ? "wait" : saveButton.passive ? "default" : "pointer",
+                      minHeight: 44,
+                    }}
+                  >
+                    {saveButton.label}
+                  </button>
+                ) : null}
                 <button type="button" onClick={() => setIsFiltersExpanded((current) => !current)} style={{ background: isFiltersExpanded ? "rgba(68,136,238,0.16)" : colors.header, color: colors.text, border: `1px solid ${isFiltersExpanded ? colors.accent : colors.border}`, borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer", minHeight: 44 }}>
                   Filters
                 </button>
@@ -2062,11 +2268,11 @@ export function LoadoutBuilderPage({
 
           {builderMode === "hero" ? (
             <div style={{ display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(320px, 440px)", gap: 20, alignItems: "start" }}>
-              <div style={{ display: "grid", gap: 14 }}>
+              <div style={{ display: isSelectedMapExpanded ? "contents" : "grid", gap: 14 }}>
 
               {selectedMap && (
-                <div style={{ position: "relative" }}>
-                  <MapStage map={selectedMap} colors={colors} getIconUrl={getIconUrl} minHeight={420}>
+                <div style={{ position: "relative", gridColumn: isSelectedMapExpanded ? "1 / -1" : undefined }}>
+                  <MapStage map={selectedMap} colors={colors} getIconUrl={getIconUrl} minHeight={isSelectedMapExpanded ? 560 : 420}>
                     {({ width, height, tokenSize, spotSize }) => {
                       const hoveredCenter = hoveredMapHeroEntry?.spot ? getSpotPixelPoint(hoveredMapHeroEntry.spot, width, height) : null;
                       const hoveredRangeRadius = hoveredMapHeroEntry?.hero ? getRangeRadiusPx(hoveredMapHeroEntry.hero.baseStats?.range, width, height) : 0;
@@ -2096,9 +2302,9 @@ export function LoadoutBuilderPage({
                             width: hoveredRangeRadius * 2,
                             height: hoveredRangeRadius * 2,
                             borderRadius: "50%",
-                            border: "2px solid rgba(245,146,30,0.58)",
-                            background: "rgba(245,146,30,0.08)",
-                            boxShadow: "0 0 0 1px rgba(245,146,30,0.14), inset 0 0 28px rgba(245,146,30,0.08)",
+                            border: "2px solid rgba(245,146,30,0.88)",
+                            background: "rgba(245,146,30,0.24)",
+                            boxShadow: "0 0 0 2px rgba(245,146,30,0.24), inset 0 0 54px rgba(245,146,30,0.22)",
                           }} />
                         </OverlayAnchor>
                       )}
@@ -2146,11 +2352,39 @@ export function LoadoutBuilderPage({
                       );
                     }}
                   </MapStage>
+                  <button
+                    type="button"
+                    onClick={toggleMapExpansion}
+                    style={{
+                      position: "absolute",
+                      top: 12,
+                      left: 12,
+                      zIndex: 8,
+                      background: "rgba(8,17,29,0.92)",
+                      color: colors.text,
+                      border: `1px solid ${colors.border}`,
+                      borderRadius: 10,
+                      padding: "8px 10px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                      boxShadow: "0 12px 28px rgba(0,0,0,0.28)",
+                    }}
+                  >
+                    {isSelectedMapExpanded ? "Collapse Map" : "Expand Map"}
+                  </button>
+                  <div style={{ position: "absolute", top: 12, right: 12, zIndex: 8, display: "grid", gap: 4, padding: "10px 12px", background: "rgba(8,17,29,0.92)", border: `1px solid ${colors.border}`, borderRadius: 12, textAlign: "right", boxShadow: "0 12px 28px rgba(0,0,0,0.28)" }}>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: colors.text }}>
+                      <span style={{ color: colors.positive }}>{placedCount}</span>/{totalSpotCount} Filled
+                    </div>
+                    <button type="button" onClick={clearSelectedMap} style={{ background: "none", border: "none", padding: 0, color: colors.accent, fontSize: 12, fontWeight: 700, cursor: "pointer", textDecoration: "underline", textUnderlineOffset: 2 }}>
+                      Clear Map
+                    </button>
+                  </div>
                 </div>
               )}
 
               {!mapHasSpots && (
-                <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 16, display: "flex", gap: 14, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap" }}>
+                <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 16, display: "flex", gap: 14, justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gridColumn: isSelectedMapExpanded ? "1 / -1" : undefined }}>
                   <div>
                     <div style={{ fontWeight: 800, color: colors.text }}>This map is still missing authored spots.</div>
                     <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Use the coord finder to add nodes with normalized coordinates before building a loadout.</div>
@@ -2161,10 +2395,8 @@ export function LoadoutBuilderPage({
 
               <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 14, padding: 16, display: "grid", gap: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: colors.muted, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Placements</div>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>{placedEntries.length} active placements</div>
-                  </div>
+                  <div style={{ fontSize: 11, color: colors.muted, fontWeight: 700, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Placements</div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: colors.muted }}>{placedEntries.length} active placements</div>
                 </div>
                 {placedEntries.length ? (
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 10 }}>
@@ -2184,38 +2416,83 @@ export function LoadoutBuilderPage({
                           transition: "background 0.15s, border-color 0.15s, box-shadow 0.15s",
                         }}
                       >
-                        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                          <HeroToken hero={entry.hero} getIconUrl={getIconUrl} colors={colors} size={40} label={entry.hero.name} />
-                          <div style={{ minWidth: 0, flex: 1 }}>
-                            <div style={{ fontWeight: 800, color: colors.text, fontSize: 13 }}>{entry.hero.name}</div>
-                            <div style={{ fontSize: 11, color: colors.muted }}>{entry.spot.label} · {entry.spot.id}</div>
-                            <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>Hero Level {entry.hero.currentLevel ?? 0}</div>
-                            <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
-                              {entry.placedBonus ? `${entry.placedBonus.name} ${formatSignedHeroBonus(normalizeMapPlacementBonusKey(entry.placedBonus.statKey), getPlacementBonusValue(entry.placedBonus, selectedMapPlacementBonusLevels[entry.placedBonus.id] ?? 0), fmt)}` : "No placement bonus"}
+                        <div style={{ display: "flex", alignItems: "start", justifyContent: "space-between", gap: 10 }}>
+                          <div style={{ display: "flex", alignItems: "center", gap: 10, minWidth: 0, flex: 1 }}>
+                            <HeroToken hero={entry.hero} getIconUrl={getIconUrl} colors={colors} size={40} label={entry.hero.name} />
+                            <div style={{ minWidth: 0, flex: 1 }}>
+                              <div style={{ fontWeight: 800, color: colors.text, fontSize: 13 }}>{entry.hero.name}</div>
+                              {entry.placedBonus ? (
+                                <div style={{ fontSize: 11, color: colors.muted, marginTop: 4 }}>
+                                  {entry.placedBonus.name} {formatSignedHeroBonus(normalizeMapPlacementBonusKey(entry.placedBonus.statKey), getPlacementBonusValue(entry.placedBonus, selectedMapPlacementBonusLevels[entry.placedBonus.id] ?? 0), fmt)}
+                                </div>
+                              ) : null}
                             </div>
                           </div>
+                          <button type="button" onClick={() => clearSpot(entry.spotId)} style={{ background: "transparent", color: colors.accent, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "8px 10px", fontWeight: 700, cursor: "pointer", flexShrink: 0 }}>Remove</button>
                         </div>
-                        <label style={{ display: "grid", gap: 4 }}>
-                          <span style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Rank</span>
-                          <input
-                            type="number"
-                            min={0}
-                            value={entry.currentRank}
-                            onChange={(event) => setSpotRank(entry.spotId, event.target.value)}
-                            style={{
-                              width: "100%",
-                              background: "#0f2640",
-                              border: `1px solid ${colors.border}`,
-                              borderRadius: 8,
-                              color: colors.text,
-                              fontSize: 13,
-                              fontWeight: 700,
-                              padding: "8px 10px",
-                              fontFamily: "inherit",
-                            }}
-                          />
-                        </label>
-                        <button type="button" onClick={() => clearSpot(entry.spotId)} style={{ background: "transparent", color: colors.accent, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "8px 10px", fontWeight: 700, cursor: "pointer" }}>Remove</button>
+                        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8 }}>
+                          <label style={{ display: "grid", gap: 4 }}>
+                            <span style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Hero Level</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={entry.currentLevel}
+                              onChange={(event) => setSpotLevel(entry.spotId, entry.heroId, event.target.value)}
+                              style={{
+                                width: "100%",
+                                background: "#0f2640",
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: 8,
+                                color: colors.text,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                padding: "8px 10px",
+                                fontFamily: "inherit",
+                              }}
+                            />
+                          </label>
+                          <label style={{ display: "grid", gap: 4 }}>
+                            <span style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Current Rank</span>
+                            <input
+                              type="number"
+                              min={0}
+                              value={entry.currentRank}
+                              onChange={(event) => setHeroRank(entry.heroId, event.target.value)}
+                              style={{
+                                width: "100%",
+                                background: "#0f2640",
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: 8,
+                                color: colors.text,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                padding: "8px 10px",
+                                fontFamily: "inherit",
+                              }}
+                            />
+                          </label>
+                          <label style={{ display: "grid", gap: 4 }}>
+                            <span style={{ fontSize: 10, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase" }}>Mastery Level</span>
+                            <input
+                              type="number"
+                              min={0}
+                              max={entry.baseHero.masteryExp?.maxLevel ?? 0}
+                              value={entry.currentMastery}
+                              onChange={(event) => setHeroMastery(entry.heroId, event.target.value)}
+                              style={{
+                                width: "100%",
+                                background: "#0f2640",
+                                border: `1px solid ${colors.border}`,
+                                borderRadius: 8,
+                                color: colors.text,
+                                fontSize: 13,
+                                fontWeight: 700,
+                                padding: "8px 10px",
+                                fontFamily: "inherit",
+                              }}
+                            />
+                          </label>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -2291,8 +2568,9 @@ export function LoadoutBuilderPage({
                       <div style={{ display: "grid", gap: 4 }}>
                         <div style={{ fontSize: 12, color: colors.muted }}>{focusedHero.class ?? "Unknown class"} · {focusedHero.rarity ?? "Unknown rarity"}</div>
                         <div style={{ fontSize: 12, color: colors.muted }}>{formatFilterLabel(focusedHero.type)}{focusedHero.typeSubtype?.length ? ` · ${focusedHero.typeSubtype.map(formatFilterLabel).join(", ")}` : ""}</div>
-                        <div style={{ fontSize: 12, color: colors.muted }}>Current Rank {focusedHero.currentRank ?? 0}</div>
-                        <div style={{ fontSize: 12, color: colors.muted }}>Current Level {focusedHero.currentLevel ?? 0}</div>
+                        <div style={{ fontSize: 12, color: colors.muted }}>Current Rank {fmt(focusedHero.currentRank ?? 0)}</div>
+                        <div style={{ fontSize: 12, color: colors.muted }}>Current Level {fmt(focusedHero.currentLevel ?? 0)}</div>
+                        <div style={{ fontSize: 12, color: colors.muted }}>Mastery Level {fmt(focusedHero.currentMastery ?? 0)}</div>
                         <div style={{ fontSize: 12, color: colors.muted }}>{focusedHero.placementBonus ? `Placement Bonus: ${focusedHero.placementBonus.name}` : "Placement Bonus: None"}</div>
                         <div style={{ fontSize: 13, color: colors.text, lineHeight: 1.6 }}>{focusedHero.skill?.description ?? "No skill description available."}</div>
                       </div>
@@ -2396,6 +2674,8 @@ export function LoadoutBuilderPage({
               maps={maps}
               getIconUrl={getIconUrl}
               fmt={fmt}
+              isMapExpanded={isSelectedMapExpanded}
+              onToggleMapExpanded={toggleMapExpansion}
             />
           ) : (
             <MapSpellLoadoutBuilder

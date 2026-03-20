@@ -59,12 +59,87 @@ function GroupTabButton({ label, isActive, colors, onSelect }) {
   );
 }
 
+function InlineTabButton({ tab, isActive, colors, getIconUrl, onSelect }) {
+  return (
+    <button
+      type="button"
+      onClick={() => onSelect(tab.key)}
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        background: isActive ? `linear-gradient(135deg, ${colors.accent}33 0%, ${colors.header} 100%)` : colors.header,
+        border: `1px solid ${isActive ? colors.accent : colors.border}`,
+        borderRadius: 999,
+        color: isActive ? colors.accent : colors.text,
+        cursor: "pointer",
+        padding: "9px 12px",
+        fontFamily: "inherit",
+        fontSize: 13,
+        fontWeight: 800,
+        whiteSpace: "nowrap",
+      }}
+    >
+      {tab.menuIcon ? <img src={getIconUrl(tab.menuIcon)} alt="" style={{ width: 18, height: 18, objectFit: "contain" }} /> : null}
+      <span>{tab.label}</span>
+    </button>
+  );
+}
+
+function SwitchToggle({ checked, onChange, colors, checkedLabel = "Purchased", uncheckedLabel = "Not Purchased" }) {
+  const label = checked ? checkedLabel : uncheckedLabel;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onChange(!checked)}
+      style={{
+        background: colors.header,
+        border: `1px solid ${checked ? colors.accent : colors.border}`,
+        borderRadius: 999,
+        color: colors.text,
+        cursor: "pointer",
+        display: "flex",
+        alignItems: "center",
+        gap: 10,
+        minHeight: 36,
+        padding: "6px 12px 6px 8px",
+        fontFamily: "inherit",
+        fontWeight: 800,
+      }}
+    >
+      <span
+        aria-hidden="true"
+        style={{
+          width: 38,
+          height: 22,
+          borderRadius: 999,
+          background: checked ? colors.accent : "#0f2640",
+          border: `1px solid ${checked ? colors.accent : colors.border}`,
+          position: "relative",
+          flexShrink: 0,
+        }}
+      >
+        <span
+          style={{
+            position: "absolute",
+            top: 2,
+            left: checked ? 18 : 2,
+            width: 16,
+            height: 16,
+            borderRadius: "50%",
+            background: checked ? "#08111d" : colors.text,
+          }}
+        />
+      </span>
+      <span style={{ fontSize: 12 }}>{label}</span>
+    </button>
+  );
+}
+
 function PurchasedToggle({ isPurchased, colors, onToggle }) {
   return (
-    <label style={{ display: "flex", alignItems: "center", gap: 8, color: colors.text, fontSize: 12, fontWeight: 700 }}>
-      <input type="checkbox" checked={isPurchased} onChange={(event) => onToggle(event.target.checked)} />
-      Purchased
-    </label>
+    <SwitchToggle checked={isPurchased} onChange={onToggle} colors={colors} checkedLabel="Purchased" uncheckedLabel="Purchased" />
   );
 }
 
@@ -103,9 +178,6 @@ function IconCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle }) {
         <img src={getIconUrl(item.icon)} alt={item.name} style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 6, objectFit: "contain" }} />
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 12, color: isPurchased ? colors.accent : colors.muted, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-          {isPurchased ? "Included In Loadout" : "Not Purchased"}
-        </div>
         <PurchasedToggle isPurchased={isPurchased} colors={colors} onToggle={onToggle} />
       </div>
     </div>
@@ -136,9 +208,6 @@ function BackgroundCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle }
           </div>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap", marginTop: "auto" }}>
-          <div style={{ fontSize: 12, color: isPurchased ? colors.accent : colors.muted, fontWeight: 800, letterSpacing: "0.06em", textTransform: "uppercase" }}>
-            {isPurchased ? "Included In Loadout" : "Not Purchased"}
-          </div>
           <PurchasedToggle isPurchased={isPurchased} colors={colors} onToggle={onToggle} />
         </div>
       </div>
@@ -175,7 +244,7 @@ function StatSummaryList({ entries, colors, fmt }) {
   );
 }
 
-export function PlayerLoadoutPage({ colors, getIconUrl, fmt, savedLoadouts = [], currentSavedLoadoutId = "", onLoadSave, onDeleteSave, onImportComplete }) {
+export function PlayerLoadoutPage({ colors, getIconUrl, fmt, savedLoadouts = [], currentSavedLoadoutId = "", onLoadSave, onDeleteSave, onImportComplete, saveButton }) {
   const initialState = useMemo(() => readPlayerLoadoutState(localStorage), []);
   const [selectedTab, setSelectedTab] = useState(initialState.selectedTab);
   const [selectedGroupByTab, setSelectedGroupByTab] = useState(initialState.selectedGroupByTab);
@@ -203,7 +272,6 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt, savedLoadouts = [],
     () => allEntries.filter((entry) => entry.sourceType === activeTab.key && activeItemIds.has(entry.sourceId)),
     [activeItemIds, activeTab.key, allEntries]
   );
-  const purchasedCount = activeItems.filter((item) => Boolean(activePurchased[item.id])).length;
   const playerPresets = useMemo(
     () => savedLoadouts.filter((save) => save.scopeId === LOADOUT_RECORD_SCOPE_PLAYER),
     [savedLoadouts]
@@ -243,71 +311,79 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt, savedLoadouts = [],
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <ScopedLoadoutPresetsPanel
-        colors={colors}
-        title="Player Loadout Presets"
-        description="Save and manage player-loadout-only presets here. These records only affect the Player Loadout page."
-        scopeId={LOADOUT_RECORD_SCOPE_PLAYER}
-        presets={playerPresets}
-        currentSavedLoadoutId={currentSavedLoadoutId}
-        onLoadSave={onLoadSave}
-        onDeleteSave={onDeleteSave}
-        onImportComplete={onImportComplete}
-      />
-
-      <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 18, display: "grid", gap: 10 }}>
-        <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>Player Loadout</div>
-        <div style={{ fontSize: 13, color: colors.muted, maxWidth: 780 }}>
-          Track which player icons and backgrounds are purchased and apply their rewards as global loadout stats.
+      <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 18, display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>Player Loadout</div>
+        </div>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <ScopedLoadoutPresetsPanel
+            colors={colors}
+            title="Player Loadout Presets"
+            description="Save and manage player-loadout-only presets here. These records only affect the Player Loadout page."
+            scopeId={LOADOUT_RECORD_SCOPE_PLAYER}
+            presets={playerPresets}
+            currentSavedLoadoutId={currentSavedLoadoutId}
+            onLoadSave={onLoadSave}
+            onDeleteSave={onDeleteSave}
+            onImportComplete={onImportComplete}
+            compact
+          />
+          {saveButton ? (
+            <button
+              type="button"
+              onClick={saveButton.onClick}
+              style={{
+                background: saveButton.passive ? colors.header : colors.accent,
+                color: saveButton.passive ? colors.muted : "#08111d",
+                border: `1px solid ${saveButton.passive ? colors.border : colors.accent}`,
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontWeight: 800,
+                cursor: saveButton.busy ? "wait" : saveButton.passive ? "default" : "pointer",
+                minHeight: 44,
+              }}
+            >
+              {saveButton.label}
+            </button>
+          ) : null}
         </div>
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "start" }}>
         <aside style={{ flex: "0 0 260px", width: "100%", maxWidth: 320, display: "grid", gap: 14, position: "sticky", top: 0 }}>
-          <div style={{ background: `linear-gradient(180deg, ${colors.panel} 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 8 }}>
-            {PLAYER_LOADOUT_TABS.map((tab) => (
-              <TabButton
-                key={tab.key}
-                tab={tab}
-                isActive={tab.key === activeTab.key}
-                colors={colors}
-                getIconUrl={getIconUrl}
-                onSelect={setSelectedTab}
-              />
-            ))}
-          </div>
-        </aside>
-
-        <section style={{ flex: "1 1 760px", minWidth: 0, display: "grid", gap: 16 }}>
-          <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12 }}>
-            <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
-              <div>
-                <div style={{ fontSize: 14, fontWeight: 900, color: colors.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>
-                  {activeTab.label}
-                </div>
-                <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>
-                  {activeGroup?.label ?? "Group"} group with {fmt(purchasedCount)} purchased and {fmt(activeItems.length)} total items.
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                {groupEntries.map((group) => (
-                  <GroupTabButton
-                    key={group.key}
-                    label={group.label}
-                    isActive={group.key === activeGroup?.key}
-                    colors={colors}
-                    onSelect={() => handleGroupChange(group.key)}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
           <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12 }}>
             <div style={{ fontSize: 14, fontWeight: 900, color: colors.accent, letterSpacing: "0.08em", textTransform: "uppercase" }}>
               {activeGroup?.label ?? activeTab.label} Stat Summary
             </div>
             <StatSummaryList entries={activeEntries} colors={colors} fmt={fmt} />
+          </div>
+        </aside>
+
+        <section style={{ flex: "1 1 760px", minWidth: 0, display: "grid", gap: 16 }}>
+          <div style={{ display: "grid", gap: 12 }}>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+              {PLAYER_LOADOUT_TABS.map((tab) => (
+                <InlineTabButton
+                  key={tab.key}
+                  tab={tab}
+                  isActive={tab.key === activeTab.key}
+                  colors={colors}
+                  getIconUrl={getIconUrl}
+                  onSelect={setSelectedTab}
+                />
+              ))}
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {groupEntries.map((group) => (
+                <GroupTabButton
+                  key={group.key}
+                  label={group.label}
+                  isActive={group.key === activeGroup?.key}
+                  colors={colors}
+                  onSelect={() => handleGroupChange(group.key)}
+                />
+              ))}
+            </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 14 }}>

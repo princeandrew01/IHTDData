@@ -471,7 +471,7 @@ function AttributeCard({ attribute, currentLevel, previewLevels, colors, fmt, ge
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Projected Level</div>
-          <div style={{ fontSize: 14, fontWeight: 800, color: colors.accent }}>{preview.currentLevel} -&gt; {preview.projectedLevel}</div>
+          <div style={{ fontSize: 14, fontWeight: 800, color: colors.accent }}>{fmt(preview.currentLevel)} -&gt; {fmt(preview.projectedLevel)}</div>
         </div>
         <div style={{ display: "grid", gap: 4 }}>
           <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Projected Bonus</div>
@@ -508,7 +508,7 @@ function HeaderFieldCard({ label, value, colors, helper, valueColor, min = 0, ma
   );
 }
 
-export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts = [], currentSavedLoadoutId = "", onLoadSave, onDeleteSave, onImportComplete }) {
+export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts = [], currentSavedLoadoutId = "", onLoadSave, onDeleteSave, onImportComplete, saveButton }) {
   const initialState = useMemo(() => readHeroLoadoutState(localStorage), []);
   const [selectedHeroId, setSelectedHeroId] = useState(initialState.selectedHeroId);
   const [previewLevelsByHero, setPreviewLevelsByHero] = useState(initialState.previewLevelsByHero);
@@ -804,28 +804,45 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
 
   return (
     <div style={{ display: "grid", gap: 20 }}>
-      <ScopedLoadoutPresetsPanel
-        colors={colors}
-        title="Hero Loadout Presets"
-        description="Save and manage hero-loadout-only presets here. These records only affect the Hero Loadout page."
-        scopeId={LOADOUT_RECORD_SCOPE_HERO}
-        presets={heroPresets}
-        currentSavedLoadoutId={currentSavedLoadoutId}
-        onLoadSave={onLoadSave}
-        onDeleteSave={onDeleteSave}
-        onImportComplete={onImportComplete}
-      />
-
       <div style={{ background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 18, display: "flex", justifyContent: "space-between", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
         <div style={{ minWidth: 0 }}>
           <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>Hero Loadout</div>
           <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>Configure hero-wide rank, level, mastery, and attribute levels shared by every copy of the same hero.</div>
         </div>
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+          <ScopedLoadoutPresetsPanel
+            colors={colors}
+            title="Hero Loadout Presets"
+            description="Save and manage hero-loadout-only presets here. These records only affect the Hero Loadout page."
+            scopeId={LOADOUT_RECORD_SCOPE_HERO}
+            presets={heroPresets}
+            currentSavedLoadoutId={currentSavedLoadoutId}
+            onLoadSave={onLoadSave}
+            onDeleteSave={onDeleteSave}
+            onImportComplete={onImportComplete}
+            compact
+          />
+          {saveButton ? (
+            <button
+              type="button"
+              onClick={saveButton.onClick}
+              style={{
+                background: saveButton.passive ? colors.header : colors.accent,
+                color: saveButton.passive ? colors.muted : "#08111d",
+                border: `1px solid ${saveButton.passive ? colors.border : colors.accent}`,
+                borderRadius: 10,
+                padding: "10px 14px",
+                fontWeight: 800,
+                cursor: saveButton.busy ? "wait" : saveButton.passive ? "default" : "pointer",
+                minHeight: 44,
+              }}
+            >
+              {saveButton.label}
+            </button>
+          ) : null}
           <button type="button" onClick={() => setIsFiltersExpanded((current) => !current)} style={{ background: isFiltersExpanded ? "rgba(68,136,238,0.16)" : colors.header, color: colors.text, border: `1px solid ${isFiltersExpanded ? colors.accent : colors.border}`, borderRadius: 10, padding: "10px 14px", fontWeight: 800, cursor: "pointer", minHeight: 44 }}>
             Filters
           </button>
-          <div style={{ fontSize: 12, color: colors.muted }}>{sortedHeroes.length} of {heroes.length} heroes</div>
         </div>
       </div>
 
@@ -915,9 +932,9 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
         </div>
       )}
 
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "start" }}>
-        <aside style={{ flex: "0 0 280px", width: "100%", maxWidth: 340, display: "grid", gap: 14, position: "sticky", top: 0 }}>
-          <div style={{ background: `linear-gradient(180deg, ${colors.panel} 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12, maxHeight: "calc(100vh - 120px)", overflowY: "auto" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 20, alignItems: "flex-start" }}>
+        <aside style={{ flex: "0 0 300px", width: "100%", maxWidth: 340, display: "grid", gap: 14, alignSelf: "flex-start" }}>
+          <div style={{ background: `linear-gradient(180deg, ${colors.panel} 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 12, maxHeight: "calc(200vh - 240px)", overflowY: "auto", position: "sticky", top: 16 }}>
             {groupedHeroes.map((group) => (
               <div key={group.rarity} style={{ display: "grid", gap: 8 }}>
                 <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>{group.rarity}</div>
@@ -936,19 +953,24 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                           borderRadius: 12,
                           color: colors.text,
                           cursor: "pointer",
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 10,
-                          padding: "10px 12px",
+                          display: "grid",
+                          gridTemplateColumns: "72px minmax(0, 1fr)",
+                          gap: 12,
+                          padding: 12,
                           textAlign: "left",
+                          alignItems: "center",
                         }}
                       >
-                        <div style={{ width: 40, height: 40, borderRadius: 10, background: colors.panel, border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0, overflow: "hidden" }}>
-                          {hero.heroIcon ? <img src={getIconUrl(hero.heroIcon)} alt="" style={{ width: 28, height: 28, objectFit: "contain" }} /> : null}
+                        <div style={{ position: "relative", width: 72, height: 72, borderRadius: 12, background: isActive ? "rgba(245,146,30,0.12)" : colors.panel, border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "visible", flexShrink: 0, marginBottom: 10 }}>
+                          {hero.heroIcon ? <img src={getIconUrl(hero.heroIcon)} alt="" style={{ width: 56, height: 56, objectFit: "contain" }} /> : null}
+                          <div style={{ position: "absolute", left: "50%", bottom: -10, transform: "translateX(-50%)", display: "flex", alignItems: "center", gap: 4, padding: "3px 8px", borderRadius: 999, background: "rgba(8,17,29,0.92)", border: `1px solid ${colors.border}`, boxShadow: "0 6px 16px rgba(0,0,0,0.24)", zIndex: 1 }}>
+                            <img src={getIconUrl("_mastery_2.png")} alt="" style={{ width: 12, height: 12, objectFit: "contain", flexShrink: 0 }} />
+                            <span style={{ fontSize: 11, fontWeight: 800, color: colors.text }}>{fmt(masteryLevelByHero[hero.id] ?? 0)}</span>
+                          </div>
                         </div>
-                        <div style={{ minWidth: 0, flex: 1 }}>
-                          <div style={{ fontSize: 14, fontWeight: 800, color: isActive ? colors.accent : colors.text }}>{hero.name}</div>
-                          <div style={{ fontSize: 11, color: colors.muted }}>{formatLabel(hero.class)} · Order {hero.order ?? "-"}</div>
+                        <div style={{ minWidth: 0, display: "grid", gap: 6, alignContent: "center" }}>
+                          <div style={{ fontSize: 14, fontWeight: 800, color: isActive ? colors.accent : colors.text, lineHeight: 1.25 }}>{hero.name}</div>
+                          <div style={{ fontSize: 11, color: colors.muted, lineHeight: 1.4 }}>{formatLabel(hero.class)} · Lv. {fmt(levelByHero[hero.id] ?? 0)}</div>
                         </div>
                       </button>
                     );
@@ -975,7 +997,6 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{ fontSize: 22, fontWeight: 900, color: colors.text }}>{selectedHero.name}</div>
                     <div style={{ fontSize: 13, color: colors.muted, marginTop: 4 }}>{formatLabel(selectedHero.class)} · {selectedHero.rarity} · {formatLabel(selectedHero.type)}</div>
-                    <div style={{ fontSize: 13, color: colors.muted, marginTop: 8 }}>Rank, map-resetting level, mastery, and attributes on this page apply to every placed copy of {selectedHero.name}.</div>
                   </div>
                 </div>
 
@@ -992,28 +1013,6 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                     </div>
                   ))}
                 </div>
-
-                <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-                  {HERO_DETAIL_TABS.map((tab) => (
-                    <button
-                      key={tab.id}
-                      type="button"
-                      onClick={() => setActiveHeroTab(tab.id)}
-                      style={{
-                        background: activeHeroTab === tab.id ? "rgba(245,146,30,0.16)" : colors.panel,
-                        color: activeHeroTab === tab.id ? colors.text : colors.muted,
-                        border: `1px solid ${activeHeroTab === tab.id ? colors.accent : colors.border}`,
-                        borderRadius: 999,
-                        padding: "10px 14px",
-                        fontWeight: 800,
-                        cursor: "pointer",
-                      }}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
-                </div>
-
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(0, 1fr))", gap: 12 }}>
                   <HeaderFieldCard
                     label="Current Rank"
@@ -1037,16 +1036,37 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                     max={selectedHero.masteryExp?.maxLevel ?? 0}
                     disabled={!selectedHero.masteryExp}
                     colors={colors}
-                    helper={selectedHero.masteryExp ? `Max ${selectedHero.masteryLevel?.maxLevel ?? selectedHero.masteryExp?.maxLevel ?? 0}` : "Mastery is unavailable for this hero."}
+                    helper={selectedHero.masteryExp ? `Max ${fmt(selectedHero.masteryLevel?.maxLevel ?? selectedHero.masteryExp?.maxLevel ?? 0)}` : "Mastery is unavailable for this hero."}
                   />
                   <HeaderFieldCard
                     label="Next Mastery Cost"
                     value={selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Maxed" : `${fmt(nextMasteryCost)} exp`) : "Unavailable"}
                     valueColor={colors.accent}
                     colors={colors}
-                    helper={selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Mastery is fully maxed." : `Next level ${nextMasteryLevel}`) : "No mastery table is available."}
+                    helper={selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Mastery is fully maxed." : `Next level ${fmt(nextMasteryLevel)}`) : "No mastery table is available."}
                   />
                 </div>
+              </div>
+
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+                {HERO_DETAIL_TABS.map((tab) => (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveHeroTab(tab.id)}
+                    style={{
+                      background: activeHeroTab === tab.id ? "rgba(245,146,30,0.16)" : colors.panel,
+                      color: activeHeroTab === tab.id ? colors.text : colors.muted,
+                      border: `1px solid ${activeHeroTab === tab.id ? colors.accent : colors.border}`,
+                      borderRadius: 999,
+                      padding: "10px 14px",
+                      fontWeight: 800,
+                      cursor: "pointer",
+                    }}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
               </div>
 
               {activeHeroTab === "information" && (
@@ -1054,7 +1074,6 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Active Skill</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Base skill text plus the parts affected by skill power and skill duration.</div>
                     </div>
 
                     {selectedHero.skill ? (
@@ -1066,7 +1085,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                           <div style={{ minWidth: 0, flex: 1, display: "grid", gap: 8 }}>
                             <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                               <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>{selectedHero.skill.name}</div>
-                              <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "4px 10px", fontSize: 12, color: colors.muted }}>{selectedHero.skill.cooldown ?? 0}s cooldown</div>
+                              <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 999, padding: "4px 10px", fontSize: 12, color: colors.muted }}>{fmt(selectedHero.skill.cooldown ?? 0)}s cooldown</div>
                             </div>
                             <div style={{ fontSize: 14, color: colors.text, lineHeight: 1.6 }}>{selectedHero.skill.description}</div>
                           </div>
@@ -1095,20 +1114,19 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Skill Mastery</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Review the current mastery state and the exp cost required for the next level.</div>
                     </div>
 
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Current Mastery Level</div>
                         <div style={{ fontSize: 16, fontWeight: 900, color: colors.text }}>
-                          {selectedHero.masteryExp ? `${selectedHeroMasteryLevel} / ${selectedHero.masteryExp.maxLevel ?? 0}` : "Unavailable"}
+                          {selectedHero.masteryExp ? `${fmt(selectedHeroMasteryLevel)} / ${fmt(selectedHero.masteryExp.maxLevel ?? 0)}` : "Unavailable"}
                         </div>
                       </div>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Next Mastery Level</div>
                         <div style={{ fontSize: 16, fontWeight: 900, color: colors.text }}>
-                          {selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Maxed" : nextMasteryLevel) : "Unavailable"}
+                          {selectedHero.masteryExp ? (selectedHeroMasteryLevel >= (selectedHero.masteryExp.maxLevel ?? 0) ? "Maxed" : fmt(nextMasteryLevel)) : "Unavailable"}
                         </div>
                       </div>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
@@ -1128,7 +1146,6 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Stats</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>Base stat values defined for the hero.</div>
                     </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12 }}>
                       {Object.entries(selectedHero.baseStats ?? {}).map(([statKey, value]) => (
@@ -1143,26 +1160,21 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                   <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 16, padding: 16, display: "grid", gap: 16 }}>
                     <div>
                       <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>Milestones</div>
-                      <div style={{ fontSize: 12, color: colors.muted, marginTop: 4 }}>All milestone thresholds for this hero, including bonus type and scope.</div>
                     </div>
                     {(selectedHero.milestones ?? []).length ? (
-                      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
+                      <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12 }}>
                         {(selectedHero.milestones ?? []).map((milestone) => {
                           const isActive = selectedHeroLevel >= (milestone.requirement ?? 0);
+                          const scopeColor = milestone.scope === "personal" ? colors.accent : colors.positive;
                           return (
-                            <div key={milestone.milestone} style={{ background: isActive ? "rgba(46,204,113,0.12)" : colors.header, border: `1px solid ${isActive ? colors.positive : colors.border}`, borderRadius: 14, padding: 14, display: "grid", gap: 10 }}>
-                              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "start" }}>
-                                <div>
-                                  <div style={{ fontSize: 12, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Milestone {milestone.milestone}</div>
-                                  <div style={{ fontSize: 16, fontWeight: 900, color: colors.text, marginTop: 4 }}>{milestone.name}</div>
-                                </div>
-                                <div style={{ background: isActive ? "rgba(46,204,113,0.18)" : colors.panel, border: `1px solid ${isActive ? colors.positive : colors.border}`, borderRadius: 999, padding: "4px 10px", fontSize: 11, fontWeight: 800, color: isActive ? colors.positive : colors.muted }}>{isActive ? "Active" : "Locked"}</div>
+                            <div key={milestone.milestone} style={{ background: isActive ? "rgba(46,204,113,0.12)" : colors.header, border: `1px solid ${isActive ? colors.positive : colors.border}`, borderRadius: 14, padding: 14, display: "grid", gridTemplateColumns: "72px minmax(0, 1fr)", gap: 14, alignItems: "center", opacity: isActive ? 1 : 0.58, minWidth: 0 }}>
+                              <div style={{ width: 72, height: 72, borderRadius: 16, background: milestone.bgColor ?? colors.panel, border: `1px solid ${milestone.borderColor ?? colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
+                                {milestone.icon ? <img src={getIconUrl(milestone.icon)} alt="" style={{ width: 42, height: 42, objectFit: "contain" }} /> : null}
                               </div>
                               <div style={{ display: "grid", gap: 6 }}>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Required Level:</span> {fmt(milestone.requirement ?? 0)}</div>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Stat:</span> {getHeroEffectLabel(milestone.type)}</div>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Amount:</span> {formatHeroEffectAmount(milestone.type, milestone.amount, fmt)}</div>
-                                <div style={{ fontSize: 12, color: colors.text }}><span style={{ color: colors.muted }}>Scope:</span> {formatLabel(milestone.scope)}</div>
+                                <div style={{ fontSize: 15, fontWeight: 900, color: colors.text }}>Level {fmt(milestone.requirement ?? 0)}</div>
+                                <div style={{ fontSize: 13, color: colors.text, lineHeight: 1.6 }}>{milestone.description ?? `${milestone.name} ${formatHeroEffectAmount(milestone.type, milestone.amount, fmt)}`}</div>
+                                <div style={{ fontSize: 12, fontWeight: 800, color: scopeColor }}>{formatLabel(milestone.scope)} effect</div>
                               </div>
                             </div>
                           );
@@ -1185,7 +1197,7 @@ export function HeroLoadoutPage({ colors, getIconUrl, fmt, heroes, savedLoadouts
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12 }}>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Milestones Reached</div>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>{milestoneProgress.completed} / {selectedHero.milestones?.length ?? 0}</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: colors.text }}>{fmt(milestoneProgress.completed)} / {fmt(selectedHero.milestones?.length ?? 0)}</div>
                       </div>
                       <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 12, padding: 14, display: "grid", gap: 8 }}>
                         <div style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.08em", textTransform: "uppercase", fontWeight: 800 }}>Next Milestone</div>
