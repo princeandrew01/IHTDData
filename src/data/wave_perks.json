@@ -1,0 +1,255 @@
+{
+  "menuOrder": 15,
+  "parentMenuName": "Upgrades",
+  "menuIcon": "_wavePerkWaves2.png",
+  "label": "Wave Perks",
+  "note": "Wave perks are randomly offered every N waves (N decreases with Wave Perk Waves upgrades). Each perk can be stacked up to its max stacks.",
+  "groups": {
+    "Common": [
+      {
+        "id": "damage",
+        "name": "Damage",
+        "statAmt": 15,
+        "maxStacks": 999,
+        "rarity": "Common",
+        "icon": "_dps.png",
+        "bgColor": "#960000",
+        "borderColor": "#FF0000"
+      },
+      {
+        "id": "killGold",
+        "name": "Kill Gold",
+        "statAmt": 15,
+        "maxStacks": 999,
+        "rarity": "Common",
+        "icon": "_coin.png",
+        "bgColor": "#999900",
+        "borderColor": "#FFFF00"
+      },
+      {
+        "id": "prestigePower",
+        "name": "Prestige Power",
+        "statAmt": 15,
+        "maxStacks": 999,
+        "rarity": "Common",
+        "icon": "_planet.png",
+        "bgColor": "#6E00A2",
+        "borderColor": "#AF00FF"
+      },
+      {
+        "id": "critDmg",
+        "name": "Crit Damage",
+        "statAmt": 15,
+        "maxStacks": 999,
+        "rarity": "Common",
+        "icon": "_critDmg_2.png",
+        "bgColor": "#843800",
+        "borderColor": "#E16400"
+      },
+      {
+        "id": "enemyHp",
+        "name": "Enemy HP",
+        "statAmt": -5,
+        "maxStacks": 5,
+        "rarity": "Common",
+        "icon": "_enemyHp.png",
+        "bgColor": "#4C0000",
+        "borderColor": "#800000"
+      },
+      {
+        "id": "critChance",
+        "name": "Crit Chance",
+        "statAmt": 5,
+        "maxStacks": 3,
+        "rarity": "Common",
+        "icon": "_critChance2.png",
+        "bgColor": "#994B00",
+        "borderColor": "#FF8000"
+      },
+      {
+        "id": "attSpeed",
+        "name": "Attack Speed",
+        "statAmt": 5,
+        "maxStacks": 3,
+        "rarity": "Common",
+        "icon": "_attSpeed.png",
+        "bgColor": "#009B00",
+        "borderColor": "#00FF00"
+      },
+      {
+        "id": "range",
+        "name": "Range",
+        "statAmt": 5,
+        "maxStacks": 3,
+        "rarity": "Common",
+        "icon": "_range_2.png",
+        "bgColor": "#9F9E00",
+        "borderColor": "#FFFF00"
+      },
+      {
+        "id": "hoarderGold",
+        "name": "Goblin Hoarder Gold",
+        "statAmt": 15,
+        "maxStacks": 3,
+        "rarity": "Common",
+        "icon": "_hoarderGold.png",
+        "bgColor": "#878600",
+        "borderColor": "#DEDE00"
+      }
+    ],
+    "Uncommon": [
+      {
+        "id": "energyIncome",
+        "name": "Energy Income",
+        "statAmt": 1,
+        "maxStacks": 999,
+        "rarity": "Uncommon",
+        "icon": "_energy2.png",
+        "bgColor": "#00A300",
+        "borderColor": "#00FF00"
+      },
+      {
+        "id": "killExp",
+        "name": "Kill Exp",
+        "statAmt": 1,
+        "maxStacks": 999,
+        "rarity": "Uncommon",
+        "icon": "_exp.png",
+        "bgColor": "#0A6899",
+        "borderColor": "#19AFFF"
+      },
+      {
+        "id": "skillPower",
+        "name": "Skill Power",
+        "statAmt": 1,
+        "maxStacks": 5,
+        "rarity": "Uncommon",
+        "icon": "_skillPower_2.png",
+        "bgColor": "#009F9F",
+        "borderColor": "#00DEE0"
+      },
+      {
+        "id": "skillCd",
+        "name": "Skill Cooldown",
+        "statAmt": 5,
+        "maxStacks": 3,
+        "rarity": "Uncommon",
+        "icon": "_skillCd.png",
+        "bgColor": "#7C7B7C",
+        "borderColor": "#C8C8C8"
+      },
+      {
+        "id": "spellCd",
+        "name": "Spell Cooldown",
+        "statAmt": 5,
+        "maxStacks": 3,
+        "rarity": "Uncommon",
+        "icon": "_skillDuration.png",
+        "bgColor": "#007575",
+        "borderColor": "#00C8C8"
+      },
+      {
+        "id": "producerEnergy",
+        "name": "Power Mage Energy",
+        "statAmt": 15,
+        "maxStacks": 3,
+        "rarity": "Uncommon",
+        "icon": "_energy_2.png",
+        "bgColor": "#008200",
+        "borderColor": "#00DE00"
+      },
+      {
+        "id": "battlepassExp",
+        "name": "Battlepass Exp",
+        "statAmt": 1,
+        "maxStacks": 3,
+        "rarity": "Uncommon",
+        "icon": "_battlepassExp.png",
+        "bgColor": "#007700",
+        "borderColor": "#00C800"
+      },
+      {
+        "id": "wavePerkWaves",
+        "name": "Wave Perk Waves",
+        "statAmt": 10,
+        "maxStacks": 3,
+        "rarity": "Uncommon",
+        "icon": "_wavePerkWaves2.png",
+        "bgColor": "#00234B",
+        "borderColor": "#003A74"
+      }
+    ],
+    "Rare": [
+      {
+        "id": "alienTech",
+        "name": "Alien Tech",
+        "statAmt": 2,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_techPts.png",
+        "bgColor": "#4A3B79",
+        "borderColor": "#7D64C8"
+      },
+      {
+        "id": "gameSpeed",
+        "name": "Max Game Speed",
+        "statAmt": 0.5,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_gameSpeed.png",
+        "bgColor": "#4B994B",
+        "borderColor": "#80FF80"
+      },
+      {
+        "id": "hoarderSpawns",
+        "name": "Goblin Hoarder Spawns",
+        "statAmt": 5,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_boss.png",
+        "bgColor": "#868500",
+        "borderColor": "#DEDE00"
+      },
+      {
+        "id": "producerSpawns",
+        "name": "Power Mage Spawns",
+        "statAmt": 3,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_boss.png",
+        "bgColor": "#691A1A",
+        "borderColor": "#AF3232"
+      },
+      {
+        "id": "shadowRunes",
+        "name": "Shadow Runes",
+        "statAmt": 1,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_rune2.png",
+        "bgColor": "#770000",
+        "borderColor": "#C80000"
+      },
+      {
+        "id": "trainerExp",
+        "name": "Training Dummy Exp",
+        "statAmt": 25,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_trainerExp2.png",
+        "bgColor": "#005987",
+        "borderColor": "#0096E1"
+      },
+      {
+        "id": "ultimusTokens",
+        "name": "Ultimus Tokens",
+        "statAmt": 10,
+        "maxStacks": 1,
+        "rarity": "Rare",
+        "icon": "_token_2.png",
+        "bgColor": "#1A1A9B",
+        "borderColor": "#3232FF"
+      }
+    ]
+  }
+}

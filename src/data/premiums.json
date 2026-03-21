@@ -1,0 +1,113 @@
+{
+  "bundles": [
+    {
+      "id": "combat_bundle",
+      "name": "Combat Bundle",
+      "description": "Purchase Sharpened Blades and Moneybags together at a discounted price!",
+      "bonus_gems": 250,
+      "premium_items": [
+        {
+          "id": "sharpened_blades"
+        },
+        {
+          "id": "moneybags"
+        }
+      ]
+    },
+    {
+      "id": "power_bundle",
+      "name": "Power Bundle",
+      "description": "Purchase Restoration and Basic Training together at a discounted price!",
+      "bonus_gems": 250,
+      "premium_items": [
+        {
+          "id": "restoration"
+        },
+        {
+          "id": "basic_training"
+        }
+      ]
+    },
+    {
+      "id": "efficiency_bundle",
+      "name": "Efficiency Bundle",
+      "description": "Purchase Speed Demon and Leadership together at a discounted price!",
+      "bonus_gems": 400,
+      "premium_items": [
+        {
+          "id": "speed_demon"
+        },
+        {
+          "id": "leadership"
+        }
+      ]
+    }
+  ],
+  "premiums": [
+    {
+      "id": "active_play_premium",
+      "name": "Active Play Premium",
+      "description": "5min Active Play Cooldown and Zero Gem Cost to Continue Wave after Defeat",
+      "effects": {
+        "active_play_cooldown_minutes": 5,
+        "continue_wave_cost": 0
+      }
+    },
+    {
+      "id": "offline_unlimited",
+      "name": "Offline Unlimited",
+      "description": "Infinite Offline Progress (Removes the 8 hour time cap!)",
+      "effects": {
+        "offline_progress_limit": "infinite"
+      }
+    },
+    {
+      "id": "sharpened_blades",
+      "name": "Sharpened Blades",
+      "description": "3x Damage Increase",
+      "effects": {
+        "damage_multiplier": 3
+      }
+    },
+    {
+      "id": "moneybags",
+      "name": "Moneybags",
+      "description": "2x Kill Gold Increase",
+      "effects": {
+        "kill_gold_multiplier": 2
+      }
+    },
+    {
+      "id": "restoration",
+      "name": "Restoration",
+      "description": "3x Prestige Power Increase",
+      "effects": {
+        "prestige_power_multiplier": 3
+      }
+    },
+    {
+      "id": "basic_training",
+      "name": "Basic Training",
+      "description": "2x Rank EXP Increase",
+      "effects": {
+        "rank_exp_multiplier": 2
+      }
+    },
+    {
+      "id": "speed_demon",
+      "name": "Speed Demon",
+      "description": "Max Game Speed Unlocked (x6)",
+      "effects": {
+        "max_game_speed": 6
+      }
+    },
+    {
+      "id": "leadership",
+      "name": "Leadership",
+      "description": "2x Battlepass EXP Increase",
+      "effects": {
+        "battlepass_exp_multiplier": 2
+      }
+    }
+  ]
+}
