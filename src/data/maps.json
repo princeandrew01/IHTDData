@@ -115,6 +115,68 @@
       "name": "Island Hideout",
       "mapId": 0,
       "icon": "icon_islands.png",
+      "spots": [
+        {
+          "id": "island_hideout_spot_01",
+          "label": "Spot 1",
+          "x": 0.237,
+          "y": 0.365
+        },
+        {
+          "id": "island_hideout_spot_02",
+          "label": "Spot 2",
+          "x": 0.239,
+          "y": 0.62
+        },
+        {
+          "id": "island_hideout_spot_03",
+          "label": "Spot 3",
+          "x": 0.411,
+          "y": 0.234
+        },
+        {
+          "id": "island_hideout_spot_04",
+          "label": "Spot 4",
+          "x": 0.415,
+          "y": 0.491
+        },
+        {
+          "id": "island_hideout_spot_05",
+          "label": "Spot 5",
+          "x": 0.415,
+          "y": 0.747
+        },
+        {
+          "id": "island_hideout_spot_06",
+          "label": "Spot 6",
+          "x": 0.59,
+          "y": 0.234
+        },
+        {
+          "id": "island_hideout_spot_07",
+          "label": "Spot 7",
+          "x": 0.589,
+          "y": 0.493
+        },
+        {
+          "id": "island_hideout_spot_08",
+          "label": "Spot 8",
+          "x": 0.592,
+          "y": 0.747
+        },
+        {
+          "id": "island_hideout_spot_09",
+          "label": "Spot 9",
+          "x": 0.765,
+          "y": 0.365
+        },
+        {
+          "id": "island_hideout_spot_10",
+          "label": "Spot 10",
+          "x": 0.767,
+          "y": 0.622
+        }
+      ],
       "waveRequirement": 0,
       "gemsToUnlock": 0,
       "negativePerk": null,
@@ -238,6 +300,68 @@
       "name": "Snow Fort",
       "mapId": 1,
       "icon": "icon_snow.png",
+      "spots": [
+        {
+          "id": "snow_fort_spot_01",
+          "label": "Spot 1",
+          "x": 0.326,
+          "y": 0.295
+        },
+        {
+          "id": "snow_fort_spot_02",
+          "label": "Spot 2",
+          "x": 0.503,
+          "y": 0.294
+        },
+        {
+          "id": "snow_fort_spot_03",
+          "label": "Spot 3",
+          "x": 0.676,
+          "y": 0.295
+        },
+        {
+          "id": "snow_fort_spot_04",
+          "label": "Spot 4",
+          "x": 0.503,
+          "y": 0.466
+        },
+        {
+          "id": "snow_fort_spot_05",
+          "label": "Spot 5",
+          "x": 0.326,
+          "y": 0.549
+        },
+        {
+          "id": "snow_fort_spot_06",
+          "label": "Spot 6",
+          "x": 0.5,
+          "y": 0.638
+        },
+        {
+          "id": "snow_fort_spot_07",
+          "label": "Spot 7",
+          "x": 0.674,
+          "y": 0.549
+        },
+        {
+          "id": "snow_fort_spot_08",
+          "label": "Spot 8",
+          "x": 0.325,
+          "y": 0.804
+        },
+        {
+          "id": "snow_fort_spot_09",
+          "label": "Spot 9",
+          "x": 0.503,
+          "y": 0.808
+        },
+        {
+          "id": "snow_fort_spot_10",
+          "label": "Spot 10",
+          "x": 0.675,
+          "y": 0.804
+        }
+      ],
       "waveRequirement": 0,
       "gemsToUnlock": 0,
       "negativePerk": {
@@ -364,6 +488,68 @@
       "name": "Barren Desert",
       "mapId": 2,
       "icon": "icon_desert.png",
+      "spots": [
+        {
+          "id": "barren_desert_spot_01",
+          "label": "Spot 1",
+          "x": 0.325,
+          "y": 0.349
+        },
+        {
+          "id": "barren_desert_spot_02",
+          "label": "Spot 2",
+          "x": 0.413,
+          "y": 0.214
+        },
+        {
+          "id": "barren_desert_spot_03",
+          "label": "Spot 3",
+          "x": 0.5,
+          "y": 0.347
+        },
+        {
+          "id": "barren_desert_spot_04",
+          "label": "Spot 4",
+          "x": 0.588,
+          "y": 0.22
+        },
+        {
+          "id": "barren_desert_spot_05",
+          "label": "Spot 5",
+          "x": 0.676,
+          "y": 0.345
+        },
+        {
+          "id": "barren_desert_spot_06",
+          "label": "Spot 6",
+          "x": 0.324,
+          "y": 0.604
+        },
+        {
+          "id": "barren_desert_spot_07",
+          "label": "Spot 7",
+          "x": 0.415,
+          "y": 0.725
+        },
+        {
+          "id": "barren_desert_spot_08",
+          "label": "Spot 8",
+          "x": 0.5,
+          "y": 0.602
+        },
+        {
+          "id": "barren_desert_spot_09",
+          "label": "Spot 9",
+          "x": 0.588,
+          "y": 0.731
+        },
+        {
+          "id": "barren_desert_spot_10",
+          "label": "Spot 10",
+          "x": 0.676,
+          "y": 0.602
+        }
+      ],
       "waveRequirement": 400,
       "gemsToUnlock": 250,
       "negativePerk": {
@@ -488,6 +674,68 @@
       "name": "Haunted Cemetery",
       "mapId": 3,
       "icon": "icon_cemetery.png",
+      "spots": [
+        {
+          "id": "haunted_cemetery_spot_01",
+          "label": "Spot 1",
+          "x": 0.379,
+          "y": 0.218
+        },
+        {
+          "id": "haunted_cemetery_spot_02",
+          "label": "Spot 2",
+          "x": 0.326,
+          "y": 0.345
+        },
+        {
+          "id": "haunted_cemetery_spot_03",
+          "label": "Spot 3",
+          "x": 0.324,
+          "y": 0.602
+        },
+        {
+          "id": "haunted_cemetery_spot_04",
+          "label": "Spot 4",
+          "x": 0.379,
+          "y": 0.727
+        },
+        {
+          "id": "haunted_cemetery_spot_05",
+          "label": "Spot 5",
+          "x": 0.676,
+          "y": 0.214
+        },
+        {
+          "id": "haunted_cemetery_spot_06",
+          "label": "Spot 6",
+          "x": 0.764,
+          "y": 0.345
+        },
+        {
+          "id": "haunted_cemetery_spot_07",
+          "label": "Spot 7",
+          "x": 0.852,
+          "y": 0.214
+        },
+        {
+          "id": "haunted_cemetery_spot_08",
+          "label": "Spot 8",
+          "x": 0.679,
+          "y": 0.727
+        },
+        {
+          "id": "haunted_cemetery_spot_09",
+          "label": "Spot 9",
+          "x": 0.764,
+          "y": 0.6
+        },
+        {
+          "id": "haunted_cemetery_spot_10",
+          "label": "Spot 10",
+          "x": 0.852,
+          "y": 0.727
+        }
+      ],
       "waveRequirement": 800,
       "gemsToUnlock": 500,
       "negativePerk": {
@@ -612,6 +860,68 @@
       "name": "Lava Dungeon",
       "mapId": 4,
       "icon": "icon_dungeon.png",
+      "spots": [
+        {
+          "id": "lava_dungeon_spot_01",
+          "label": "Spot 1",
+          "x": 0.409,
+          "y": 0.228
+        },
+        {
+          "id": "lava_dungeon_spot_02",
+          "label": "Spot 2",
+          "x": 0.591,
+          "y": 0.23
+        },
+        {
+          "id": "lava_dungeon_spot_03",
+          "label": "Spot 3",
+          "x": 0.681,
+          "y": 0.23
+        },
+        {
+          "id": "lava_dungeon_spot_04",
+          "label": "Spot 4",
+          "x": 0.32,
+          "y": 0.491
+        },
+        {
+          "id": "lava_dungeon_spot_05",
+          "label": "Spot 5",
+          "x": 0.408,
+          "y": 0.495
+        },
+        {
+          "id": "lava_dungeon_spot_06",
+          "label": "Spot 6",
+          "x": 0.591,
+          "y": 0.491
+        },
+        {
+          "id": "lava_dungeon_spot_07",
+          "label": "Spot 7",
+          "x": 0.681,
+          "y": 0.491
+        },
+        {
+          "id": "lava_dungeon_spot_08",
+          "label": "Spot 8",
+          "x": 0.409,
+          "y": 0.753
+        },
+        {
+          "id": "lava_dungeon_spot_09",
+          "label": "Spot 9",
+          "x": 0.591,
+          "y": 0.751
+        },
+        {
+          "id": "lava_dungeon_spot_10",
+          "label": "Spot 10",
+          "x": 0.68,
+          "y": 0.751
+        }
+      ],
       "waveRequirement": 2000,
       "gemsToUnlock": 1000,
       "negativePerk": {
@@ -735,6 +1045,68 @@
       "name": "Sunny Farm",
       "mapId": 5,
       "icon": "icon_farm.png",
+      "spots": [
+        {
+          "id": "sunny_farm_spot_01",
+          "label": "Spot 1",
+          "x": 0.278,
+          "y": 0.325
+        },
+        {
+          "id": "sunny_farm_spot_02",
+          "label": "Spot 2",
+          "x": 0.366,
+          "y": 0.228
+        },
+        {
+          "id": "sunny_farm_spot_03",
+          "label": "Spot 3",
+          "x": 0.455,
+          "y": 0.323
+        },
+        {
+          "id": "sunny_farm_spot_04",
+          "label": "Spot 4",
+          "x": 0.545,
+          "y": 0.228
+        },
+        {
+          "id": "sunny_farm_spot_05",
+          "label": "Spot 5",
+          "x": 0.635,
+          "y": 0.329
+        },
+        {
+          "id": "sunny_farm_spot_06",
+          "label": "Spot 6",
+          "x": 0.365,
+          "y": 0.622
+        },
+        {
+          "id": "sunny_farm_spot_07",
+          "label": "Spot 7",
+          "x": 0.455,
+          "y": 0.723
+        },
+        {
+          "id": "sunny_farm_spot_08",
+          "label": "Spot 8",
+          "x": 0.543,
+          "y": 0.624
+        },
+        {
+          "id": "sunny_farm_spot_09",
+          "label": "Spot 9",
+          "x": 0.635,
+          "y": 0.723
+        },
+        {
+          "id": "sunny_farm_spot_10",
+          "label": "Spot 10",
+          "x": 0.725,
+          "y": 0.622
+        }
+      ],
       "waveRequirement": 3500,
       "gemsToUnlock": 2500,
       "negativePerk": {
@@ -858,6 +1230,68 @@
       "name": "Astral Battleground",
       "mapId": 6,
       "icon": "icon_astral.png",
+      "spots": [
+        {
+          "id": "astral_battleground_spot_01",
+          "label": "Spot 1",
+          "x": 0.32,
+          "y": 0.244
+        },
+        {
+          "id": "astral_battleground_spot_02",
+          "label": "Spot 2",
+          "x": 0.231,
+          "y": 0.47
+        },
+        {
+          "id": "astral_battleground_spot_03",
+          "label": "Spot 3",
+          "x": 0.319,
+          "y": 0.699
+        },
+        {
+          "id": "astral_battleground_spot_04",
+          "label": "Spot 4",
+          "x": 0.499,
+          "y": 0.244
+        },
+        {
+          "id": "astral_battleground_spot_05",
+          "label": "Spot 5",
+          "x": 0.408,
+          "y": 0.47
+        },
+        {
+          "id": "astral_battleground_spot_06",
+          "label": "Spot 6",
+          "x": 0.5,
+          "y": 0.705
+        },
+        {
+          "id": "astral_battleground_spot_07",
+          "label": "Spot 7",
+          "x": 0.59,
+          "y": 0.472
+        },
+        {
+          "id": "astral_battleground_spot_08",
+          "label": "Spot 8",
+          "x": 0.68,
+          "y": 0.246
+        },
+        {
+          "id": "astral_battleground_spot_09",
+          "label": "Spot 9",
+          "x": 0.771,
+          "y": 0.472
+        },
+        {
+          "id": "astral_battleground_spot_10",
+          "label": "Spot 10",
+          "x": 0.68,
+          "y": 0.699
+        }
+      ],
       "waveRequirement": 12500,
       "gemsToUnlock": 7500,
       "negativePerk": null,

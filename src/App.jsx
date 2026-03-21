@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext, useTransition } from "react";
+import { Suspense, lazy, useState, useMemo, useEffect, useLayoutEffect, useRef, createContext, useContext } from "react";
 
 function useIsMobile() {
   const [isMobile, setIsMobile] = useState(() => window.innerWidth <= 768);
@@ -10,40 +10,72 @@ function useIsMobile() {
   return isMobile;
 }
 
-import heroesData     from "./data/heroes.json";
-import mapsData       from "./data/maps.json";
-import researchData   from "./data/research.json";
-import spellsData     from "./data/spells.json";
-import powerupsData   from "./data/powerups.json";
-import gemsData       from "./data/gems.json";
-import masteryData    from "./data/mastery.json";
-import techData       from "./data/tech.json";
-import ticketsData    from "./data/tickets.json";
+import { heroesData, mapsData, getInitialMapSpotsById, mergeMapsWithSpots, normalizeMapSpots, parseMapSpotsByIdFromJsonText } from "./lib/gameData";
+import challengesData from "./data/challenges.json";
+import enemyHpData from "./data/enemy_hp.json";
+import researchData from "./data/research.json";
+import spellsData from "./data/spells.json";
+import powerupsData from "./data/powerups.json";
+import gemsData from "./data/gems.json";
+import masteryData from "./data/mastery.json";
+import playerBgData from "./data/player_backgrounds.json";
+import playerIconsData from "./data/player_icons.json";
+import techData from "./data/tech.json";
+import ticketsData from "./data/tickets.json";
 import tournamentData from "./data/tournament.json";
-import ultimusData    from "./data/ultimus.json";
-import runesData           from "./data/runes.json";
-import heroAttributesData       from "./data/hero_attributes.json";
-import tournamentBracketsData   from "./data/tournament_brackets.json";
-import combatStylesData         from "./data/combat_styles.json";
-import enemyHpData              from "./data/enemy_hp.json";
-import ultimusRewardsData       from "./data/ultimus_rewards.json";
-import battpassExpData          from "./data/battlepass_exp.json";
-import challengesData          from "./data/challenges.json";
-import playerIconsData         from "./data/player_icons.json";
-import wavePerksData           from "./data/wave_perks.json";
-import playerBgData            from "./data/player_backgrounds.json";
-import STAT_UNITS          from "./data/stat_units.json";
-import techTreeDisplayData  from "./data/tech_tree_display.json";
-import immortalBossData     from "./data/immortal_boss.json";
+import ultimusData from "./data/ultimus.json";
+import runesData from "./data/runes.json";
+import heroAttributesData from "./data/hero_attributes.json";
+import tournamentBracketsData from "./data/tournament_brackets.json";
+import STAT_UNITS from "./data/stat_units.json";
+import techTreeDisplayData from "./data/tech_tree_display.json";
+import immortalBossData from "./data/immortal_boss.json";
+import wavePerksData from "./data/wave_perks.json";
+import { hydrateLoadoutRuntime, LOADOUT_RUNTIME_CHANGED_EVENT, persistLoadoutRuntime, schedulePersistLoadoutRuntime, getCurrentSavedLoadoutSelections, getCurrentScopedSavedLoadoutId, removeSavedLoadoutIdFromSelections } from "./lib/loadoutRuntimeStore";
+import {
+  deleteSavedLoadout,
+  getSavedLoadout,
+  listSavedLoadouts,
+  loadSavedLoadoutIntoWorkingState,
+  saveWorkingLoadoutAsRecord,
+  saveWorkingLoadoutChanges,
+  startFreshWorkingLoadout,
+  updateSavedLoadout,
+} from "./lib/loadoutSavedRepository";
+import { buildActiveLoadoutScope, buildComparableLoadoutScopePayload, createComparableLoadoutScopePayload, getLoadoutScopeDisplayName, LOADOUT_RECORD_SCOPE_FULL } from "./lib/loadoutScope";
+import { readMapLoadoutBuilderMode } from "./lib/mapLoadout";
 
-// ─────────────────────────────────────────────
-// NORMALIZE  — rename multCost → multiCost for
-// consistency, and hoist per-item costFormula
-// ─────────────────────────────────────────────
+const loadSecondaryViews = () => import("./views/secondaryViews.jsx");
+const HomeView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.HomeView })));
+const BracketsView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BracketsView })));
+const BattlepassExpView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.BattlepassExpView })));
+const MapPerksView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.MapPerksView })));
+const loadMiscViews = () => import("./views/miscViews.jsx");
+const ChallengesView = lazy(() => loadMiscViews().then((module) => ({ default: module.ChallengesView })));
+const PlayerIconsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerIconsView })));
+const PlayerBackgroundsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerBackgroundsView })));
+const WavePerksView = lazy(() => loadMiscViews().then((module) => ({ default: module.WavePerksView })));
+const loadCalculatorViews = () => import("./views/calculatorViews.jsx");
+const CombatStylesView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.CombatStylesView })));
+const EnemyHpView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.EnemyHpView })));
+const loadAppDataViews = () => import("./views/appDataViews.jsx");
+const AllHeroesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllHeroesRoute })));
+const AllSynergiesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllSynergiesRoute })));
+const AllMilestonesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllMilestonesRoute })));
+const AllMapsRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllMapsRoute })));
+const loadBuilderViews = () => import("./views/loadoutBuilderViews.jsx");
+const LoadoutBuilderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.LoadoutBuilderView })));
+const StatsLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.StatsLoadoutView })));
+const HeroLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.HeroLoadoutView })));
+const PlayerLoadoutView = lazy(() => loadBuilderViews().then((module) => ({ default: module.PlayerLoadoutView })));
+const StatsHubView = lazy(() => loadBuilderViews().then((module) => ({ default: module.StatsHubView })));
+const SavesView = lazy(() => loadBuilderViews().then((module) => ({ default: module.SavesView })));
+const CoordFinderView = lazy(() => loadBuilderViews().then((module) => ({ default: module.CoordFinderView })));
+
 function normalizeSection(data) {
   const groups = {};
   for (const [groupName, items] of Object.entries(data.groups)) {
-    groups[groupName] = items.map(item => ({
+    groups[groupName] = items.map((item) => ({
       ...item,
       multiCost: item.multCost ?? item.multiCost,
       hasLinearMult: item.hasLinearMult ?? data.hasLinearMult ?? false,
@@ -53,19 +85,49 @@ function normalizeSection(data) {
 }
 
 const SECTIONS = [
-  { key: "research",   data: normalizeSection(researchData) },
-  { key: "spells",     data: normalizeSection(spellsData) },
-  { key: "runes",      data: normalizeSection(runesData) },
-  { key: "gems",       data: normalizeSection(gemsData) },
-  { key: "powerups",   data: normalizeSection(powerupsData) },
-  { key: "tech",       data: normalizeSection(techData) },
+  { key: "research", data: normalizeSection(researchData) },
+  { key: "spells", data: normalizeSection(spellsData) },
+  { key: "runes", data: normalizeSection(runesData) },
+  { key: "gems", data: normalizeSection(gemsData) },
+  { key: "powerups", data: normalizeSection(powerupsData) },
+  { key: "tech", data: normalizeSection(techData) },
   { key: "tournament", data: normalizeSection(tournamentData) },
-  { key: "tickets",    data: normalizeSection(ticketsData) },
-  { key: "ultimus",    data: normalizeSection(ultimusData) },
-  { key: "mastery",    data: normalizeSection(masteryData) },
+  { key: "tickets", data: normalizeSection(ticketsData) },
+  { key: "ultimus", data: normalizeSection(ultimusData) },
+  { key: "mastery", data: normalizeSection(masteryData) },
 ];
 
-const SECTION_MAP = Object.fromEntries(SECTIONS.map(s => [s.key, s]));
+const SECTION_MAP = Object.fromEntries(SECTIONS.map((section) => [section.key, section]));
+const MAP_LOADOUT_ROUTE_TO_MODE = Object.freeze({
+  loadoutBuilderPlacement: "hero",
+  loadoutBuilderPerks: "perks",
+  loadoutBuilderSpell: "spell",
+});
+const MAP_LOADOUT_ROUTE_KEYS = new Set(["loadoutBuilder", ...Object.keys(MAP_LOADOUT_ROUTE_TO_MODE)]);
+const PAGE_HEADER_SAVE_ROUTE_KEYS = new Set(["heroLoadout", "statsLoadout", "playerLoadout", "statsHub", "saves", ...MAP_LOADOUT_ROUTE_KEYS]);
+
+function getMapLoadoutModeFromRoute(activeKey, storage = localStorage) {
+  if (activeKey === "loadoutBuilder") {
+    return readMapLoadoutBuilderMode(storage);
+  }
+
+  return MAP_LOADOUT_ROUTE_TO_MODE[activeKey] ?? "hero";
+}
+
+const REWARD_UNIT_SYMBOL = Object.fromEntries(
+  Object.values(STAT_UNITS).map((value) => [value.label.toLowerCase(), value.unit])
+);
+const HERO_GOLD_COST_BASE_COST = heroesData.levelCostFormula.baseCost;
+const HERO_GOLD_COST_MILESTONE_LEVELS = new Set(
+  (heroesData.heroes ?? []).flatMap((hero) => (hero.milestones ?? []).map((milestone) => milestone.requirement))
+);
+const HERO_GOLD_COST_SOURCES = [
+  { key: "tickets", label: "Tickets", icon: "_ticket.png", statAmt: 0.5, maxLevel: 25 },
+  { key: "runes", label: "Runes", icon: "_rune_2.png", statAmt: 0.5, maxLevel: 10 },
+  { key: "ultimus", label: "Ultimus", icon: "token_red.png", statAmt: 0.5, maxLevel: 10 },
+  { key: "mastery", label: "Mastery", icon: "_mastery_2.png", statAmt: 0.5, maxLevel: 10 },
+];
+const HERO_ATTRIBUTE_LIST = [...heroAttributesData.personal, ...heroAttributesData.global];
 
 const NAV_GROUPS = [
   {
@@ -86,12 +148,12 @@ const NAV_GROUPS = [
   {
     label: "Hero Data",
     items: [
-      { key: "allHeroes",    label: "All Heroes",    menuIcon: "_heroHelm.png" },
-      { key: "synergies",    label: "Synergies",     menuIcon: "_synergy.png", iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
-      { key: "milestones",   label: "Milestones",    menuIcon: "_star 3610.png" },
-      { key: "rankExp",      label: "Rank Exp",      menuIcon: "_killExp.png" },
-      { key: "attributes",    label: "Attributes",     menuIcon: "_attributePoints_0.png" },
-      { key: "combatStyles",  label: "Combat Styles",  menuIcon: "icon_scale.png" },
+      { key: "allHeroes", label: "All Heroes", menuIcon: "_heroHelm.png" },
+      { key: "synergies", label: "Synergies", menuIcon: "_synergy.png", iconFilter: "invert(60%) sepia(100%) saturate(400%) hue-rotate(90deg) brightness(1.2)" },
+      { key: "milestones", label: "Milestones", menuIcon: "_star 3610.png" },
+      { key: "rankExp", label: "Rank Exp", menuIcon: "_killExp.png" },
+      { key: "attributes", label: "Attributes", menuIcon: "_attributePoints_0.png" },
+      { key: "combatStyles", label: "Combat Styles", menuIcon: "icon_scale.png" },
     ],
   },
   {
@@ -104,17 +166,36 @@ const NAV_GROUPS = [
   {
     label: "Maps",
     items: [
-      { key: "allMaps",   label: "All Maps",   menuIcon: "Icon_Map_0.png" },
-      { key: "mapPerks",  label: "Map Perks",  menuIcon: "_starEmpty_0.png" },
+      { key: "allMaps", label: "All Maps", menuIcon: "Icon_Map_0.png" },
+      { key: "mapPerks", label: "Map Perks", menuIcon: "_starEmpty_0.png" },
+    ],
+  },
+  {
+    label: "Loadout",
+    items: [
+      { key: "statsHub", label: "Stats Hub", menuIcon: "_attributePoints_0.png" },
+      {
+        key: "loadoutBuilderMenu",
+        label: "Map Loadouts",
+        children: [
+          { key: "loadoutBuilderPlacement", label: "Placement Loadout", menuIcon: "tower2.png" },
+          { key: "loadoutBuilderPerks", label: "Map Perks Loadout", menuIcon: "_starEmpty_0.png" },
+          { key: "loadoutBuilderSpell", label: "Spell Loadout", menuIcon: "_energy.png" },
+        ],
+      },
+      { key: "heroLoadout", label: "Hero Loadout", menuIcon: "_heroHelm.png" },
+      { key: "statsLoadout", label: "Upgrades Loadout", menuIcon: "_heroes.png" },
+      { key: "playerLoadout", label: "Player Loadout", menuIcon: "_background.png" },
+      { key: "saves", label: "Saves", menuIcon: "Icon_Trophy_0.png" },
     ],
   },
   {
     label: "Misc",
     items: [
-      { key: "battpassExp",       label: "Battlepass Exp",     menuIcon: "_battlepass.png" },
-      { key: "wavePerks",         label: "Wave Perks",         menuIcon: "flagSword.png" },
-      { key: "challenges",        label: "Challenges",         menuIcon: "_starBlue.png" },
-      { key: "playerIcons",       label: "Player Icons",       menuIcon: "icon_inforound.png" },
+      { key: "battpassExp", label: "Battlepass Exp", menuIcon: "_battlepass.png" },
+      { key: "wavePerks", label: "Wave Perks", menuIcon: "flagSword.png" },
+      { key: "challenges", label: "Challenges", menuIcon: "_starBlue.png" },
+      { key: "playerIcons", label: "Player Icons", menuIcon: "icon_inforound.png" },
       { key: "playerBackgrounds", label: "Player Backgrounds", menuIcon: "_prestigeBg.png" },
     ],
   },
@@ -127,38 +208,46 @@ const NAV_GROUPS = [
       { key: "ultimusTokens", label: "Ultimus Tokens",   menuIcon: "ultimusBoss.png" },
     ],
   },
+  {
+    label: "Admin",
+    items: [{ key: "coordFinder", label: "Coord Finder", menuIcon: "_edit.png" }],
+  },
 ];
 
-// ─────────────────────────────────────────────
-// COST COMPUTATION
-// ─────────────────────────────────────────────
-// Suffixes: "", K, M, B, T, then aa–az, ba–bz, ca–cz, da–dz
-// Covers up to tier 108 (1e324) — well beyond float max (~1e308)
+const ADMIN_ROUTE_KEYS = new Set(["coordFinder"]);
+
+function isLocalhostAdminHost() {
+  const hostname = window.location.hostname.toLowerCase();
+  return import.meta.env.DEV
+    || hostname === "localhost"
+    || hostname === "127.0.0.1"
+    || hostname === "::1"
+    || hostname === "[::1]";
+}
+
 const BIG_SUFFIXES = (() => {
-  const s = ["", "K", "M", "B", "T"];
-  for (const c1 of "abcd") {
-    for (const c2 of "abcdefghijklmnopqrstuvwxyz") {
-      s.push(c1 + c2);
+  const suffixes = ["", "K", "M", "B", "T"];
+  for (const first of "abcd") {
+    for (const second of "abcdefghijklmnopqrstuvwxyz") {
+      suffixes.push(first + second);
     }
   }
-  return s;
+  return suffixes;
 })();
 
-// notation: "scientific" | "letters"
 function formatBigNum(n, notation = "scientific") {
-  // Log-space result from simulate — {logValue: number} represents ~10^logValue
   if (n !== null && typeof n === "object" && "logValue" in n) {
-    const lv = n.logValue;
-    if (!isFinite(lv)) return lv > 0 ? "∞" : "0";
-    const exp = Math.floor(lv);
-    const mantissa = Math.pow(10, lv - exp);
+    const logValue = n.logValue;
+    if (!isFinite(logValue)) return logValue > 0 ? "∞" : "0";
+    const exponent = Math.floor(logValue);
+    const mantissa = Math.pow(10, logValue - exponent);
     if (notation === "letters") {
-      const tier = Math.floor(exp / 3);
+      const tier = Math.floor(exponent / 3);
       if (tier > 0 && tier < BIG_SUFFIXES.length) {
-        return (mantissa * Math.pow(10, exp - tier * 3)).toFixed(2) + BIG_SUFFIXES[tier];
+        return (mantissa * Math.pow(10, exponent - tier * 3)).toFixed(2) + BIG_SUFFIXES[tier];
       }
     }
-    return `${mantissa.toFixed(2)}e${exp}`;
+    return `${mantissa.toFixed(2)}e${exponent}`;
   }
   if (typeof n === "bigint") {
     if (n <= 0n) return n === 0n ? "0" : "-" + formatBigNum(-n, notation);
@@ -177,81 +266,98 @@ function formatBigNum(n, notation = "scientific") {
   }
   if (!isFinite(n)) return "∞";
   if (n === 0) return "0";
-  const tier = Math.max(0, Math.floor(Math.log10(Math.max(1, n)) / 3));
-  if (tier === 0) return n.toFixed(0);
-  // K → T: same for both
-  if (tier <= 4) return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
-  // 1e15+ diverge
+  const sign = n < 0 ? "-" : "";
+  const absolute = Math.abs(n);
+  const tier = Math.max(0, Math.floor(Math.log10(Math.max(1, absolute)) / 3));
+  if (tier === 0) return sign + absolute.toFixed(0);
+  if (tier <= 4) return sign + (absolute / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
   if (notation === "scientific") {
-    const exp = Math.floor(Math.log10(n));
-    const mantissa = n / Math.pow(10, exp);
-    return `${mantissa.toFixed(2)}e${exp}`;
+    const exponent = Math.floor(Math.log10(absolute));
+    const mantissa = absolute / Math.pow(10, exponent);
+    return `${sign}${mantissa.toFixed(2)}e${exponent}`;
   }
   if (tier >= BIG_SUFFIXES.length) return "∞";
-  return (n / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
+  return sign + (absolute / Math.pow(1000, tier)).toFixed(2) + BIG_SUFFIXES[tier];
 }
 
-// ─────────────────────────────────────────────
-// SPELL FORMULA
-// Tier 1:  levels 1-15   — energy every level
-// Tier 2:  level  16     — tier2Unlock (different currency, one-time)
-//          levels 17-20  — energy
-// Tier 3:  level  21     — tier3Unlock (different currency, one-time)
-//          levels 22-25  — energy
-// ─────────────────────────────────────────────
 const CURRENCY_LABELS = {
-  prestigePower:    "Prestige Power",
+  prestigePower: "Prestige Power",
   tournamentPoints: "Tournament Points",
-  techPoints:       "Tech Points",
-  weeklyTickets:    "Weekly Tickets",
-  gems:             "Gems",
-  tokensBlue:       "Blue Tokens",
-  tokensGreen:      "Green Tokens",
-  tokensRed:        "Red Tokens",
+  techPoints: "Tech Points",
+  weeklyTickets: "Weekly Tickets",
+  gems: "Gems",
+  tokensBlue: "Blue Tokens",
+  tokensGreen: "Green Tokens",
+  tokensRed: "Red Tokens",
 };
 
-// level is 1-indexed (1-25).
-// Returns { type:"energy", cost:BigInt }
-//      or { type:"unlock", currency:string, amount:number }
 function spellCostEntry(level, item) {
-  if (level === 16 && item.tier2Unlock)
+  if (level === 16 && item.tier2Unlock) {
     return { type: "unlock", currency: item.tier2Unlock.currency, amount: item.tier2Unlock.amount };
-  if (level === 21 && item.tier3Unlock)
+  }
+  if (level === 21 && item.tier3Unlock) {
     return { type: "unlock", currency: item.tier3Unlock.currency, amount: item.tier3Unlock.amount };
+  }
 
   const { baseCost, base15, base20, multCost, noBreakpointMult } = item;
-
-  // Level 1 is the initial unlock — costs exactly baseCost
   if (level === 1) return { type: "energy", cost: BigInt(Math.round(baseCost)) };
 
-  let tierIdx, base;
+  let tierIndex;
+  let base;
 
   if (level <= 15) {
-    tierIdx = level - 1;       // 0-14 within tier 1
-    base = tierIdx < 10 ? baseCost : baseCost * 2;
+    tierIndex = level - 1;
+    base = tierIndex < 10 ? baseCost : baseCost * 2;
   } else if (level >= 17 && level <= 20) {
-    tierIdx = level - 1;      // 0-3 within tier 2
+    tierIndex = level - 1;
     base = base15;
   } else {
-    tierIdx = level - 1;      // 0-3 within tier 3
+    tierIndex = level - 1;
     base = base20;
   }
 
-  const bpMult = noBreakpointMult ? 1 : (tierIdx < 3 ? 1 : tierIdx < 6 ? 2 : 6);
-  const cost   = BigInt(Math.round(base))
-               * BigInt(Math.round(multCost)) ** BigInt(tierIdx + 1)
-               * BigInt(bpMult);
+  const breakpointMult = noBreakpointMult ? 1 : tierIndex < 3 ? 1 : tierIndex < 6 ? 2 : 6;
+  const cost = BigInt(Math.round(base)) * BigInt(Math.round(multCost)) ** BigInt(tierIndex + 1) * BigInt(breakpointMult);
   return { type: "energy", cost };
 }
 
-// ─────────────────────────────────────────────
-// NOTATION CONTEXT
-// ─────────────────────────────────────────────
 const NotationContext = createContext("scientific");
 
 function useFmt() {
   const notation = useContext(NotationContext);
   return (n) => formatBigNum(n, notation);
+}
+
+function Badge({ children, color }) {
+  return (
+    <span style={{
+      background: color + "22",
+      color,
+      border: `1px solid ${color}44`,
+      borderRadius: 4,
+      padding: "1px 7px",
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: "0.04em",
+      whiteSpace: "nowrap",
+    }}>
+      {children}
+    </span>
+  );
+}
+
+function getIconUrl(filename) {
+  return new URL(`./images/Icons/${filename}`, import.meta.url).href;
+}
+
+function getPerkUnit(name) {
+  if (name.includes("%")) return "%";
+  if (/chance|synergy|speed|cooldown|bonus|effect|group|damage|power|exp|gold|energy|active play/i.test(name)) return "%";
+  return "";
+}
+
+function rewardUnitSym(rewardUnit) {
+  return REWARD_UNIT_SYMBOL[rewardUnit?.toLowerCase()] ?? "";
 }
 
 function computeTotalCost(item, sectionFormula) {
@@ -263,201 +369,134 @@ function computeTotalCost(item, sectionFormula) {
 
   if (formula === "spell") {
     let total = 0n;
-    for (let lvl = 1; lvl <= maxLevel; lvl++) {
-      const entry = spellCostEntry(lvl, item);
+    for (let level = 1; level <= maxLevel; level += 1) {
+      const entry = spellCostEntry(level, item);
       if (entry.type === "energy") total += entry.cost;
     }
     return total;
   }
 
   if (formula === "hero_attr") {
-    const bp1 = Math.round(maxLevel * 0.5);
-    const bp2 = Math.round(maxLevel * 0.8);
-    // Closed-form: sum(L=a..b) floor(bc * L * mult) ≈ mult * bc * (b-a+1)*(a+b)/2
-    // Error ≤ number of terms — negligible for display at any scale
-    const sumRange = (a, b) => b >= a ? (b - a + 1) * (a + b) / 2 : 0;
-    return Math.round(
-      baseCost       * sumRange(1,     bp1 - 1) +
-      1.25  * baseCost * sumRange(bp1,   bp2 - 1) +
-      1.875 * baseCost * sumRange(bp2,   maxLevel)
-    );
+    const breakpointOne = Math.round(maxLevel * 0.5);
+    const breakpointTwo = Math.round(maxLevel * 0.8);
+    const sumRange = (start, end) => (end >= start ? ((end - start + 1) * (start + end)) / 2 : 0);
+    return Math.round(baseCost * sumRange(1, breakpointOne - 1) + 1.25 * baseCost * sumRange(breakpointOne, breakpointTwo - 1) + 1.875 * baseCost * sumRange(breakpointTwo, maxLevel));
   }
 
-  // Use BigInt arithmetic when all inputs are integers for exact results
-  const intInputs = Number.isInteger(baseCost) &&
-    (multiCost === undefined || Number.isInteger(multiCost));
-
+  const intInputs = Number.isInteger(baseCost) && (multiCost === undefined || Number.isInteger(multiCost));
 
   if (intInputs) {
-    const bc = BigInt(baseCost);
-    const mc = multiCost !== undefined ? BigInt(multiCost) : 1n;
-    const n  = BigInt(maxLevel);
-    const formula_overide = "power"
+    const baseCostBig = BigInt(baseCost);
+    const multiCostBig = multiCost !== undefined ? BigInt(multiCost) : 1n;
+    const maxLevelBig = BigInt(maxLevel);
+
     switch (formula) {
       case "flat":
-        return bc * n;
+        return baseCostBig * maxLevelBig;
 
-      // rank_linear: cost(level) = baseCost × level → total = baseCost × n×(n+1)/2
       case "rank_linear":
-        return bc * n * (n + 1n) / 2n;
+        return (baseCostBig * maxLevelBig * (maxLevelBig + 1n)) / 2n;
 
       case "power": {
-        // cost(level) = baseCost × level^multiCost × mult
-        // mult = 8 if level > 80% maxLevel, 3 if >= 50%, else 1
-        // linearMult requires float — fall through if item uses it
         if (item.hasLinearMult) break;
-
-        // Tournament-style capped formula: cost(L) = min(bc*(L+1)^mc, capCost), no bp mults
-        if (item.capCost !== undefined) {
-          const cc = BigInt(item.capCost);
-          if (!multiCost || multiCost === 1) {
-            // capLv = first L (1-indexed) where bc*(L+1) >= cc
-            const rawCapLv = cc > bc ? (cc + bc - 1n) / bc - 1n : 0n;
-            const cl = rawCapLv < 1n ? 1n : rawCapLv;
-            if (n < cl) {
-              // All levels pre-cap: sum_{L=1}^{N} bc*(L+1) = bc*((N+1)*(N+2)/2 - 1)
-              return bc * ((n + 1n) * (n + 2n) / 2n - 1n);
-            }
-            // Pre-cap sum (L=1..cl-1) + cap sum (L=cl..N)
-            const preCap = cl > 1n ? bc * (cl * (cl + 1n) / 2n - 1n) : 0n;
-            return preCap + cc * (n - cl + 1n);
-          }
-          // General mc: per-level loop (no current items reach this path)
-          let total = 0n;
-          for (let i = 1n; i <= n; i++) {
-            const raw = bc * (i + 1n) ** mc;
-            total += raw < cc ? raw : cc;
-          }
-          return total;
-        }
-
-        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
-        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
-        const sumRange = (a, b) => b >= a ? (b - a + 1n) * (a + b) / 2n : 0n;
+        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
+        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
+        const sumRange = (start, end) => (end >= start ? ((end - start + 1n) * (start + end)) / 2n : 0n);
         if (!multiCost || multiCost === 1) {
-          return bc * (
-            sumRange(1n, bp1 - 1n) +
-            3n * sumRange(bp1, bp2 - 1n) +
-            24n * sumRange(bp2, n)
-          );
+          return baseCostBig * (sumRange(1n, breakpointOne - 1n) + 3n * sumRange(breakpointOne, breakpointTwo - 1n) + 24n * sumRange(breakpointTwo, maxLevelBig));
         }
         let total = 0n;
-        for (let i = 1n; i <= n; i++) {
-          const mult = i >= bp2 ? 24n : i >= bp1 ? 3n : 1n;
-          total += bc * i ** mc * mult;
+        for (let level = 1n; level <= maxLevelBig; level += 1n) {
+          const breakpointMult = level >= breakpointTwo ? 24n : level >= breakpointOne ? 3n : 1n;
+          total += baseCostBig * level ** multiCostBig * breakpointMult;
         }
         return total;
       }
 
       case "exponential":
       case "exponential_endgame": {
-        // cost(level) = baseCost × multiCost^(level-1) × bpMult
-        // linearMult requires float — fall through if item uses it
         if (item.hasLinearMult) break;
-        const bp1 = BigInt(Math.ceil(maxLevel * 0.5));
-        const bp2 = BigInt(Math.ceil(maxLevel * 0.8));
+        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
+        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
         if (!multiCost || multiCost === 1) {
-          const c1 = bp1 > 1n ? bp1 - 1n : 0n;
-          const c2 = bp2 > bp1 ? bp2 - bp1 : 0n;
-          const c3 = n >= bp2 ? n - bp2 + 1n : 0n;
-          return bc * (c1 + 3n * c2 + 24n * c3);
+          const countOne = breakpointOne > 1n ? breakpointOne - 1n : 0n;
+          const countTwo = breakpointTwo > breakpointOne ? breakpointTwo - breakpointOne : 0n;
+          const countThree = maxLevelBig >= breakpointTwo ? maxLevelBig - breakpointTwo + 1n : 0n;
+          return baseCostBig * (countOne + 3n * countTwo + 24n * countThree);
         }
-        // Segmented geometric series (exact BigInt)
-        // sum(level=a..b) mc^(level-1) = mc^(a-1) * (mc^(b-a+1) - 1) / (mc-1)
-        const geo = (a, b) => b < a ? 0n : mc ** (a - 1n) * (mc ** (b - a + 1n) - 1n) / (mc - 1n);
+        const geometric = (start, end) => end < start ? 0n : multiCostBig ** (start - 1n) * (multiCostBig ** (end - start + 1n) - 1n) / (multiCostBig - 1n);
         try {
-          return bc * (geo(1n, bp1-1n) + 3n * geo(bp1, bp2-1n) + 24n * geo(bp2, n));
+          return baseCostBig * (geometric(1n, breakpointOne - 1n) + 3n * geometric(breakpointOne, breakpointTwo - 1n) + 24n * geometric(breakpointTwo, maxLevelBig));
         } catch {
-          // BigInt too large — fall through to float path below
           break;
         }
       }
 
       case "capped_linear": {
-        const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : n;
-        if (n <= cap) return bc * n * (n + 1n) / 2n;
-        return bc * (cap * (cap + 1n) / 2n + (n - cap) * cap);
+        const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : maxLevelBig;
+        if (maxLevelBig <= cap) return (baseCostBig * maxLevelBig * (maxLevelBig + 1n)) / 2n;
+        return baseCostBig * (((cap * (cap + 1n)) / 2n) + (maxLevelBig - cap) * cap);
       }
 
       default:
-        return bc * n;
+        return baseCostBig * maxLevelBig;
     }
   }
 
-  // Float fallback for fractional multipliers (e.g. exponential_endgame with 1.1×, 1.2×, ...)
   switch (formula) {
     case "flat":
       return baseCost * maxLevel;
 
     case "rank_linear":
-      return baseCost * maxLevel * (maxLevel + 1) / 2;
+      return (baseCost * maxLevel * (maxLevel + 1)) / 2;
 
     case "power": {
-      if (item.capCost !== undefined) {
-        const mc = multiCost ?? 1;
-        const cc = item.capCost;
-        // capLv = first level where baseCost*(L+1)^mc >= cc
-        // For mc=1: capLv = ceil(cc/baseCost) - 1
-        const capLv = Math.max(1, Math.ceil(cc / baseCost) - 1);
-        if (maxLevel < capLv) {
-          // All pre-cap: sum_{L=1}^{N} baseCost*(L+1)^mc
-          let total = 0;
-          for (let lv = 1; lv <= maxLevel; lv++) total += baseCost * Math.pow(lv + 1, mc);
-          return total;
-        }
-        let preCap = 0;
-        for (let lv = 1; lv < capLv; lv++) preCap += baseCost * Math.pow(lv + 1, mc);
-        return preCap + cc * (maxLevel - capLv + 1);
-      }
-      const bp1f = maxLevel * 0.5;
-      const bp2f = maxLevel * 0.8;
-      const mc = multiCost ?? 1;
+      const breakpointOne = maxLevel * 0.5;
+      const breakpointTwo = maxLevel * 0.8;
+      const exponent = multiCost ?? 1;
       if (maxLevel > 10000) {
-        // Integral approximation including linearMult = (1 + L*0.001) for L > 1
-        // ∫ L^mc * (1 + L*0.001) dL = L^(mc+1)/(mc+1) + 0.001*L^(mc+2)/(mc+2)
-        const intPow = (a, b) => {
-          const t1 = (Math.pow(b, mc + 1) - Math.pow(a, mc + 1)) / (mc + 1);
-          const t2 = 0.001 * (Math.pow(b, mc + 2) - Math.pow(a, mc + 2)) / (mc + 2);
-          return t1 + t2;
+        const integral = (start, end) => {
+          const first = (Math.pow(end, exponent + 1) - Math.pow(start, exponent + 1)) / (exponent + 1);
+          const second = 0.001 * (Math.pow(end, exponent + 2) - Math.pow(start, exponent + 2)) / (exponent + 2);
+          return first + second;
         };
-        return baseCost * (intPow(0, bp1f) + 3 * intPow(bp1f, bp2f) + 24 * intPow(bp2f, maxLevel));
+        return baseCost * (integral(0, breakpointOne) + 3 * integral(breakpointOne, breakpointTwo) + 24 * integral(breakpointTwo, maxLevel));
       }
       let total = 0;
-      for (let i = 0; i < maxLevel; i++) {
-        const lv = i + 1;
-        const mult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
-        const linMult = (item.hasLinearMult && lv > 1) ? (1 + lv * 0.001) : 1;
-        total += baseCost * Math.pow(lv, mc) * mult * linMult;
+      for (let index = 0; index < maxLevel; index += 1) {
+        const level = index + 1;
+        const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
+        const linearMult = item.hasLinearMult && level > 1 ? 1 + level * 0.001 : 1;
+        total += baseCost * Math.pow(level, exponent) * breakpointMult * linearMult;
       }
       return total;
     }
 
     case "exponential":
     case "exponential_endgame": {
-      const bp1f = Math.ceil(maxLevel * 0.5);
-      const bp2f = Math.ceil(maxLevel * 0.8);
+      const breakpointOne = Math.ceil(maxLevel * 0.5);
+      const breakpointTwo = Math.ceil(maxLevel * 0.8);
       if (item.hasLinearMult) {
-        // linearMult applies — sum level by level
         let total = 0;
-        for (let lv = 1; lv <= maxLevel; lv++) {
-          const bpMult = lv >= bp2f ? 24 : lv >= bp1f ? 3 : 1;
-          const linMult = lv > 1 ? (1 + lv * 0.001) : 1;
-          total += baseCost * Math.pow(multiCost ?? 1, lv - 1) * bpMult * linMult;
+        for (let level = 1; level <= maxLevel; level += 1) {
+          const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
+          const linearMult = level > 1 ? 1 + level * 0.001 : 1;
+          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * breakpointMult * linearMult;
         }
         return total;
       }
-      const geoSum = (a, b) => {
-        if (b < a) return 0;
-        if (!multiCost || multiCost === 1) return b - a + 1;
-        return Math.pow(multiCost, a - 1) * (Math.pow(multiCost, b - a + 1) - 1) / (multiCost - 1);
+      const geometric = (start, end) => {
+        if (end < start) return 0;
+        if (!multiCost || multiCost === 1) return end - start + 1;
+        return Math.pow(multiCost, start - 1) * (Math.pow(multiCost, end - start + 1) - 1) / (multiCost - 1);
       };
-      return baseCost * (geoSum(1, bp1f-1) + 3*geoSum(bp1f, bp2f-1) + 24*geoSum(bp2f, maxLevel));
+      return baseCost * (geometric(1, breakpointOne - 1) + 3 * geometric(breakpointOne, breakpointTwo - 1) + 24 * geometric(breakpointTwo, maxLevel));
     }
 
     case "capped_linear": {
       const cap = stopCostIncreaseAt ?? maxLevel;
-      if (maxLevel <= cap) return baseCost * maxLevel * (maxLevel + 1) / 2;
-      return baseCost * (cap * (cap + 1) / 2 + (maxLevel - cap) * cap);
+      if (maxLevel <= cap) return (baseCost * maxLevel * (maxLevel + 1)) / 2;
+      return baseCost * (((cap * (cap + 1)) / 2) + (maxLevel - cap) * cap);
     }
 
     default:
@@ -494,10 +533,6 @@ function rankExpForLevel(lvl) {
 // ─────────────────────────────────────────────
 // STAT DISPLAY HELPERS
 // ─────────────────────────────────────────────
-function getStatLabel(statKey) {
-  return STAT_UNITS[statKey]?.label ?? statKey;
-}
-
 function formatStat(statAmt, statKey) {
   const info = STAT_UNITS[statKey];
   if (!info) return `+${statAmt}`;
@@ -529,13 +564,6 @@ function progressiveTotal(statAmt, level) {
   return statAmt * level * (level + 1) / 2;
 }
 
-// Reverse lookup: rewardUnit label (case-insensitive) → unit symbol ("%" / "s" / etc.)
-const REWARD_UNIT_SYMBOL = Object.fromEntries(
-  Object.values(STAT_UNITS).map(v => [v.label.toLowerCase(), v.unit])
-);
-function rewardUnitSym(rewardUnit) {
-  return REWARD_UNIT_SYMBOL[rewardUnit?.toLowerCase()] ?? "";
-}
 
 // ─────────────────────────────────────────────
 // COLORS  — based on in-game UI palette
@@ -566,855 +594,6 @@ const ASTRAL_COLORS = {
 };
 
 // ─────────────────────────────────────────────
-// COST AT A SINGLE LEVEL  (1-indexed)
-// ─────────────────────────────────────────────
-// Returns BigInt when all inputs are integers, Number otherwise.
-// All calls for the same item always return the same type.
-function costAtLevel(level, item, sectionFormula) {
-  const formula   = item.costFormula ?? sectionFormula;
-  const { baseCost, multiCost, stopCostIncreaseAt } = item;
-  if (!baseCost || formula === "none") return 0n;
-
-  if (formula === "spell") {
-    const entry = spellCostEntry(level, item);
-    return entry.type === "energy" ? entry.cost : 0n;
-  }
-
-  if (formula === "hero_attr") {
-    const ml  = item.maxLevel ?? 999999;
-    const bp1 = Math.round(ml * 0.5);
-    const bp2 = Math.round(ml * 0.8);
-    const mult = level >= bp2 ? 1.875 : level >= bp1 ? 1.25 : 1.0;
-    return Math.floor(baseCost * level * mult);
-  }
-
-  const intInputs = Number.isInteger(baseCost) &&
-    (multiCost === undefined || Number.isInteger(multiCost));
-
-  if (intInputs) {
-    const bc = BigInt(baseCost);
-    const mc = multiCost !== undefined ? BigInt(multiCost) : 1n;
-    const lv = BigInt(level);
-    switch (formula) {
-      case "flat":           return bc;
-      case "rank_linear":    return bc * lv;
-      case "power": {
-        const ml = item.maxLevel ?? 999999;
-        if (item.hasLinearMult) break; // linearMult requires float path
-        if (item.capCost !== undefined) {
-          const cc = BigInt(item.capCost);
-          const raw = bc * (lv + 1n) ** mc;
-          return raw < cc ? raw : cc;
-        }
-        const bp1 = BigInt(Math.ceil(ml * 0.5));
-        const bp2 = BigInt(Math.ceil(ml * 0.8));
-        const mult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
-        return bc * lv ** mc * mult;
-      }
-      case "exponential":
-      case "exponential_endgame": {
-        const ml = item.maxLevel ?? 999999;
-        if (item.hasLinearMult) break; // linearMult requires float path
-        const bp1 = BigInt(Math.ceil(ml * 0.5));
-        const bp2 = BigInt(Math.ceil(ml * 0.8));
-        const bpMult = lv >= bp2 ? 24n : lv >= bp1 ? 3n : 1n;
-        return bc * mc ** (lv - 1n) * bpMult;
-      }
-      case "capped_linear": {
-        const cap = stopCostIncreaseAt !== undefined ? BigInt(Math.round(stopCostIncreaseAt)) : lv;
-        return bc * (lv < cap ? lv : cap);
-      }
-      default: return bc;
-    }
-  }
-
-  // Float fallback
-  const i = level - 1;
-  switch (formula) {
-    case "flat":           return baseCost;
-    case "rank_linear":    return baseCost * level;
-    case "power": {
-      if (item.capCost !== undefined) {
-        return Math.min(baseCost * Math.pow(level + 1, multiCost ?? 1), item.capCost);
-      }
-      const ml   = item.maxLevel ?? 999999;
-      const bp1f = ml * 0.5;
-      const bp2f = ml * 0.8;
-      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
-      const linMult = (item.hasLinearMult && level > 1) ? (1 + level * 0.001) : 1;
-      return baseCost * Math.pow(level, multiCost ?? 1) * bpMult * linMult;
-    }
-    case "exponential":
-    case "exponential_endgame": {
-      const ml   = item.maxLevel ?? 999999;
-      const bp1f = ml * 0.5;
-      const bp2f = ml * 0.8;
-      const bpMult = level >= bp2f ? 24 : level >= bp1f ? 3 : 1;
-      const linMult = (item.hasLinearMult && level > 1) ? (1 + level * 0.001) : 1;
-      return baseCost * Math.pow(multiCost ?? 1, i) * bpMult * linMult;
-    }
-    case "capped_linear":  return baseCost * Math.min(level, stopCostIncreaseAt ?? level);
-    default:               return baseCost;
-  }
-}
-
-// ─────────────────────────────────────────────
-// UI COMPONENTS
-// ─────────────────────────────────────────────
-function Badge({ children, color }) {
-  return (
-    <span style={{
-      background: color + "22", color, border: `1px solid ${color}44`,
-      borderRadius: 4, padding: "1px 7px", fontSize: 11, fontWeight: 600,
-      letterSpacing: "0.04em", whiteSpace: "nowrap",
-    }}>{children}</span>
-  );
-}
-
-function StatRow({ label, value, sub, valueColor }) {
-  return (
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", borderBottom: `1px solid ${colors.border}`, padding: "6px 0", gap: 8 }}>
-      <span style={{ color: colors.muted, fontSize: 13 }}>{label}</span>
-      <span style={{ color: valueColor ?? colors.gold, fontFamily: "'Exo 2', monospace", fontSize: 14, textAlign: "right", fontWeight: 700 }}>
-        {value}{sub && <span style={{ color: colors.muted, fontSize: 11 }}> {sub}</span>}
-      </span>
-    </div>
-  );
-}
-
-const MAX_TABLE_ROWS = 500;
-
-function CostModal({ item, sectionFormula, onClose }) {
-  const fmt      = useFmt();
-  const formula  = item.costFormula ?? sectionFormula;
-  const isSpell  = formula === "spell";
-  const maxLevel = item.maxLevel ?? 100;
-  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
-
-  // Committed values drive all calculations
-  const [startLvl, setStartLvl] = useState(1);
-  const [endLvl,   setEndLvl]   = useState(Math.min(maxLevel, 100));
-  // Draft values are what the user sees while typing
-  const [startInput, setStartInput] = useState("1");
-  const [endInput,   setEndInput]   = useState(String(Math.min(maxLevel, 100)));
-
-  const start = clamp(startLvl, 1, maxLevel);
-  const end   = clamp(endLvl,   start, maxLevel);
-
-  function commitStart() {
-    const v = clamp(parseInt(startInput) || 1, 1, maxLevel);
-    setStartLvl(v);
-    setStartInput(String(v));
-    // If start now exceeds end, push end up to match
-    if (v > endLvl) {
-      setEndLvl(v);
-      setEndInput(String(v));
-    }
-  }
-  function commitEnd() {
-    const raw = clamp(parseInt(endInput) || 1, 1, maxLevel);
-    // End must be >= start
-    const v = Math.max(raw, startLvl);
-    setEndLvl(v);
-    setEndInput(String(v));
-  }
-
-  const rows = useMemo(() => {
-    const out = [];
-    const limit = Math.min(end - start + 1, MAX_TABLE_ROWS);
-    if (isSpell) {
-      let energyRunning = 0n;
-      for (let lvl = start; lvl <= start + limit - 1; lvl++) {
-        const entry = spellCostEntry(lvl, item);
-        if (entry.type === "energy") {
-          energyRunning += entry.cost;
-          out.push({ lvl, type: "energy", cost: entry.cost, running: energyRunning });
-        } else {
-          out.push({ lvl, type: "unlock", currency: entry.currency, amount: entry.amount, running: energyRunning });
-        }
-      }
-    } else {
-      const zero = typeof costAtLevel(start, item, sectionFormula) === "bigint" ? 0n : 0;
-      let running = zero;
-      for (let lvl = start; lvl <= start + limit - 1; lvl++) {
-        const cost = costAtLevel(lvl, item, sectionFormula);
-        running += cost;
-        out.push({ lvl, type: "energy", cost, running });
-      }
-    }
-    return out;
-  }, [start, end, item, sectionFormula, isSpell]);
-
-  const totalCost = useMemo(() => {
-    if (isSpell) {
-      let t = 0n;
-      for (let lvl = start; lvl <= end; lvl++) {
-        const entry = spellCostEntry(lvl, item);
-        if (entry.type === "energy") t += entry.cost;
-      }
-      return t;
-    }
-    const zero = typeof costAtLevel(start, item, sectionFormula) === "bigint" ? 0n : 0;
-    let t = zero;
-    for (let lvl = start; lvl <= end; lvl++) t += costAtLevel(lvl, item, sectionFormula);
-    return t;
-  }, [start, end, item, sectionFormula, isSpell]);
-
-  // Unlock costs that fall within the selected range (spells only)
-  const unlocksInRange = !isSpell ? [] : [16, 21].flatMap(lvl => {
-    if (lvl < start || lvl > end) return [];
-    const entry = spellCostEntry(lvl, item);
-    return entry.type === "unlock" ? [{ lvl, ...entry }] : [];
-  });
-
-  const truncated = (end - start + 1) > MAX_TABLE_ROWS;
-
-  // Effective increase: only for % stats
-  // Formula: (100 + statAmt×end) / (100 + statAmt×start) - 1
-  const effectiveIncrease = (() => {
-    if (!item.statAmt || !item.statKey) return null;
-    if (STAT_UNITS[item.statKey]?.unit !== "%") return null;
-    const bonusBefore = item.statAmt * start;
-    const bonusAfter  = item.statAmt * end;
-    return (100 + bonusAfter) / (100 + bonusBefore) - 1;
-  })();
-
-  const inputStyle = {
-    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
-    width: 90, textAlign: "center", outline: "none",
-  };
-  const thStyle = {
-    padding: "8px 16px", color: colors.muted, fontWeight: 700, fontSize: 12,
-    textAlign: "left", borderBottom: `1px solid ${colors.border}`,
-    letterSpacing: "0.06em", textTransform: "uppercase",
-  };
-
-  return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.7)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: 24 }}>
-      <div className="modal-box" style={{ background: colors.bg, border: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)" }}>
-
-        {/* Modal header */}
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
-          <div>
-            <div style={{ fontSize: 17, fontWeight: 800, color: colors.text }}>{item.name}</div>
-            {item.statAmt && item.statKey && (
-              <div style={{ fontSize: 13, color: colors.positive, marginTop: 2 }}>
-                {isProgressiveItem(item)
-                  ? `+${item.statAmt} × level (progressive)`
-                  : `${formatStat(item.statAmt, item.statKey)} per level`}
-              </div>
-            )}
-            {item.waveReq > 0 && (
-              <div style={{ display: "inline-block", marginTop: 5, background: "#1a2a3a", border: "1px solid #ffaa44", borderRadius: 4, padding: "2px 8px", fontSize: 11, fontWeight: 700, color: "#ffaa44" }}>
-                Unlocks: Wave {item.waveReq.toLocaleString()}
-              </div>
-            )}
-          </div>
-          <button onClick={onClose} style={{ background: "none", border: "none", color: colors.muted, fontSize: 22, cursor: "pointer", lineHeight: 1, padding: "0 4px" }}>✕</button>
-        </div>
-
-        {/* Level range inputs */}
-        <div style={{ padding: "14px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-          <span style={{ color: colors.muted, fontSize: 13 }}>From level</span>
-          <input type="number" value={startInput} min={1} max={maxLevel}
-            onChange={e => {
-              setStartInput(e.target.value);
-              if (e.target.value !== "") {
-                const v = clamp(parseInt(e.target.value) || 1, 1, maxLevel);
-                setStartLvl(v);
-                if (v > endLvl) { setEndLvl(v); setEndInput(String(v)); }
-              }
-            }}
-            onBlur={commitStart}
-            onKeyDown={e => e.key === "Enter" && commitStart()}
-            style={inputStyle} />
-          <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
-          <input type="number" value={endInput} min={1} max={maxLevel}
-            onChange={e => {
-              setEndInput(e.target.value);
-              if (e.target.value !== "") {
-                const v = clamp(Math.max(parseInt(e.target.value) || 1, startLvl), 1, maxLevel);
-                setEndLvl(v);
-              }
-            }}
-            onBlur={commitEnd}
-            onKeyDown={e => e.key === "Enter" && commitEnd()}
-            style={inputStyle} />
-          <span style={{ color: colors.muted, fontSize: 12 }}>/ {maxLevel.toLocaleString()}</span>
-        </div>
-
-        {/* Summary */}
-        <div style={{ padding: "12px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", gap: 10 }}>
-          {/* Row 1: levels, cost, effective increase */}
-          <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Levels</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: colors.text }}>{start} → {end} <span style={{ fontSize: 13, color: colors.muted }}>({end - start + 1} lvls)</span></div>
-            </div>
-            <div>
-              <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{isSpell ? "Total Energy" : "Total Cost"}</div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: colors.gold }}>{fmt(totalCost)}</div>
-            </div>
-            {effectiveIncrease !== null && (
-              <div>
-                <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>Effective Increase</div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: colors.positive }}>+{(effectiveIncrease * 100).toFixed(2)}%</div>
-              </div>
-            )}
-          </div>
-          {/* Row 2: tier unlock costs (spells only, only when in range) */}
-          {unlocksInRange.length > 0 && (
-            <div style={{ display: "flex", gap: 24, flexWrap: "wrap" }}>
-              {unlocksInRange.map(u => (
-                <div key={u.lvl}>
-                  <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em" }}>{u.lvl === 16 ? "Tier 2 Unlock Cost" : "Tier 3 Unlock Cost"}</div>
-                  <div style={{ fontSize: 14, fontWeight: 700, color: colors.accent }}>
-                    {fmt(u.amount)} {CURRENCY_LABELS[u.currency] ?? u.currency}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
-        {/* Table */}
-        <div style={{ overflowY: "auto", flex: 1 }}>
-          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-            <thead style={{ position: "sticky", top: 0, background: colors.panel }}>
-              <tr>
-                <th style={thStyle}>Level</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>{isSpell ? "Resource / Cost" : "Cost"}</th>
-                <th style={{ ...thStyle, textAlign: "right" }}>{isSpell ? "Running Energy" : "Running Total"}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => {
-                if (r.type === "unlock") return (
-                  <tr key={r.lvl} style={{ background: colors.accentDim + "55", borderBottom: `1px solid ${colors.border}` }}>
-                    <td style={{ padding: "7px 16px", color: colors.accent, fontWeight: 700 }}>{r.lvl}</td>
-                    <td style={{ padding: "7px 16px", textAlign: "right" }}>
-                      <span style={{ color: colors.muted, fontSize: 11, marginRight: 4 }}>{CURRENCY_LABELS[r.currency] ?? r.currency}</span>
-                      <span style={{ color: colors.accent, fontFamily: "monospace", fontWeight: 700 }}>{fmt(r.amount)}</span>
-                    </td>
-                    <td style={{ padding: "7px 16px", color: colors.muted, textAlign: "right" }}>—</td>
-                  </tr>
-                );
-                return (
-                  <tr key={r.lvl} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
-                    <td style={{ padding: "7px 16px", color: colors.accent, fontWeight: 600 }}>{r.lvl}</td>
-                    <td style={{ padding: "7px 16px", color: colors.text, fontFamily: "monospace", textAlign: "right" }}>{fmt(r.cost)}</td>
-                    <td style={{ padding: "7px 16px", color: colors.gold, fontFamily: "monospace", textAlign: "right", fontWeight: 600 }}>{fmt(r.running)}</td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-          {truncated && (
-            <div style={{ padding: "10px 16px", fontSize: 12, color: colors.muted, textAlign: "center", borderTop: `1px solid ${colors.border}` }}>
-              Showing first {MAX_TABLE_ROWS} rows — total cost above reflects the full range.
-            </div>
-          )}
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function getIconUrl(filename) {
-  return new URL(`./images/Icons/${filename}`, import.meta.url).href;
-}
-
-function getPerkUnit(name) {
-  if (name.includes("%")) return "%";
-  if (/chance|synergy|speed|cooldown|bonus|effect|group|damage|power|exp|gold|energy|active play/i.test(name)) return "%";
-  return "";
-}
-
-function ItemCard({ item, sectionFormula, canCalculateCost, onOpen }) {
-  const fmt       = useFmt();
-  const formula   = item.costFormula ?? sectionFormula;
-  const isRune    = formula === "none";
-  const isSpell   = formula === "spell";
-  const totalCost = computeTotalCost(item, sectionFormula);
-  const statLine  = item.statAmt !== undefined && item.statKey
-    ? isProgressiveItem(item)
-      ? `+${item.statAmt} × level (progressive)`
-      : `${formatStat(item.statAmt, item.statKey)} per level`
-    : null;
-  const levelLabel = item.maxLevel === undefined ? null : `Max Lvl: ${item.maxLevel.toLocaleString()}`;
-
-  const iconBg     = item.bgColor     ?? "#1a4a8a";
-  const iconBorder = item.borderColor ?? colors.border;
-
-  const clickable = canCalculateCost !== false;
-
-  return (
-    <div onClick={clickable ? onOpen : undefined} style={{ background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 8, padding: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.2)", display: "flex", gap: 12, alignItems: "center", cursor: clickable ? "pointer" : "default", transition: "border-color 0.15s" }}
-      onMouseEnter={e => { if (clickable) e.currentTarget.style.borderColor = colors.accent; }}
-      onMouseLeave={e => e.currentTarget.style.borderColor = colors.border}>
-
-      {/* Icon box */}
-      {isSpell ? (
-        <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, overflow: "hidden" }}>
-          {item.icon
-            ? <img src={getIconUrl(item.icon)} alt="" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
-            : <span style={{ fontSize: 20, fontWeight: 800, color: "#ffffff99", textTransform: "uppercase", userSelect: "none" }}>{item.name.charAt(0)}</span>
-          }
-        </div>
-      ) : (
-        <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, background: iconBg, border: `2px solid ${iconBorder}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-          {item.icon
-            ? <img src={getIconUrl(item.icon)} alt="" style={{ width: 36, height: 36, objectFit: "contain" }} />
-            : <span style={{ fontSize: 20, fontWeight: 800, color: "#ffffff99", textTransform: "uppercase", userSelect: "none" }}>{item.name.charAt(0)}</span>
-          }
-        </div>
-      )}
-
-      {/* Content */}
-      <div style={{ flex: 1, minWidth: 0 }}>
-
-        {/* Row 1: name + level */}
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 6, marginBottom: 3 }}>
-          <span style={{ color: colors.text, fontWeight: 700, fontSize: 15, lineHeight: 1.2 }}>{item.name}</span>
-          <div style={{ display: "flex", gap: 4, flexShrink: 0 }}>
-            {levelLabel && <Badge color={colors.accent}>{levelLabel}</Badge>}
-          </div>
-        </div>
-
-        {/* Row 2: stat per level */}
-        {statLine && (
-          <div style={{ color: colors.positive, fontWeight: 700, fontSize: 14, marginBottom: 6 }}>{statLine}</div>
-        )}
-
-        {/* Row 3: base cost + total cost + max benefit */}
-        <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-          {item.baseCost !== undefined && !isRune && (
-            <span style={{ fontSize: 13, color: colors.muted }}>{isSpell ? "Unlock" : "Base"} <span style={{ color: colors.gold, fontWeight: 700 }}>{fmt(item.baseCost)}</span></span>
-          )}
-          {totalCost !== null && (
-            <span style={{ fontSize: 13, color: colors.muted }}>Total <span style={{ color: colors.gold, fontWeight: 700 }}>{fmt(totalCost)}</span></span>
-          )}
-          {item.statAmt !== undefined && item.statKey && item.maxLevel !== undefined && (
-            <span style={{ fontSize: 13, color: colors.muted }}>Max Benefit <span style={{ color: colors.positive, fontWeight: 700 }}>{formatStatTotal(isProgressiveItem(item) ? progressiveTotal(item.statAmt, item.maxLevel) : item.statAmt * item.maxLevel, item.statKey, fmt)}</span></span>
-          )}
-          {item.waveReq !== undefined && item.waveReq > 0 && (
-            <span style={{ fontSize: 13, color: colors.muted }}>Unlocks <span style={{ color: colors.accent, fontWeight: 700 }}>Wave {item.waveReq.toLocaleString()}</span></span>
-          )}
-        </div>
-
-      </div>
-    </div>
-  );
-}
-
-function GroupCard({ title, items, sectionFormula, canCalculateCost, onOpen }) {
-  // Use rarity colours if the group name matches a known rarity tier
-  const baseRarity = Object.keys(RARITY_COLORS).find(r => title === r || title.startsWith(r + " "));
-  const rc = baseRarity ? RARITY_COLORS[baseRarity] : null;
-
-  return (
-    <div style={{ marginBottom: 32 }}>
-      <div style={{
-        background: rc
-          ? `linear-gradient(180deg, ${rc.bg}cc 0%, ${rc.bg}88 100%)`
-          : `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`,
-        border: `1px solid ${rc ? rc.border : "#4a7ec0"}`,
-        borderRadius: 8,
-        padding: "8px 20px",
-        marginBottom: 14,
-        textAlign: "center",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.4)",
-      }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: rc ? rc.text : colors.bannerText, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>
-          {title}
-        </span>
-      </div>
-      <div className="card-grid">
-        {items.map(item => (
-          <ItemCard key={item.id} item={item} sectionFormula={sectionFormula} canCalculateCost={canCalculateCost} onOpen={() => onOpen(item)} />
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function SheetView({ sectionData, onOpen }) {
-  const { costFormula, canCalculateCost, groups } = sectionData;
-  return (
-    <div>
-      {Object.entries(groups).map(([groupName, items]) => (
-        <GroupCard key={groupName} title={groupName} items={items} sectionFormula={costFormula} canCalculateCost={canCalculateCost} onOpen={onOpen} />
-      ))}
-    </div>
-  );
-}
-
-function RankExpView() {
-  const fmt = useFmt();
-  const [startInput, setStartInput] = useState("1");
-  const [endInput,   setEndInput]   = useState("5000");
-  const [range, setRange] = useState({ start: 1, end: 5000 });
-  const [sortDir, setSortDir] = useState("asc");
-  const [isPending, startTransition] = useTransition();
-  const [isLoading, setIsLoading] = useState(false);
-
-  function applyRange() {
-    const s = Math.max(1, parseInt(startInput) || 1);
-    const e = Math.max(s, parseInt(endInput)   || s);
-    setStartInput(String(s));
-    setEndInput(String(e));
-    setIsLoading(true);
-    setTimeout(() => { setRange({ start: s, end: e }); setIsLoading(false); }, 30);
-  }
-
-  function handleKeyDown(evt) {
-    if (evt.key === "Enter") applyRange();
-  }
-
-  const { rows, totalExp, totalPoints } = useMemo(() => {
-    const out = [];
-    const toBI = (v) => isFinite(v) ? BigInt(Math.round(v)) : null;
-    let prevBI = range.start > 1 ? toBI(rankExpForLevel(range.start - 1)) : 0n;
-    let cumulativePoints = range.start > 1
-      ? Array.from({ length: range.start - 1 }, (_, i) => i + 2).reduce((s, l) => s + l, 0)
-      : 0;
-    const pointsBefore = cumulativePoints;
-    for (let i = range.start; i <= range.end; i++) {
-      const cumBI = toBI(rankExpForLevel(i));
-      const required = (cumBI !== null && prevBI !== null) ? cumBI - prevBI : Infinity;
-      const pointsGained = i === 1 ? 0 : i;
-      cumulativePoints += pointsGained;
-      out.push({ level: i, required, cumulative: cumBI ?? Infinity, pointsGained, cumulativePoints });
-      if (cumBI !== null) prevBI = cumBI;
-    }
-    let totalExp = 0n;
-    let hasInf = false;
-    for (const r of out) {
-      if (r.required === Infinity) { hasInf = true; break; }
-      totalExp += r.required;
-    }
-    const totalPoints = out.length > 0 ? out[out.length - 1].cumulativePoints - pointsBefore : 0;
-    return { rows: out, totalExp: hasInf ? null : totalExp, totalPoints };
-  }, [range]);
-
-  // Rows are always generated ascending — desc is just a reverse (no sort needed)
-  const displayRows = sortDir === "asc" ? rows : [...rows].reverse();
-
-  const inputStyle = {
-    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
-    width: 90, textAlign: "center", outline: "none",
-  };
-
-  const thBase = { padding: "10px 16px", fontWeight: 600, textAlign: "left", borderBottom: `1px solid ${colors.border}`, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" };
-  const thMuted = { ...thBase, color: colors.muted };
-  const thSortable = { ...thBase, color: colors.accent, cursor: isPending ? "wait" : "pointer", userSelect: "none", whiteSpace: "nowrap" };
-
-  return (
-    <div>
-      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
-        <img src={getIconUrl("_killExp.png")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-        <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Rank Exp</div>
-      </div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <span style={{ color: colors.muted, fontSize: 13 }}>From level</span>
-        <input
-          type="number" value={startInput} min={1}
-          onChange={e => setStartInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
-        <input
-          type="number" value={endInput} min={1}
-          onChange={e => setEndInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <button onClick={applyRange} style={{
-          background: colors.accent, color: "#000", border: "none", borderRadius: 6,
-          padding: "6px 18px", cursor: "pointer", fontWeight: 700, fontSize: 13,
-          fontFamily: "inherit",
-        }}>
-          Apply
-        </button>
-      </div>
-      <div style={{ display: "flex", gap: 10, marginBottom: 16, flexWrap: "wrap" }}>
-        <div style={{ flex: 1, minWidth: 180, background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "10px 16px" }}>
-          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Total EXP (Levels {range.start}–{range.end})</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: colors.positive, fontFamily: "monospace" }}>{totalExp !== null ? fmt(totalExp) : "—"}</div>
-        </div>
-        <div style={{ flex: 1, minWidth: 180, background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "10px 16px" }}>
-          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Attribute Points (Levels {range.start}–{range.end})</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: colors.gold, fontFamily: "monospace" }}>{totalPoints.toLocaleString()}</div>
-        </div>
-      </div>
-      <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: colors.panel }}>
-              <th onClick={() => !isPending && startTransition(() => setSortDir(d => d === "asc" ? "desc" : "asc"))} style={thSortable}>
-                Level{isPending ? <span className="sort-spinner" /> : (sortDir === "asc" ? " ▲" : " ▼")}
-              </th>
-              <th style={thMuted}>EXP Required</th>
-              <th style={thMuted}>Cumulative EXP</th>
-              <th style={thMuted}>Points Gained</th>
-              <th style={thMuted}>Cumulative Points</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayRows.map((r, i) => (
-              <tr key={r.level} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
-                <td style={{ padding: "8px 16px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
-                <td style={{ padding: "8px 16px", color: colors.text, fontFamily: "monospace" }}>{fmt(r.required)}</td>
-                <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
-                <td style={{ padding: "8px 16px", color: r.pointsGained === 0 ? colors.muted : colors.gold, fontWeight: r.pointsGained > 0 ? 600 : 400 }}>{r.pointsGained === 0 ? "—" : `+${r.pointsGained}`}</td>
-                <td style={{ padding: "8px 16px", color: colors.gold, fontFamily: "monospace" }}>{r.cumulativePoints.toLocaleString()}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      {isLoading && (
-        <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.55)", zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <div style={{ background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 12, padding: "28px 40px", textAlign: "center" }}>
-            <div style={{ fontSize: 15, fontWeight: 700, color: colors.text, marginBottom: 6 }}>Calculating…</div>
-            <div style={{ fontSize: 12, color: colors.muted }}>Computing rank exp, please wait.</div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// BATTLEPASS EXP FORMULA
-// base = 50 * level²; scaling thresholds applied cumulatively with round-half-up
-// ─────────────────────────────────────────────
-function battpassExpForLevel(lvl) {
-  const roundHalfUp = v => Math.floor(v + 0.5);
-  let base = 50 * lvl * lvl;
-  if (lvl > 35)  base = roundHalfUp(base * (1 + (lvl - 35)  * 0.05));
-  if (lvl > 50)  base = roundHalfUp(base * (1 + (lvl - 50)  * 0.05));
-  if (lvl > 75)  base = roundHalfUp(base * (1 + (lvl - 75)  * 0.05));
-  if (lvl > 100) base = roundHalfUp(base * (1 + (lvl - 100) * 0.05));
-  return base;
-}
-
-function BattlepassExpView() {
-  const fmt = useFmt();
-  const [startInput, setStartInput] = useState("1");
-  const [endInput,   setEndInput]   = useState("150");
-  const [range, setRange] = useState({ start: 1, end: 150 });
-  const [sortDir, setSortDir] = useState("asc");
-  const [isPending, startTransition] = useTransition();
-
-  function applyRange() {
-    const s = Math.max(1, parseInt(startInput) || 1);
-    const e = Math.max(s, parseInt(endInput)   || s);
-    setStartInput(String(s));
-    setEndInput(String(e));
-    setRange({ start: s, end: e });
-  }
-
-  function handleKeyDown(evt) {
-    if (evt.key === "Enter") applyRange();
-  }
-
-  const { rows, totalExp } = useMemo(() => {
-    const out = [];
-    // EXP to reach level N from N-1 uses battpassExpForLevel(N-1)
-    let cumulative = 0;
-    for (let i = range.start; i <= range.end; i++) {
-      const required = battpassExpForLevel(i - 1);
-      cumulative += required;
-      out.push({ level: i, required, cumulative });
-    }
-    const totalExp = out.reduce((s, r) => s + r.required, 0);
-    return { rows: out, totalExp };
-  }, [range]);
-
-  // Rows are always generated ascending — desc is just a reverse (no sort needed)
-  const displayRows = sortDir === "asc" ? rows : [...rows].reverse();
-
-  const inputStyle = {
-    background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-    color: colors.text, padding: "6px 10px", fontSize: 14, fontFamily: "inherit",
-    width: 90, textAlign: "center", outline: "none",
-  };
-
-  const thBase = { padding: "10px 16px", fontWeight: 600, textAlign: "left", borderBottom: `1px solid ${colors.border}`, fontSize: 11, letterSpacing: "0.06em", textTransform: "uppercase" };
-  const thMuted = { ...thBase, color: colors.muted };
-  const thSortable = { ...thBase, color: colors.accent, cursor: isPending ? "wait" : "pointer", userSelect: "none", whiteSpace: "nowrap" };
-
-  return (
-    <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        <span style={{ color: colors.muted, fontSize: 13 }}>From level</span>
-        <input
-          type="number" value={startInput} min={1}
-          onChange={e => setStartInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <span style={{ color: colors.muted, fontSize: 13 }}>to</span>
-        <input
-          type="number" value={endInput} min={1}
-          onChange={e => setEndInput(e.target.value)}
-          onKeyDown={handleKeyDown}
-          style={inputStyle}
-        />
-        <button onClick={applyRange} style={{
-          background: colors.accent, color: "#000", border: "none", borderRadius: 6,
-          padding: "6px 18px", cursor: "pointer", fontWeight: 700, fontSize: 13,
-          fontFamily: "inherit",
-        }}>
-          Apply
-        </button>
-      </div>
-      <div style={{ marginBottom: 16 }}>
-        <div style={{ display: "inline-block", background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 8, padding: "10px 16px" }}>
-          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", marginBottom: 4 }}>Total EXP (Levels {range.start}–{range.end})</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: colors.positive, fontFamily: "monospace" }}>{fmt(totalExp)}</div>
-        </div>
-      </div>
-      <div style={{ background: colors.header, border: `1px solid ${colors.border}`, borderRadius: 8, overflow: "hidden" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-          <thead>
-            <tr style={{ background: colors.panel }}>
-              <th onClick={() => !isPending && startTransition(() => setSortDir(d => d === "asc" ? "desc" : "asc"))} style={thSortable}>
-                Level{isPending ? <span className="sort-spinner" /> : (sortDir === "asc" ? " ▲" : " ▼")}
-              </th>
-              <th style={thMuted}>EXP Required</th>
-              <th style={thMuted}>Cumulative EXP</th>
-            </tr>
-          </thead>
-          <tbody>
-            {displayRows.map((r, i) => (
-              <tr key={r.level} style={{ background: i % 2 === 0 ? "transparent" : colors.panel + "60", borderBottom: `1px solid ${colors.border}22` }}>
-                <td style={{ padding: "8px 16px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
-                <td style={{ padding: "8px 16px", color: colors.text, fontFamily: "monospace" }}>{fmt(r.required)}</td>
-                <td style={{ padding: "8px 16px", color: colors.positive, fontFamily: "monospace" }}>{fmt(r.cumulative)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// ALL HEROES VIEW
-// ─────────────────────────────────────────────
-// ─────────────────────────────────────────────
-// SEARCH BAR
-// ─────────────────────────────────────────────
-function SearchBar({ value, onChange, placeholder }) {
-  return (
-    <div style={{ position: "relative", marginBottom: 20 }}>
-      <span style={{ position: "absolute", left: 12, top: "50%", transform: "translateY(-50%)", color: colors.muted, fontSize: 15, pointerEvents: "none" }}>⌕</span>
-      <input
-        type="text"
-        value={value}
-        onChange={e => onChange(e.target.value)}
-        placeholder={placeholder ?? "Search…"}
-        style={{
-          width: "100%", boxSizing: "border-box",
-          background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 8,
-          color: colors.text, padding: "9px 12px 9px 34px",
-          fontSize: 14, fontFamily: "inherit", outline: "none",
-        }}
-      />
-      {value && (
-        <button onClick={() => onChange("")} style={{ position: "absolute", right: 10, top: "50%", transform: "translateY(-50%)", background: "none", border: "none", color: colors.muted, fontSize: 16, cursor: "pointer", lineHeight: 1, padding: 0 }}>✕</button>
-      )}
-    </div>
-  );
-}
-
-// ─────────────────────────────────────────────
-// ALL SYNERGIES VIEW
-// ─────────────────────────────────────────────
-const HERO_NAMES = (heroesData.heroes ?? [])
-  .sort((a, b) => a.name.localeCompare(b.name))
-  .map(h => ({ id: h.id, name: h.name }));
-
-const ALL_TIERS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX"];
-
-function ScopeFilter({ value, onChange }) {
-  return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <span style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>Scope</span>
-      {["both", "global", "personal"].map(opt => (
-        <button key={opt} onClick={() => onChange(opt)} style={{
-          background: value === opt ? colors.accent : colors.header,
-          color: value === opt ? "#000" : colors.text,
-          border: `1px solid ${value === opt ? colors.accent : colors.border}`,
-          borderRadius: 6, padding: "5px 14px", cursor: "pointer",
-          fontFamily: "inherit", fontWeight: value === opt ? 700 : 500,
-          fontSize: 13, textTransform: "capitalize", transition: "all 0.15s",
-        }}>{opt}</button>
-      ))}
-    </div>
-  );
-}
-
-function TierFilter({ value, onChange }) {
-  // value is a Set of selected tiers, empty Set = all
-  function toggle(tier) {
-    const next = new Set(value);
-    next.has(tier) ? next.delete(tier) : next.add(tier);
-    onChange(next);
-  }
-  const allSelected = value.size === 0;
-  return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <span style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>Tier</span>
-      <button onClick={() => onChange(new Set())} style={{
-        background: allSelected ? colors.accent : colors.header,
-        color: allSelected ? "#000" : colors.text,
-        border: `1px solid ${allSelected ? colors.accent : colors.border}`,
-        borderRadius: 6, padding: "5px 12px", cursor: "pointer",
-        fontFamily: "inherit", fontWeight: allSelected ? 700 : 500, fontSize: 13, transition: "all 0.15s",
-      }}>All</button>
-      {ALL_TIERS.map(tier => {
-        const tc = TIER_COLORS[tier] ?? TIER_COLORS.I;
-        const active = value.has(tier);
-        return (
-          <button key={tier} onClick={() => toggle(tier)} style={{
-            background: active ? tc.border : tc.bg,
-            color: active ? "#000" : tc.text,
-            border: `1px solid ${tc.border}`,
-            borderRadius: 6, padding: "5px 12px", cursor: "pointer",
-            fontFamily: "inherit", fontWeight: 700, fontSize: 13, transition: "all 0.15s",
-          }}>{tier}</button>
-        );
-      })}
-    </div>
-  );
-}
-
-function HeroDropdown({ value, onChange }) {
-  return (
-    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
-      <span style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>Hero</span>
-      <select value={value} onChange={e => onChange(e.target.value)} style={{
-        background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
-        color: colors.text, padding: "5px 10px", fontSize: 13, fontFamily: "inherit",
-        cursor: "pointer", outline: "none", minWidth: 140,
-      }}>
-        <option value="all">All Heroes</option>
-        {HERO_NAMES.map(h => (
-          <option key={h.id} value={h.id}>{h.name}</option>
-        ))}
-      </select>
-    </div>
-  );
-}
-
 function AllSynergiesView() {
   const [query, setQuery] = useState("");
   const [scope, setScope] = useState("both");
@@ -2061,21 +1240,6 @@ function HeroGoldCostView() {
   const fmt = useFmt();
   const isMobile = useIsMobile();
 
-  const BASE_COST = heroesData.levelCostFormula.baseCost; // 10
-
-  const MILESTONE_LEVELS = useMemo(() => {
-    const s = new Set();
-    (heroesData.heroes ?? []).forEach(h => (h.milestones ?? []).forEach(m => s.add(m.requirement)));
-    return s;
-  }, []);
-
-  const SOURCES = [
-    { key: "tickets", label: "Tickets", icon: "_ticket.png",    statAmt: 0.5, maxLevel: 25 },
-    { key: "runes",   label: "Runes",   icon: "_rune_2.png",    statAmt: 0.5, maxLevel: 10 },
-    { key: "ultimus", label: "Ultimus", icon: "token_red.png",  statAmt: 0.5, maxLevel: 10 },
-    { key: "mastery", label: "Mastery", icon: "_mastery_2.png", statAmt: 0.5, maxLevel: 10 },
-  ];
-
   const STORAGE_KEY = "heroGoldCostInputs";
   const saved = useMemo(() => { try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; } }, []);
 
@@ -2083,7 +1247,7 @@ function HeroGoldCostView() {
   const [endInput,      setEndInput]      = useState(saved.end          ?? "10000");
   const [milestoneOnly, setMilestoneOnly] = useState(saved.milestoneOnly === "true");
   const [upgInputs,     setUpgInputs]     = useState(() => {
-    const defaults = Object.fromEntries(SOURCES.map(s => [s.key, "0"]));
+    const defaults = Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, "0"]));
     return { ...defaults, ...(saved.upgrades || {}) };
   });
 
@@ -2092,7 +1256,7 @@ function HeroGoldCostView() {
   const [params, setParams] = useState(() => {
     const start = Math.max(1, parseInt(saved.start) || 1);
     const end   = Math.max(start + 1, Math.min(parseInt(saved.end) || 10000, 50000));
-    const upgrades = Object.fromEntries(SOURCES.map(s => [s.key, Math.min(Math.max(parseInt((saved.upgrades || {})[s.key]) || 0, 0), s.maxLevel)]));
+    const upgrades = Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, Math.min(Math.max(parseInt((saved.upgrades || {})[s.key]) || 0, 0), s.maxLevel)]));
     return { start, end, milestoneOnly: saved.milestoneOnly === "true", upgrades };
   });
 
@@ -2102,7 +1266,7 @@ function HeroGoldCostView() {
   function apply() {
     const start = Math.max(1, parseInt(startInput) || 1);
     const end   = Math.max(start + 1, Math.min(parseInt(endInput) || 10000, 50000));
-    const upgrades = Object.fromEntries(SOURCES.map(s => [s.key, clampUpg(upgInputs[s.key], s.maxLevel)]));
+    const upgrades = Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, clampUpg(upgInputs[s.key], s.maxLevel)]));
     setStartInput(String(start));
     setEndInput(String(end));
     setUpgInputs(Object.fromEntries(Object.entries(upgrades).map(([k, v]) => [k, String(v)])));
@@ -2114,8 +1278,8 @@ function HeroGoldCostView() {
 
   function clearAll() {
     setStartInput("1"); setEndInput("10000"); setMilestoneOnly(false);
-    setUpgInputs(Object.fromEntries(SOURCES.map(s => [s.key, "0"])));
-    setParams({ start: 1, end: 10000, milestoneOnly: false, upgrades: Object.fromEntries(SOURCES.map(s => [s.key, 0])) });
+    setUpgInputs(Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, "0"])));
+    setParams({ start: 1, end: 10000, milestoneOnly: false, upgrades: Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, 0])) });
     localStorage.removeItem(STORAGE_KEY);
   }
 
@@ -2132,27 +1296,27 @@ function HeroGoldCostView() {
     // Using scale DSCALE=200: contribution = (200 - level * statAmt*2) / 200
     // statAmt*2 is always an integer for statAmt in multiples of 0.5.
     const DSCALE = 200n;
-    const contribs = SOURCES.map(s => BigInt(upgrades[s.key]) * BigInt(Math.round(s.statAmt * 2)));
+    const contribs = HERO_GOLD_COST_SOURCES.map(s => BigInt(upgrades[s.key]) * BigInt(Math.round(s.statAmt * 2)));
     const factorNum = contribs.reduce((prod, c) => prod * (DSCALE - c), 1n);
-    const factorDen = DSCALE ** BigInt(SOURCES.length);
+    const factorDen = DSCALE ** BigInt(HERO_GOLD_COST_SOURCES.length);
     const redNum = 1000n * factorDen + 65n * factorNum;
     const redDen = 1000n * factorDen;
 
     function nextCost(prev, multNum, multDen) {
       // round((prev + BASE_COST) * multNum / multDen)
-      const base = BigInt(BASE_COST);
+      const base = BigInt(HERO_GOLD_COST_BASE_COST);
       return (2n * (prev + base) * multNum + multDen) / (2n * multDen);
     }
 
-    let origCost = BigInt(BASE_COST);
-    let redCost  = BigInt(BASE_COST);
+    let origCost = BigInt(HERO_GOLD_COST_BASE_COST);
+    let redCost  = BigInt(HERO_GOLD_COST_BASE_COST);
     let origCum  = 0n;
     let redCum   = 0n;
     const result = [];
 
     for (let lv = 1; lv <= end; lv++) {
-      if (lv >= start && (!milestoneOnly || MILESTONE_LEVELS.has(lv))) {
-        result.push({ level: lv, origCost, origCum, redCost, redCum, isMilestone: MILESTONE_LEVELS.has(lv) });
+      if (lv >= start && (!milestoneOnly || HERO_GOLD_COST_MILESTONE_LEVELS.has(lv))) {
+        result.push({ level: lv, origCost, origCum, redCost, redCum, isMilestone: HERO_GOLD_COST_MILESTONE_LEVELS.has(lv) });
       }
       origCum  += origCost;
       redCum   += redCost;
@@ -2160,10 +1324,10 @@ function HeroGoldCostView() {
       redCost   = nextCost(redCost,  redNum,  redDen);
     }
     return result;
-  }, [params, MILESTONE_LEVELS]);
+  }, [params]);
 
-  const hasReduction = SOURCES.some(s => (parseInt(upgInputs[s.key]) || 0) > 0);
-  const redFactor   = SOURCES.reduce((f, s) => f * (1 - (parseInt(upgInputs[s.key]) || 0) * s.statAmt / 100), 1);
+  const hasReduction = HERO_GOLD_COST_SOURCES.some(s => (parseInt(upgInputs[s.key]) || 0) > 0);
+  const redFactor   = HERO_GOLD_COST_SOURCES.reduce((f, s) => f * (1 - (parseInt(upgInputs[s.key]) || 0) * s.statAmt / 100), 1);
 
   const smallInput = {
     background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
@@ -2171,7 +1335,7 @@ function HeroGoldCostView() {
     width: 68, textAlign: "center", outline: "none",
   };
 
-  const sortedMilestoneLevels = useMemo(() => [...MILESTONE_LEVELS].sort((a, b) => a - b), [MILESTONE_LEVELS]);
+  const sortedMilestoneLevels = useMemo(() => [...HERO_GOLD_COST_MILESTONE_LEVELS].sort((a, b) => a - b), []);
 
   return (
     <div>
@@ -2218,13 +1382,13 @@ function HeroGoldCostView() {
             <div style={{ fontWeight: 700, fontSize: 13, color: colors.text, marginBottom: 10, display: "flex", alignItems: "center" }}>
               Hero Level Cost Upgrades
               <div style={{ display: "flex", gap: 6, marginLeft: "auto" }}>
-                <button onClick={() => setUpgInputs(Object.fromEntries(SOURCES.map(s => [s.key, String(s.maxLevel)])))}
+                <button onClick={() => setUpgInputs(Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, String(s.maxLevel)])))}
                   style={{ background: colors.accent + "22", border: `1px solid ${colors.accent}44`, color: colors.accent, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Max</button>
-                <button onClick={() => setUpgInputs(Object.fromEntries(SOURCES.map(s => [s.key, "0"])))}
+                <button onClick={() => setUpgInputs(Object.fromEntries(HERO_GOLD_COST_SOURCES.map(s => [s.key, "0"])))}
                   style={{ background: "transparent", border: `1px solid ${colors.border}`, color: colors.muted, borderRadius: 6, padding: "2px 12px", fontFamily: "inherit", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Clear</button>
               </div>
             </div>
-            {SOURCES.map(s => {
+            {HERO_GOLD_COST_SOURCES.map(s => {
               const val = parseInt(upgInputs[s.key]) || 0;
               const over = val > s.maxLevel;
               const pct = (val * s.statAmt).toFixed(1);
@@ -2436,14 +1600,6 @@ function AttributesView() {
 // ─────────────────────────────────────────────
 // MAPS VIEW
 // ─────────────────────────────────────────────
-function perkMaxCost(perk) {
-  const bp = 5;
-  const uc = perk.upgradeCost ?? perk.baseCost;
-  const low  = uc * Math.min(perk.maxLevel, bp);
-  const high = uc * 2 * Math.max(0, perk.maxLevel - bp);
-  return (perk.unlockCost ?? 0) + low + high;
-}
-
 function MapModal({ map, onClose, mapPerkMult = 1 }) {
   const hasVariants = map.astralVariants?.length > 0;
   const [tab, setTab] = useState("perks");
@@ -2710,8 +1866,6 @@ function MapCard({ map, onClick, isMobile, mapPerkMult = 1 }) {
   const hasVariants = map.astralVariants?.length > 0;
   const [variantIdx, setVariantIdx] = useState(0);
 
-  const negativeIsGood = new Set(["skillCooldown", "spellCooldown"]);
-
   return (
     <div onClick={onClick} style={{
       border: `1px solid ${colors.border}`, borderRadius: 10, overflow: "hidden", cursor: "pointer",
@@ -2832,66 +1986,10 @@ function MapCard({ map, onClick, isMobile, mapPerkMult = 1 }) {
 }
 
 // ─────────────────────────────────────────────
-// COMBAT STYLES VIEW
-// ─────────────────────────────────────────────
-function CombatStylesView() {
-  const isMobile = useIsMobile();
-  const styles = combatStylesData.styles ?? [];
-
-  function statLabel(key) {
-    return key.replace(/([A-Z])/g, ' $1').replace(/^./, s => s.toUpperCase()).trim();
-  }
-
-  const cols = isMobile ? 2 : 4;
-
-  return (
-    <div style={{ padding: "16px 12px" }}>
-      <div style={{ display: "grid", gridTemplateColumns: `repeat(${cols}, 1fr)`, gap: 10 }}>
-        {styles.map(style => (
-          <div key={style.id} style={{
-            background: colors.panel,
-            border: `1px solid ${colors.border}`,
-            borderRadius: 10,
-            padding: "12px 14px",
-            display: "flex",
-            flexDirection: "column",
-            gap: 8,
-          }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 8, flexWrap: "wrap" }}>
-              <div style={{ fontWeight: 700, fontSize: 15, color: colors.text }}>{style.name}</div>
-              <span style={{
-                fontSize: 11, fontWeight: 700, padding: "2px 8px", borderRadius: 10,
-                background: "#0f2640", border: "1px solid #2a5a8a", color: "#7aaacf", whiteSpace: "nowrap",
-              }}>
-                {style.rankReq > 0 ? `Rank ${style.rankReq.toLocaleString()}+` : "Available"}
-              </span>
-            </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              {style.bonuses.length === 0 ? (
-                <span style={{ fontSize: 12, color: colors.muted, fontStyle: "italic" }}>No modifiers</span>
-              ) : style.bonuses.map((b, i) => (
-                <div key={i} style={{ fontSize: 13, display: "flex", alignItems: "center", gap: 5 }}>
-                  <span style={{ fontWeight: 700, color: (() => { const neg = ["skillCooldown"].includes(b.stat); return (b.amount >= 0) !== neg ? colors.positive : "#e05555"; })() }}>
-                    {b.amount >= 0 ? "+" : ""}{b.amount}{b.isPercent ? "%" : ""}
-                  </span>
-                  <span style={{ color: colors.text, flex: 1 }}>{statLabel(b.stat)}</span>
-                  {b.isGlobal && (
-                    <span style={{ fontSize: 10, color: colors.muted, background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 4, padding: "1px 5px", marginLeft: "auto" }}>Global</span>
-                  )}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 const MAP_PERK_UPGRADE_SOURCES = [
-  { id: "runes",   label: "Runes",   statAmt: 2,  maxLevel: 15, icon: "_rune_2.png"    },
-  { id: "mastery", label: "Mastery", statAmt: 5,  maxLevel: 5,  icon: "_mastery_2.png" },
-  { id: "ultimus", label: "Ultimus", statAmt: 2,  maxLevel: 15, icon: "token_red.png"  },
+  { id: "runes", label: "Runes", statAmt: 2, maxLevel: 15, icon: "_rune_2.png" },
+  { id: "mastery", label: "Mastery", statAmt: 5, maxLevel: 5, icon: "_mastery_2.png" },
+  { id: "ultimus", label: "Ultimus", statAmt: 2, maxLevel: 15, icon: "token_red.png" },
 ];
 
 function AllMapsView() {
@@ -2902,7 +2000,9 @@ function AllMapsView() {
     try {
       const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
       if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
-    } catch {}
+    } catch {
+      return { runes: "", mastery: "", ultimus: "" };
+    }
     return { runes: "", mastery: "", ultimus: "" };
   });
 
@@ -3047,10 +2147,7 @@ function rankForPoints(points) {
 function RankRequiredView() {
   const fmt = useFmt();
   const isMobile = useIsMobile();
-  const allAttrs = [
-    ...heroAttributesData.personal,
-    ...heroAttributesData.global,
-  ];
+  const allAttrs = HERO_ATTRIBUTE_LIST;
 
   const RR_STORAGE_KEY = "rankRequiredLevels";
 
@@ -3059,7 +2156,9 @@ function RankRequiredView() {
     try {
       const saved = JSON.parse(localStorage.getItem(RR_STORAGE_KEY));
       if (saved && typeof saved === "object") return { ...defaults, ...saved };
-    } catch {}
+    } catch {
+      return defaults;
+    }
     return defaults;
   });
 
@@ -3076,7 +2175,7 @@ function RankRequiredView() {
       const target = Math.min(parseInt(levels[attr.id]) || 0, attr.maxLevel ?? 999999);
       return sum + attrPointsForLevels(attr, target);
     }, 0);
-  }, [levels]);
+  }, [allAttrs, levels]);
 
   const minRank    = rankForPoints(totalPoints);
   const rankExp    = rankExpForLevel(minRank);
@@ -3220,84 +2319,6 @@ function RankRequiredView() {
 }
 
 // ─────────────────────────────────────────────
-// HOME VIEW
-// ─────────────────────────────────────────────
-const HOME_SECTIONS = [
-  {
-    group: "Upgrades",
-    color: "#4a9eff",
-    items: [
-      { key: "research",   label: "Research",   icon: "_energy.png",          desc: "Prestige power upgrades" },
-      { key: "spells",     label: "Spells",     icon: "_energy.png",          desc: "Spell levels and energy costs" },
-      { key: "runes",      label: "Runes",      icon: "_rune_2.png",          desc: "Rune bonuses" },
-      { key: "gems",       label: "Gems",       icon: "_gem_2.png",           desc: "Gem upgrades" },
-      { key: "powerups",   label: "Power Ups",  icon: "_prestigePower.png",   desc: "Power up levels" },
-      { key: "tech",       label: "Tech",       icon: "_techPts_2.png",       desc: "Tech tree upgrades" },
-      { key: "tournament", label: "Tournament", icon: "_tournPts.png",        desc: "Tournament upgrades" },
-      { key: "tickets",    label: "Tickets",    icon: "_ticket.png",          desc: "Weekly ticket upgrades" },
-      { key: "ultimus",    label: "Ultimus",    icon: "token_red.png",        desc: "Ultimus upgrades" },
-      { key: "mastery",    label: "Mastery",    icon: "_mastery_2.png",       desc: "Mastery levels" },
-    ],
-  },
-  {
-    group: "Hero Data",
-    color: "#b47aff",
-    items: [
-      { key: "allHeroes",    label: "All Heroes",    icon: "_heroHelm.png",           desc: "Stats, skills and synergies" },
-      { key: "heroGoldCost", label: "Hero Gold Cost", icon: "_gold.png",              desc: "Gold cost per level with upgrade reductions" },
-      { key: "synergies",    label: "Synergies",     icon: "_synergy.png",            desc: "Browse all synergy bonuses" },
-      { key: "milestones",   label: "Milestones",    icon: "_star 3610.png",          desc: "Hero milestone rewards" },
-      { key: "rankExp",      label: "Rank Exp",      icon: "_killExp.png",            desc: "Experience per rank level" },
-      { key: "attributes",   label: "Attributes",    icon: "_attributePoints_0.png",  desc: "Personal and global attribute costs" },
-      { key: "combatStyles", label: "Combat Styles", icon: "icon_scale.png",          desc: "Combat style bonuses and rank requirements" },
-    ],
-  },
-  {
-    group: "PvP",
-    color: colors.gold,
-    items: [
-      { key: "brackets",         label: "Tournament Brackets", icon: "Icon_Trophy_0.png", desc: "Trophy rewards by tier and placement" },
-      { key: "immortalBrackets", label: "Immortal Brackets",   icon: "Icon_Trophy_0.png", desc: "Immortal bracket rewards" },
-    ],
-  },
-  {
-    group: "Maps",
-    color: colors.positive,
-    items: [
-      { key: "allMaps",  label: "All Maps",  icon: "Icon_Map_0.png",    desc: "Map perks and unlock requirements" },
-      { key: "mapPerks", label: "Map Perks", icon: "_starEmpty_0.png",  desc: "Perk points earned per wave milestone" },
-    ],
-  },
-  {
-    group: "Misc",
-    color: "#4ac8ff",
-    items: [
-      { key: "battpassExp",       label: "Battlepass Exp",     icon: "_battlepass.png",       desc: "EXP required per battlepass level" },
-      { key: "wavePerks",         label: "Wave Perks",         icon: "flagSword.png",   desc: "Wave perk bonuses by rarity" },
-      { key: "challenges",        label: "Challenges",         icon: "_starBlue.png",         desc: "Challenge rewards by difficulty" },
-      { key: "playerIcons",       label: "Player Icons",       icon: "icon_inforound.png",    desc: "Player icon costs and bonuses" },
-      { key: "playerBackgrounds", label: "Player Backgrounds", icon: "_prestigeBg.png",       desc: "Background unlock requirements and rewards" },
-    ],
-  },
-  {
-    group: "Calculators",
-    color: colors.accent,
-    items: [
-      { key: "rankRequired",  label: "Rank Required",  icon: "_attributePoints_0.png", desc: "Min rank needed for your attribute levels" },
-      { key: "enemyHp",       label: "Enemy HP",       icon: "_bosses.png",            desc: "Enemy HP by wave with player reductions" },
-      { key: "heroGoldCost",  label: "Hero Gold Cost",  icon: "_gold.png",              desc: "Gold cost per level with upgrade reductions" },
-      { key: "ultimusTokens", label: "Ultimus Tokens",  icon: "ultimusBoss.png",        desc: "Token rewards from killing the Ultimus Boss" },
-    ],
-  },
-];
-
-const STORE_LINKS = [
-  { label: "Android", url: "https://play.google.com/store/apps/details?id=com.SwellGamesLLC.IdleHeroTD", color: "#78c257", icon: "icon_android.png", desc: "Get it on Google Play" },
-  { label: "iOS",     url: "https://apps.apple.com/us/app/id6479284270",                                  color: "#aaaaaa", icon: "icon_ios.png",     desc: "Download on the App Store" },
-  { label: "Steam",   url: "https://store.steampowered.com/app/2897580",                                  color: "#1b9de2", icon: "icon_steam.png",    desc: "Available on Steam" },
-  { label: "Discord", url: "https://discord.com/invite/vs3uJUsxVx",                                       color: "#5865f2", icon: "discord-mark-blue.png", desc: "Join the community" },
-];
-
 // ─────────────────────────────────────────────
 // ULTIMUS TOKENS CALCULATOR
 // ─────────────────────────────────────────────
@@ -3331,7 +2352,7 @@ function UltimusTokensView() {
 
   // WPE levels — shared localStorage key with Enemy HP / Wave Perks pages
   const [wpeLevels, setWpeLevels] = useState(() => {
-    try { const s = JSON.parse(localStorage.getItem("wavePerkEffectLevels")); if (s && typeof s === "object") return s; } catch {}
+    try { const s = JSON.parse(localStorage.getItem("wavePerkEffectLevels")); if (s && typeof s === "object") return s; } catch { return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""])); }
     return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
   });
   function setWpeLevel(key, val) {
@@ -3348,7 +2369,7 @@ function UltimusTokensView() {
     try { const g = JSON.parse(localStorage.getItem("astral_group_levels")) || {}; localStorage.setItem("astral_group_levels", JSON.stringify({ ...g, boss: val })); } catch { localStorage.setItem("astral_group_levels", JSON.stringify({ boss: val })); }
   }
   const [mpLevels] = useState(() => {
-    try { const s = JSON.parse(localStorage.getItem("mapPerkUpgrades")); if (s && typeof s === "object") return s; } catch {}
+    try { const s = JSON.parse(localStorage.getItem("mapPerkUpgrades")); if (s && typeof s === "object") return s; } catch { return { runes: "", mastery: "", ultimus: "" }; }
     return { runes: "", mastery: "", ultimus: "" };
   });
 
@@ -3656,7 +2677,7 @@ function UltimusTokensView() {
 
 // ENEMY HP CALCULATOR
 // ─────────────────────────────────────────────
-function EnemyHpView() {
+function LegacyEnemyHpView() {
   const fmt = useFmt();
   const isMobile = useIsMobile();
 
@@ -3686,7 +2707,9 @@ function EnemyHpView() {
         const defaults = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
         return { ...defaults, ...saved };
       }
-    } catch {}
+    } catch {
+      return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+    }
     return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
   });
 
@@ -3709,7 +2732,9 @@ function EnemyHpView() {
     try {
       const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
       if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
-    } catch {}
+    } catch {
+      return { runes: "", mastery: "", ultimus: "" };
+    }
     return { runes: "", mastery: "", ultimus: "" };
   });
   function setMpLevel(id, val) {
@@ -3889,7 +2914,7 @@ function EnemyHpView() {
       scalingPct, ehpPct, wavePerkEhpPct, playerIconPct, skipChance, effectiveWave,
       mobCount, hasBoss, mobCountSkip, hasBossSkip, wpeMult, mapPerkMult: mapPerkMultCalc,
     };
-  }, [params, wpeLevels, snowLevel, mpLevels]);
+  }, [enemy_hp.sources, params, wave_skip.sources, wpeLevels, snowLevel, mpLevels]);
 
   const smallInput = {
     background: "#0f2640", border: `1px solid ${colors.border}`, borderRadius: 6,
@@ -4249,90 +3274,13 @@ function EnemyHpView() {
   );
 }
 
-function HomeView({ onNavigate }) {
-  const isMobile = useIsMobile();
-  return (
-    <div>
-
-      {/* Hero banner */}
-      <div style={{ textAlign: "center", marginBottom: 36, padding: "32px 20px", background: `linear-gradient(180deg, ${colors.panel} 0%, transparent 100%)`, borderRadius: 12, border: `1px solid ${colors.border}` }}>
-        <div style={{ fontSize: isMobile ? 28 : 36, fontWeight: 900, color: colors.accent, letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 24px rgba(245,146,30,0.5)", marginBottom: 8 }}>
-          Idle Hero TD
-        </div>
-        <div style={{ fontSize: 16, fontWeight: 700, color: colors.text, marginBottom: 4 }}>Game Data Reference</div>
-        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>by Asingh · Game Version 15.04</div>
-        <p style={{ fontSize: 14, color: colors.muted, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 12px" }}>
-          A comprehensive reference tool for Idle Hero TD — covering upgrade costs, hero stats, synergies, milestones, mastery exp, map perks, tournament brackets, and battlepass exp. Use the sidebar to navigate between sections.
-        </p>
-        <p style={{ fontSize: 13, color: colors.muted, lineHeight: 1.6, maxWidth: 560, margin: "0 auto 24px", padding: "10px 16px", background: colors.header, borderRadius: 8, border: `1px solid ${colors.border}` }}>
-          Found an error or something looks off? Please message <span style={{ color: colors.accent, fontWeight: 700 }}>Asingh</span> or any of the mods on the Discord server.
-        </p>
-        {/* Store + Discord links */}
-        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 14 }}>Find the game and join the community:</div>
-        <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap" }}>
-          {STORE_LINKS.map(link => (
-            <a key={link.label} href={link.url} target="_blank" rel="noreferrer" style={{
-              padding: "10px 18px", borderRadius: 10,
-              background: link.color + "22", border: `1px solid ${link.color}66`,
-              color: link.color, fontWeight: 700, fontSize: 13,
-              textDecoration: "none", display: "flex", alignItems: "center", gap: 8,
-              transition: "background 0.15s",
-            }}>
-              {link.icon && <img src={getIconUrl(link.icon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", flexShrink: 0 }} />}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontWeight: 800 }}>{link.label}</div>
-                <div style={{ fontSize: 11, opacity: 0.8, fontWeight: 400 }}>{link.desc}</div>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
-
-      {/* Section quick-links */}
-      {HOME_SECTIONS.map(section => (
-        <div key={section.group} style={{ marginBottom: 28 }}>
-          <div style={{ fontSize: 11, fontWeight: 800, color: section.color, letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 10, paddingLeft: 4 }}>
-            {section.group}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(3, 1fr)", gap: 10 }}>
-            {section.items.map(item => (
-              <button key={item.key} onClick={() => onNavigate(item.key)} style={{
-                background: colors.header, border: `1px solid ${colors.border}`,
-                borderRadius: 8, padding: "12px 14px", textAlign: "left",
-                cursor: "pointer", fontFamily: "inherit",
-                transition: "border-color 0.15s, background 0.15s",
-              }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = section.color; e.currentTarget.style.background = section.color + "11"; }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = colors.border; e.currentTarget.style.background = colors.header; }}
-              >
-                <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                  {item.icon && (
-                    <div style={{ width: 44, height: 44, flexShrink: 0, borderRadius: 8, background: "#0f2640", border: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
-                      <img src={getIconUrl(item.icon)} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
-                    </div>
-                  )}
-                  <div>
-                    <div style={{ fontWeight: 700, fontSize: 14, color: colors.text, marginBottom: 2 }}>{item.label}</div>
-                    <div style={{ fontSize: 12, color: colors.muted, lineHeight: 1.4 }}>{item.desc}</div>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ─────────────────────────────────────────────
 // IMMORTAL BRACKETS VIEW
 // ─────────────────────────────────────────────
 function ImmortalBracketsView() {
   const isMobile = useIsMobile();
 
-  const { leagues, rewardTickets, rewardTrophies, promotion, immuneModifier, availability } = immortalBossData;
-  const rankLabels = rewardTickets.rankLabels;
+  const { leagues, rewardTickets, promotion, immuneModifier, availability } = immortalBossData;
   const rankRanges = rewardTickets.rankPlayerRanges;
 
   // Upgrade inputs for getTournTrophies
@@ -4549,7 +3497,7 @@ function ImmortalBracketsView() {
   );
 }
 
-function BracketsView() {
+function LegacyBracketsView() {
   const [waveInput, setWaveInput] = useState("");
   const wave = parseInt(waveInput) || null;
 
@@ -4654,8 +3602,7 @@ function BracketsView() {
 const MAP_PERK_START = 25000;
 const MAP_PERK_INTERVAL = 1000;
 
-function MapPerksView() {
-  const isMobile = useIsMobile();
+function LegacyMapPerksView() {
   const [startWave, setStartWave] = useState(MAP_PERK_START);
   const [endWave,   setEndWave]   = useState(75000);
   const [startInput, setStartInput] = useState(String(MAP_PERK_START));
@@ -4760,7 +3707,7 @@ function MapPerksView() {
 // ─────────────────────────────────────────────
 // CHALLENGES VIEW
 // ─────────────────────────────────────────────
-function ChallengesView() {
+function LegacyChallengesView() {
   const bannerStyle = { background: `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`, border: `1px solid #4a7ec0`, borderRadius: 8, padding: "8px 20px", marginBottom: 14, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" };
   return (
     <div>
@@ -4804,7 +3751,7 @@ function ChallengesView() {
 // ─────────────────────────────────────────────
 // PLAYER ICONS VIEW
 // ─────────────────────────────────────────────
-function PlayerIconsView() {
+function LegacyPlayerIconsView() {
   const fmt = useFmt();
   const bannerStyle = { background: `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`, border: `1px solid #4a7ec0`, borderRadius: 8, padding: "8px 20px", marginBottom: 14, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" };
   return (
@@ -4857,7 +3804,7 @@ function PlayerIconsView() {
 // ─────────────────────────────────────────────
 // PLAYER BACKGROUNDS VIEW
 // ─────────────────────────────────────────────
-function PlayerBackgroundsView() {
+function LegacyPlayerBackgroundsView() {
   const bannerStyle = { background: `linear-gradient(180deg, #3a6eb0 0%, ${colors.bannerBg} 100%)`, border: `1px solid #4a7ec0`, borderRadius: 8, padding: "8px 20px", marginBottom: 14, textAlign: "center", boxShadow: "0 2px 8px rgba(0,0,0,0.4)" };
   return (
     <div>
@@ -5012,7 +3959,7 @@ const WAVE_PERK_EFFECT_SOURCES = [
 // Snow Fort Wave Perk Effect perk: baseAmt=3, statAmt=1, maxLevel=5
 const SNOW_FORT_WPE = { baseAmt: 3, statAmt: 1, maxLevel: 5 };
 
-function WavePerksView() {
+function LegacyWavePerksView() {
   const isMobile = useIsMobile();
   const [selectedPerk, setSelectedPerk] = useState(null);
 
@@ -5023,7 +3970,9 @@ function WavePerksView() {
         const defaults = Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
         return { ...defaults, ...saved };
       }
-    } catch {}
+    } catch {
+      return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
+    }
     return Object.fromEntries(WAVE_PERK_EFFECT_SOURCES.map(s => [s.key, ""]));
   });
 
@@ -5035,7 +3984,9 @@ function WavePerksView() {
     try {
       const saved = JSON.parse(localStorage.getItem("mapPerkUpgrades"));
       if (saved && typeof saved === "object") return { runes: "", mastery: "", ultimus: "", ...saved };
-    } catch {}
+    } catch {
+      return { runes: "", mastery: "", ultimus: "" };
+    }
     return { runes: "", mastery: "", ultimus: "" };
   });
 
@@ -5584,7 +4535,7 @@ function TechTreeGroup({ items, layout, onOpen }) {
       }
       return prev;
     });
-  });
+  }, [containerWidth, items, posById]);
 
   function makeLine(fromId, toId, key) {
     const p = pts[fromId], c = pts[toId];
@@ -5707,22 +4658,136 @@ function TechTreeView({ onOpen }) {
 // ─────────────────────────────────────────────
 // SIDEBAR
 // ─────────────────────────────────────────────
-function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
+function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
+  function itemContainsActiveKey(item, key) {
+    if (item.key === key) {
+      return true;
+    }
+
+    return (item.children ?? []).some((child) => itemContainsActiveKey(child, key));
+  }
+
   const [open, setOpen] = useState(() => {
     const initial = {};
-    for (const group of NAV_GROUPS) {
-      initial[group.label] = group.items.some(item => item.key === activeKey);
+    for (const group of navGroups) {
+      initial[group.label] = group.items.some((item) => itemContainsActiveKey(item, activeKey));
+      for (const item of group.items) {
+        if (item.children?.length) {
+          initial[`submenu:${item.key}`] = itemContainsActiveKey(item, activeKey);
+        }
+      }
     }
     return initial;
   });
 
-  function toggleGroup(label) {
-    setOpen(prev => ({ ...prev, [label]: !prev[label] }));
+  useEffect(() => {
+    setOpen((current) => {
+      let changed = false;
+      const next = { ...current };
+
+      for (const group of navGroups) {
+        if (group.items.some((item) => itemContainsActiveKey(item, activeKey)) && !next[group.label]) {
+          next[group.label] = true;
+          changed = true;
+        }
+
+        for (const item of group.items) {
+          const submenuKey = `submenu:${item.key}`;
+          if (item.children?.length && itemContainsActiveKey(item, activeKey) && !next[submenuKey]) {
+            next[submenuKey] = true;
+            changed = true;
+          }
+        }
+      }
+
+      return changed ? next : current;
+    });
+  }, [activeKey, navGroups]);
+
+  function toggleOpen(key) {
+    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
   }
 
   function handleSelect(key) {
     onSelect(key);
     onClose?.();
+  }
+
+  function renderNavItem(navItem, depth = 0) {
+    const sectionData = navItem.key ? SECTION_MAP[navItem.key]?.data : null;
+    const label = navItem.label ?? sectionData?.label ?? navItem.key;
+    const menuIcon = navItem.menuIcon ?? sectionData?.menuIcon;
+    const hasChildren = Boolean(navItem.children?.length);
+    const isActive = hasChildren
+      ? navItem.children.some((child) => itemContainsActiveKey(child, activeKey))
+      : activeKey === navItem.key;
+    const submenuKey = `submenu:${navItem.key}`;
+    const paddingLeft = 20 + depth * 16;
+
+    if (hasChildren) {
+      return (
+        <div key={navItem.key}>
+          <button
+            onClick={() => toggleOpen(submenuKey)}
+            style={{
+              width: "100%",
+              background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none",
+              border: "none",
+              borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent",
+              cursor: "pointer",
+              padding: `9px 16px 9px ${paddingLeft}px`,
+              textAlign: "left",
+              color: isActive ? colors.accent : colors.text,
+              fontSize: 14,
+              fontWeight: isActive ? 700 : 500,
+              transition: "color 0.15s, background 0.15s",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 8,
+            }}
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0 }}>
+              <span style={{ minWidth: 0 }}>{label}</span>
+              {menuIcon ? (
+                <img src={getIconUrl(menuIcon)} alt="" style={{ width: 18, height: 18, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
+              ) : null}
+            </span>
+            <span style={{ fontSize: 10, opacity: 0.7, flexShrink: 0 }}>{open[submenuKey] ? "▲" : "▼"}</span>
+          </button>
+          {open[submenuKey] && navItem.children.map((child) => renderNavItem(child, depth + 1))}
+        </div>
+      );
+    }
+
+    return (
+      <button
+        key={navItem.key}
+        onClick={() => handleSelect(navItem.key)}
+        style={{
+          width: "100%",
+          background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none",
+          border: "none",
+          borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent",
+          cursor: "pointer",
+          padding: `9px 16px 9px ${paddingLeft}px`,
+          textAlign: "left",
+          color: isActive ? colors.accent : colors.text,
+          fontSize: depth > 0 ? 13 : 14,
+          fontWeight: isActive ? 700 : 500,
+          transition: "color 0.15s, background 0.15s",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+        }}
+      >
+        <span>{label}</span>
+        {menuIcon && (
+          <img src={getIconUrl(menuIcon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
+        )}
+      </button>
+    );
   }
 
   return (
@@ -5739,27 +4804,13 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
           </button>
         );
       })()}
-      {NAV_GROUPS.map(group => (
+      {navGroups.map((group) => (
         <div key={group.label} style={{ marginBottom: 4 }}>
-          <button onClick={() => toggleGroup(group.label)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", color: colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
+          <button onClick={() => toggleOpen(group.label)} style={{ width: "100%", background: "none", border: "none", cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "space-between", padding: "8px 16px", color: colors.muted, fontSize: 11, fontWeight: 800, letterSpacing: "0.1em", textTransform: "uppercase" }}>
             {group.label}
             <span style={{ fontSize: 10, opacity: 0.7 }}>{open[group.label] ? "▲" : "▼"}</span>
           </button>
-          {open[group.label] && group.items.map(navItem => {
-            const sectionData = SECTION_MAP[navItem.key]?.data;
-            const label = navItem.label ?? sectionData?.label ?? navItem.key;
-            const menuIcon = navItem.menuIcon ?? sectionData?.menuIcon;
-            const isActive = activeKey === navItem.key;
-            return (
-              <button key={navItem.key} onClick={() => handleSelect(navItem.key)}
-                style={{ width: "100%", background: isActive ? `linear-gradient(90deg, ${colors.accent}22 0%, transparent 100%)` : "none", border: "none", borderLeft: isActive ? `3px solid ${colors.accent}` : "3px solid transparent", cursor: "pointer", padding: "9px 16px 9px 20px", textAlign: "left", color: isActive ? colors.accent : colors.text, fontSize: 14, fontWeight: isActive ? 700 : 500, transition: "color 0.15s, background 0.15s", display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <span>{label}</span>
-                {menuIcon && (
-                  <img src={getIconUrl(menuIcon)} alt="" style={{ width: 20, height: 20, objectFit: "contain", opacity: isActive ? 1 : 0.6, flexShrink: 0, filter: navItem.iconFilter ?? "none" }} />
-                )}
-              </button>
-            );
-          })}
+          {open[group.label] && group.items.map((navItem) => renderNavItem(navItem))}
         </div>
       ))}
     </div>
@@ -5772,8 +4823,8 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose }) {
 export default function App() {
   const [activeKey,    setActiveKey]    = useState(() => {
     const hash = window.location.hash.slice(1);
-    if (hash) return hash;
-    return localStorage.getItem("activeKey") ?? "home";
+    const initialKey = hash || localStorage.getItem("activeKey") || "home";
+    return initialKey === "loadoutBuilder" ? "loadoutBuilderPlacement" : initialKey;
   });
   const [modalItem,    setModalItem]    = useState(null);
   const [modalFormula, setModalFormula] = useState(null);
@@ -5785,7 +4836,177 @@ export default function App() {
   const [notation,     setNotation]     = useState(
     () => localStorage.getItem("notation") ?? "scientific"
   );
+  const fmt = useMemo(() => (n) => formatBigNum(n, notation), [notation]);
+  const [mapSpotsById, setMapSpotsById] = useState(() => getInitialMapSpotsById());
+  const [loadoutImportVersion, setLoadoutImportVersion] = useState(0);
+  const [isLoadoutRuntimeReady, setIsLoadoutRuntimeReady] = useState(false);
+  const [savedLoadouts, setSavedLoadouts] = useState([]);
+  const [currentSavedLoadoutSelections, setCurrentSavedLoadoutSelections] = useState(() => getCurrentSavedLoadoutSelections(localStorage));
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [saveDraftName, setSaveDraftName] = useState("");
+  const [saveDraftDescription, setSaveDraftDescription] = useState("");
+  const [saveButtonMessage, setSaveButtonMessage] = useState(null);
+  const [saveButtonBusy, setSaveButtonBusy] = useState(false);
+  const [workingLoadoutRevision, setWorkingLoadoutRevision] = useState(0);
+  const [currentSavedLoadoutComparable, setCurrentSavedLoadoutComparable] = useState(null);
   const isMobile = useIsMobile();
+  const lazyFallback = <div style={{ color: colors.muted, padding: "24px 0" }}>Loading view...</div>;
+  const editableMaps = useMemo(() => mergeMapsWithSpots(mapsData.maps, mapSpotsById), [mapSpotsById]);
+  const isLocalAdmin = useMemo(() => isLocalhostAdminHost(), []);
+  const activeLoadoutScope = useMemo(
+    () => (void workingLoadoutRevision, buildActiveLoadoutScope(activeKey, localStorage)),
+    [activeKey, workingLoadoutRevision]
+  );
+  const currentSavedLoadoutId = useMemo(
+    () => (void currentSavedLoadoutSelections, getCurrentScopedSavedLoadoutId(activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext, localStorage)),
+    [activeLoadoutScope, currentSavedLoadoutSelections]
+  );
+  const currentSavedLoadout = useMemo(
+    () => savedLoadouts.find((save) => save.id === currentSavedLoadoutId) ?? null,
+    [currentSavedLoadoutId, savedLoadouts]
+  );
+  const visibleNavGroups = useMemo(
+    () => NAV_GROUPS.filter((group) => group.label !== "Admin" || isLocalAdmin),
+    [isLocalAdmin]
+  );
+  const workingLoadoutComparable = useMemo(
+    () => (void workingLoadoutRevision, buildComparableLoadoutScopePayload(localStorage, activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext)),
+    [activeLoadoutScope, workingLoadoutRevision]
+  );
+  const isCurrentSavedLoadoutDirty = useMemo(() => {
+    if (!currentSavedLoadoutId || !currentSavedLoadoutComparable) {
+      return false;
+    }
+
+    return JSON.stringify(workingLoadoutComparable) !== JSON.stringify(currentSavedLoadoutComparable);
+  }, [currentSavedLoadoutComparable, currentSavedLoadoutId, workingLoadoutComparable]);
+
+  const activeLoadoutScopeLabel = useMemo(
+    () => getLoadoutScopeDisplayName(activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext),
+    [activeLoadoutScope]
+  );
+  const compactActiveLoadoutScopeLabel = useMemo(
+    () => activeLoadoutScopeLabel.replace(/\s+Page$/, ""),
+    [activeLoadoutScopeLabel]
+  );
+  const saveButtonBaseLabel = activeLoadoutScope.scopeId === LOADOUT_RECORD_SCOPE_FULL
+    ? "Loadout"
+    : activeLoadoutScope.scopeId === "mapLoadoutMap"
+      ? "Map Preset"
+      : compactActiveLoadoutScopeLabel;
+
+  const saveButtonLabel = !currentSavedLoadoutId
+    ? `Save ${saveButtonBaseLabel}`
+    : isCurrentSavedLoadoutDirty
+      ? `Save ${saveButtonBaseLabel} Changes`
+      : currentSavedLoadout
+        ? `${currentSavedLoadout.name} Saved`
+        : "Saved";
+  const saveScopeBadgeLabel = activeLoadoutScope.scopeId === LOADOUT_RECORD_SCOPE_FULL
+    ? "Whole Save"
+    : compactActiveLoadoutScopeLabel;
+  const isSaveButtonPassive = Boolean(currentSavedLoadoutId && !isCurrentSavedLoadoutDirty);
+  const shouldShowHeaderSaveGroup = !PAGE_HEADER_SAVE_ROUTE_KEYS.has(activeKey);
+  const pageSaveButton = {
+    label: saveButtonBusy ? "Saving..." : saveButtonLabel,
+    onClick: handleSaveButtonClick,
+    busy: saveButtonBusy,
+    passive: isSaveButtonPassive,
+  };
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function initializeLoadoutRuntime() {
+      try {
+        await hydrateLoadoutRuntime(localStorage);
+        const nextSavedLoadouts = await listSavedLoadouts();
+
+        if (isCancelled) {
+          return;
+        }
+
+        setNotation(localStorage.getItem("notation") ?? "scientific");
+        setCurrentSavedLoadoutSelections(getCurrentSavedLoadoutSelections(localStorage));
+        setSavedLoadouts(nextSavedLoadouts);
+        setLoadoutImportVersion((current) => current + 1);
+      } catch {
+        if (isCancelled) {
+          return;
+        }
+      } finally {
+        if (!isCancelled) {
+          setIsLoadoutRuntimeReady(true);
+        }
+      }
+    }
+
+    void initializeLoadoutRuntime();
+    return () => {
+      isCancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!saveButtonMessage) {
+      return undefined;
+    }
+
+    const timerId = window.setTimeout(() => setSaveButtonMessage(null), 3000);
+    return () => window.clearTimeout(timerId);
+  }, [saveButtonMessage]);
+
+  useEffect(() => {
+    if (ADMIN_ROUTE_KEYS.has(activeKey) && !isLocalAdmin) {
+      setActiveKey("home");
+      localStorage.setItem("activeKey", "home");
+    }
+  }, [activeKey, isLocalAdmin]);
+
+  useEffect(() => {
+    function handleRuntimeChanged() {
+      setWorkingLoadoutRevision((current) => current + 1);
+      setCurrentSavedLoadoutSelections(getCurrentSavedLoadoutSelections(localStorage));
+    }
+
+    window.addEventListener(LOADOUT_RUNTIME_CHANGED_EVENT, handleRuntimeChanged);
+    return () => window.removeEventListener(LOADOUT_RUNTIME_CHANGED_EVENT, handleRuntimeChanged);
+  }, []);
+
+  useEffect(() => {
+    let isCancelled = false;
+
+    async function loadCurrentSavedPayload() {
+      if (!currentSavedLoadoutId) {
+        setCurrentSavedLoadoutComparable(null);
+        return;
+      }
+
+      const record = await getSavedLoadout(currentSavedLoadoutId);
+      if (!isCancelled) {
+        setCurrentSavedLoadoutComparable(
+          record
+            ? createComparableLoadoutScopePayload(record.payload, record.scopeId, record.scopeContext)
+            : null
+        );
+      }
+    }
+
+    void loadCurrentSavedPayload();
+    return () => {
+      isCancelled = true;
+    };
+  }, [activeLoadoutScope, currentSavedLoadoutId, savedLoadouts]);
+
+  async function refreshSavedLoadoutList() {
+    const nextSavedLoadouts = await listSavedLoadouts();
+    setSavedLoadouts(nextSavedLoadouts);
+    return nextSavedLoadouts;
+  }
+
+  function refreshCurrentSavedSelections() {
+    setCurrentSavedLoadoutSelections(getCurrentSavedLoadoutSelections(localStorage));
+  }
 
   function navigate(key) {
     setActiveKey(key);
@@ -5808,6 +5029,7 @@ export default function App() {
   function handleNotation(val) {
     setNotation(val);
     localStorage.setItem("notation", val);
+    schedulePersistLoadoutRuntime(localStorage);
   }
 
   function openModal(item, formula) {
@@ -5815,43 +5037,216 @@ export default function App() {
     setModalFormula(formula);
   }
 
+  function handleMapSpotsChange(mapId, nextSpots) {
+    setMapSpotsById((current) => ({
+      ...current,
+      [mapId]: normalizeMapSpots(mapId, nextSpots),
+    }));
+  }
+
+  function handleMapsJsonHydrate(rawJsonText) {
+    setMapSpotsById((current) => parseMapSpotsByIdFromJsonText(rawJsonText, current));
+  }
+
+  function openCreateSaveModal() {
+    setSaveDraftName(currentSavedLoadout?.name ?? "");
+    setSaveDraftDescription(currentSavedLoadout?.description ?? "");
+    setIsSaveModalOpen(true);
+  }
+
+  async function handleSaveButtonClick() {
+    if (!isLoadoutRuntimeReady || saveButtonBusy) {
+      return;
+    }
+
+    if (!currentSavedLoadoutId) {
+      openCreateSaveModal();
+      return;
+    }
+
+    if (!isCurrentSavedLoadoutDirty) {
+      return;
+    }
+
+    try {
+      setSaveButtonBusy(true);
+      await saveWorkingLoadoutChanges(currentSavedLoadoutId, localStorage);
+      refreshCurrentSavedSelections();
+      await refreshSavedLoadoutList();
+      setCurrentSavedLoadoutComparable(buildComparableLoadoutScopePayload(localStorage, activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext));
+      setSaveButtonMessage({ type: "success", text: "Saved changes." });
+    } catch (error) {
+      setSaveButtonMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to save changes." });
+    } finally {
+      setSaveButtonBusy(false);
+    }
+  }
+
+  async function handleCreateSaveSubmit() {
+    const trimmedName = saveDraftName.trim();
+    if (!trimmedName) {
+      setSaveButtonMessage({ type: "error", text: "Give the save a name first." });
+      return;
+    }
+
+    try {
+      setSaveButtonBusy(true);
+      await saveWorkingLoadoutAsRecord({
+        name: trimmedName,
+        description: saveDraftDescription,
+        scopeId: activeLoadoutScope.scopeId,
+        scopeContext: activeLoadoutScope.scopeContext,
+      }, localStorage);
+      refreshCurrentSavedSelections();
+      await refreshSavedLoadoutList();
+      setCurrentSavedLoadoutComparable(buildComparableLoadoutScopePayload(localStorage, activeLoadoutScope.scopeId, activeLoadoutScope.scopeContext));
+      setIsSaveModalOpen(false);
+      setSaveButtonMessage({ type: "success", text: "Saved loadout." });
+    } catch (error) {
+      setSaveButtonMessage({ type: "error", text: error instanceof Error ? error.message : "Unable to save that loadout." });
+    } finally {
+      setSaveButtonBusy(false);
+    }
+  }
+
+  async function handleLoadSavedLoadout(saveId) {
+    const record = await loadSavedLoadoutIntoWorkingState(saveId, localStorage);
+    refreshCurrentSavedSelections();
+    setCurrentSavedLoadoutComparable(buildComparableLoadoutScopePayload(localStorage, record.scopeId, record.scopeContext));
+    setNotation(localStorage.getItem("notation") ?? "scientific");
+    setLoadoutImportVersion((current) => current + 1);
+    return record;
+  }
+
+  async function handleUpdateSavedLoadout(saveId, updates) {
+    const record = await updateSavedLoadout(saveId, updates);
+    await refreshSavedLoadoutList();
+    refreshCurrentSavedSelections();
+    return record;
+  }
+
+  async function handleDeleteSavedLoadout(saveId) {
+    await deleteSavedLoadout(saveId);
+
+    if (removeSavedLoadoutIdFromSelections(saveId, localStorage)) {
+      await persistLoadoutRuntime(localStorage);
+    }
+
+    refreshCurrentSavedSelections();
+    if (currentSavedLoadoutId === saveId) {
+      setCurrentSavedLoadoutComparable(null);
+    }
+    await refreshSavedLoadoutList();
+  }
+
+  async function handleStartFreshSave() {
+    await startFreshWorkingLoadout(localStorage);
+    refreshCurrentSavedSelections();
+    setCurrentSavedLoadoutComparable(null);
+    setNotation(localStorage.getItem("notation") ?? "scientific");
+    setLoadoutImportVersion((current) => current + 1);
+  }
+
+  async function handleImportComplete(summary) {
+    await refreshSavedLoadoutList();
+
+    if (currentSavedLoadoutId && summary.updatedIds.includes(currentSavedLoadoutId)) {
+      await handleLoadSavedLoadout(currentSavedLoadoutId);
+      return;
+    }
+
+    refreshCurrentSavedSelections();
+  }
+
   const activeSection = SECTION_MAP[activeKey];
+
+  if (!isLoadoutRuntimeReady) {
+    return (
+      <div style={{ minHeight: "100vh", display: "grid", placeItems: "center", background: colors.bg, color: colors.text, fontFamily: "'Exo 2', 'Rajdhani', 'Segoe UI', sans-serif" }}>
+        <div style={{ padding: 24, borderRadius: 16, border: `1px solid ${colors.border}`, background: colors.panel, boxShadow: "0 18px 60px rgba(0,0,0,0.28)" }}>
+          Loading saved loadouts...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <NotationContext.Provider value={notation}>
     <div style={{ display: "flex", flexDirection: "column", minHeight: "100vh", fontFamily: "'Exo 2', 'Rajdhani', 'Segoe UI', sans-serif", color: colors.text, background: colors.bg }}>
 
       {/* Header */}
-      <div style={{ background: colors.panel, borderBottom: `1px solid ${colors.border}`, padding: "0 20px", flexShrink: 0, display: "flex", alignItems: "center", gap: 12 }}>
+      <div className="app-header-shell" style={{ background: colors.panel, borderBottom: `1px solid ${colors.border}`, flexShrink: 0 }}>
         {isMobile && (
           <button onClick={() => setDrawerOpen(o => !o)}
-            style={{ background: "none", border: "none", color: colors.text, fontSize: 22, cursor: "pointer", padding: "14px 4px", lineHeight: 1 }}>
+            className="app-header-shell__menu-button"
+            style={{ color: colors.text }}>
             ☰
           </button>
         )}
-        <div style={{ padding: "14px 0", cursor: "pointer" }} onClick={() => navigate("home")}>
+  <div className="app-header-shell__brand" style={{ padding: "14px 0" }} onClick={() => navigate("home")}>
           <div style={{ fontSize: 17, fontWeight: 900, color: colors.accent, letterSpacing: "0.06em", textTransform: "uppercase", textShadow: "0 0 12px rgba(245,146,30,0.4)" }}>Idle Hero TD</div>
-          <div style={{ fontSize: 11, color: colors.muted, marginTop: 1, letterSpacing: "0.04em" }}>Game Data Reference</div>
-          <div style={{ fontSize: 10, color: colors.muted, opacity: 0.7, marginTop: 1 }}>by Asingh · v15.04</div>
+          <div style={{ fontSize: 11, color: colors.muted, marginTop: 1, letterSpacing: "0.04em" }}>Game Data Reference · v15.04</div>
         </div>
-        {/* Notation toggle */}
-        <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 6 }}>
-          <span style={{ fontSize: 11, color: colors.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>Notation</span>
-          {[
-            { val: "scientific", label: "Scientific", example: "1.23e15" },
-            { val: "letters",    label: "Letters",    example: "aa, ab…"  },
-          ].map(({ val, label, example }) => (
-            <button key={val} onClick={() => handleNotation(val)} style={{
-              background: notation === val ? colors.accent : colors.header,
-              color: notation === val ? "#000" : colors.text,
-              border: `1px solid ${notation === val ? colors.accent : colors.border}`,
-              borderRadius: 6, padding: "5px 12px", cursor: "pointer",
-              fontFamily: "inherit", textAlign: "center", lineHeight: 1.2,
-            }}>
-              <div style={{ fontWeight: 700, fontSize: 12 }}>{label}</div>
-              <div style={{ fontSize: 10, opacity: 0.75, marginTop: 2 }}>{example}</div>
-            </button>
-          ))}
+        <div className="app-header-toolbar">
+          <div className="app-header-toolbar__group">
+            <span className="app-header-toolbar__label" style={{ color: colors.muted }}>Notation</span>
+            <div className="app-header-toolbar__segmented" style={{ borderColor: colors.border }}>
+              {[
+                { val: "scientific", label: "Scientific", example: "1.23e15" },
+                { val: "letters", label: "Letters", example: "aa, ab..." },
+              ].map(({ val, label, example }) => {
+                const isActive = notation === val;
+                return (
+                  <button
+                    key={val}
+                    onClick={() => handleNotation(val)}
+                    className={`app-header-toolbar__segment${isActive ? " app-header-toolbar__segment--active" : ""}`}
+                    style={{
+                      background: isActive ? colors.accent : "transparent",
+                      color: isActive ? "#08111d" : colors.text,
+                    }}
+                  >
+                    <span className="app-header-toolbar__segment-label">{label}</span>
+                    <span className="app-header-toolbar__segment-example" style={{ color: isActive ? "rgba(8, 17, 29, 0.78)" : colors.muted }}>{example}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+          {shouldShowHeaderSaveGroup ? (
+            <div className="app-header-toolbar__group app-header-toolbar__group--save">
+              <div className="app-header-toolbar__save-meta">
+                <span className="app-header-toolbar__label" style={{ color: colors.muted }}>Save</span>
+                {currentSavedLoadout ? (
+                  <span className="app-header-toolbar__value" style={{ color: colors.text }} title={currentSavedLoadout.name}>
+                    {currentSavedLoadout.name}
+                  </span>
+                ) : (
+                  <span className="app-header-toolbar__value" style={{ color: colors.text }}>{saveButtonBaseLabel}</span>
+                )}
+                <span className="app-header-toolbar__meta-text" style={{ color: colors.muted }}>{saveScopeBadgeLabel}</span>
+                {saveButtonMessage ? (
+                  <span className={`app-header-toolbar__message app-header-toolbar__message--${saveButtonMessage.type}`}>
+                    {saveButtonMessage.text}
+                  </span>
+                ) : null}
+              </div>
+              <div className="app-header-toolbar__save-actions">
+                <button
+                  onClick={handleSaveButtonClick}
+                  className={`app-header-toolbar__save-button${isSaveButtonPassive ? " app-header-toolbar__save-button--passive" : ""}`}
+                  style={{
+                    background: isSaveButtonPassive ? colors.header : colors.accent,
+                    color: isSaveButtonPassive ? colors.muted : "#08111d",
+                    borderColor: isSaveButtonPassive ? colors.border : colors.accent,
+                    cursor: saveButtonBusy ? "wait" : isSaveButtonPassive ? "default" : "pointer",
+                  }}
+                >
+                  {saveButtonBusy ? "Saving..." : saveButtonLabel}
+                </button>
+              </div>
+            </div>
+          ) : null}
         </div>
       </div>
 
@@ -5869,6 +5264,7 @@ export default function App() {
           onSelect={key => navigate(key)}
           isOpen={drawerOpen}
           onClose={() => setDrawerOpen(false)}
+          navGroups={visibleNavGroups}
         />
 
         {/* Main content */}
@@ -5882,26 +5278,205 @@ export default function App() {
           {activeKey === "tech" && (
             <TechTreeView onOpen={item => openModal(item, SECTION_MAP["tech"].data.costFormula)} />
           )}
-          {activeKey === "allHeroes"    && <AllHeroesView />}
-          {activeKey === "heroGoldCost" && <HeroGoldCostView />}
-          {activeKey === "synergies"  && <AllSynergiesView />}
-          {activeKey === "milestones" && <AllMilestonesView />}
+          {activeKey === "allHeroes"  && (
+            <Suspense fallback={lazyFallback}>
+              <AllHeroesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "synergies"  && (
+            <Suspense fallback={lazyFallback}>
+              <AllSynergiesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "milestones" && (
+            <Suspense fallback={lazyFallback}>
+              <AllMilestonesRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
           {activeKey === "rankExp"    && <RankExpView />}
           {activeKey === "attributes"   && <AttributesView />}
-          {activeKey === "combatStyles" && <CombatStylesView />}
-          {activeKey === "rankRequired"  && <RankRequiredView />}
-          {activeKey === "enemyHp"       && <EnemyHpView />}
+          {activeKey === "combatStyles" && (
+            <Suspense fallback={lazyFallback}>
+              <CombatStylesView colors={colors} isMobile={isMobile} />
+            </Suspense>
+          )}
+          {activeKey === "rankRequired" && <RankRequiredView />}
+          {activeKey === "enemyHp"      && (
+            <Suspense fallback={lazyFallback}>
+              <EnemyHpView colors={colors} fmt={fmt} getIconUrl={getIconUrl} isMobile={isMobile} />
+            </Suspense>
+          )}
+          {activeKey === "home"       && (
+            <Suspense fallback={lazyFallback}>
+              <HomeView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                isMobile={isMobile}
+                isAdmin={isLocalAdmin}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "brackets"   && (
+            <Suspense fallback={lazyFallback}>
+              <BracketsView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                tournamentBracketsData={tournamentBracketsData}
+              />
+            </Suspense>
+          )}
+          {activeKey === "allMaps"    && (
+            <Suspense fallback={lazyFallback}>
+              <AllMapsRoute colors={colors} Badge={Badge} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "mapPerks"   && (
+            <Suspense fallback={lazyFallback}>
+              <MapPerksView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {MAP_LOADOUT_ROUTE_KEYS.has(activeKey) && (
+            <Suspense fallback={lazyFallback}>
+              <LoadoutBuilderView
+                key={`loadout-builder-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+                maps={editableMaps}
+                heroes={heroesData.heroes}
+                savedLoadouts={savedLoadouts}
+                currentSavedLoadoutId={currentSavedLoadoutId}
+                onLoadSave={handleLoadSavedLoadout}
+                onDeleteSave={handleDeleteSavedLoadout}
+                onUpdateSave={handleUpdateSavedLoadout}
+                onImportComplete={handleImportComplete}
+                forcedBuilderMode={getMapLoadoutModeFromRoute(activeKey)}
+                saveButton={pageSaveButton}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "heroLoadout" && (
+            <Suspense fallback={lazyFallback}>
+              <HeroLoadoutView
+                key={`hero-loadout-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+                heroes={heroesData.heroes}
+                savedLoadouts={savedLoadouts}
+                currentSavedLoadoutId={currentSavedLoadoutId}
+                onLoadSave={handleLoadSavedLoadout}
+                onDeleteSave={handleDeleteSavedLoadout}
+                onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
+              />
+            </Suspense>
+          )}
+          {activeKey === "statsLoadout" && (
+            <Suspense fallback={lazyFallback}>
+              <StatsLoadoutView
+                key={`stats-loadout-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+                savedLoadouts={savedLoadouts}
+                currentSavedLoadoutId={currentSavedLoadoutId}
+                onLoadSave={handleLoadSavedLoadout}
+                onDeleteSave={handleDeleteSavedLoadout}
+                onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
+              />
+            </Suspense>
+          )}
+          {activeKey === "playerLoadout" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerLoadoutView
+                key={`player-loadout-${loadoutImportVersion}`}
+                colors={colors}
+                getIconUrl={getIconUrl}
+                fmt={fmt}
+                savedLoadouts={savedLoadouts}
+                currentSavedLoadoutId={currentSavedLoadoutId}
+                onLoadSave={handleLoadSavedLoadout}
+                onDeleteSave={handleDeleteSavedLoadout}
+                onImportComplete={handleImportComplete}
+                saveButton={pageSaveButton}
+              />
+            </Suspense>
+          )}
+          {activeKey === "saves" && (
+            <Suspense fallback={lazyFallback}>
+              <SavesView
+                colors={colors}
+                saves={savedLoadouts}
+                currentSavedLoadoutSelections={currentSavedLoadoutSelections}
+                onLoadSave={handleLoadSavedLoadout}
+                onDeleteSave={handleDeleteSavedLoadout}
+                onStartFreshSave={handleStartFreshSave}
+                onImportComplete={handleImportComplete}
+              />
+            </Suspense>
+          )}
+          {activeKey === "statsHub" && (
+            <Suspense fallback={lazyFallback}>
+              <StatsHubView
+                key={`stats-hub-${loadoutImportVersion}`}
+                colors={colors}
+                fmt={fmt}
+                getIconUrl={getIconUrl}
+                heroes={heroesData.heroes}
+              />
+            </Suspense>
+          )}
+          {activeKey === "coordFinder" && isLocalAdmin && (
+            <Suspense fallback={lazyFallback}>
+              <CoordFinderView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                maps={editableMaps}
+                heroes={heroesData.heroes}
+                onMapSpotsChange={handleMapSpotsChange}
+                onMapsJsonHydrate={handleMapsJsonHydrate}
+                onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }}
+              />
+            </Suspense>
+          )}
+          {activeKey === "battpassExp" && (
+            <Suspense fallback={lazyFallback}>
+              <BattlepassExpView colors={colors} fmt={fmt} />
+            </Suspense>
+          )}
+          {activeKey === "wavePerks" && (
+            <Suspense fallback={lazyFallback}>
+              <WavePerksView
+                colors={colors}
+                getIconUrl={getIconUrl}
+                isMobile={isMobile}
+                rarityColors={RARITY_COLORS}
+                mapPerkUpgradeSources={MAP_PERK_UPGRADE_SOURCES}
+              />
+            </Suspense>
+          )}
+          {activeKey === "challenges" && (
+            <Suspense fallback={lazyFallback}>
+              <ChallengesView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "playerIcons" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerIconsView colors={colors} getIconUrl={getIconUrl} fmt={fmt} />
+            </Suspense>
+          )}
+          {activeKey === "playerBackgrounds" && (
+            <Suspense fallback={lazyFallback}>
+              <PlayerBackgroundsView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "heroGoldCost" && <HeroGoldCostView />}
           {activeKey === "ultimusTokens" && <UltimusTokensView />}
-          {activeKey === "home"       && <HomeView onNavigate={key => { setActiveKey(key); localStorage.setItem("activeKey", key); }} />}
-          {activeKey === "brackets"         && <BracketsView />}
           {activeKey === "immortalBrackets" && <ImmortalBracketsView />}
-          {activeKey === "allMaps"    && <AllMapsView />}
-          {activeKey === "mapPerks"   && <MapPerksView />}
-          {activeKey === "battpassExp" && <BattlepassExpView />}
-          {activeKey === "wavePerks"         && <WavePerksView />}
-          {activeKey === "challenges"        && <ChallengesView />}
-          {activeKey === "playerIcons"       && <PlayerIconsView />}
-          {activeKey === "playerBackgrounds" && <PlayerBackgroundsView />}
         </div>
 
       </div>
@@ -5912,6 +5487,30 @@ export default function App() {
           sectionFormula={modalFormula}
           onClose={() => setModalItem(null)}
         />
+      )}
+      {isSaveModalOpen && (
+        <div onClick={() => setIsSaveModalOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(3,8,18,0.78)", backdropFilter: "blur(8px)", zIndex: 500, display: "flex", alignItems: "center", justifyContent: "center", padding: 18 }}>
+          <div onClick={(event) => event.stopPropagation()} style={{ width: "100%", maxWidth: 620, borderRadius: 18, border: `1px solid ${colors.border}`, background: `linear-gradient(180deg, ${colors.header} 0%, ${colors.panel} 26%, ${colors.bg} 100%)`, boxShadow: "0 24px 80px rgba(0,0,0,0.42)", overflow: "hidden" }}>
+            <div style={{ padding: 20, borderBottom: `1px solid ${colors.border}`, display: "grid", gap: 4 }}>
+              <div style={{ fontSize: 20, fontWeight: 800 }}>Save {saveButtonBaseLabel}</div>
+              <div style={{ fontSize: 13, color: colors.muted }}>Create a saved record for {activeLoadoutScopeLabel.toLowerCase()} so it can be loaded, exported, and imported later.</div>
+            </div>
+            <div style={{ padding: 20, display: "grid", gap: 14 }}>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 12, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Name</span>
+                <input value={saveDraftName} onChange={(event) => setSaveDraftName(event.target.value)} placeholder="Example: Tournament Push" style={{ background: colors.bg, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px", fontFamily: "inherit", fontSize: 14 }} />
+              </label>
+              <label style={{ display: "grid", gap: 6 }}>
+                <span style={{ fontSize: 12, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.08em" }}>Description</span>
+                <textarea value={saveDraftDescription} onChange={(event) => setSaveDraftDescription(event.target.value)} placeholder="Optional notes about the build, map, or use case." rows={4} style={{ resize: "vertical", background: colors.bg, color: colors.text, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "12px 14px", fontFamily: "inherit", fontSize: 14 }} />
+              </label>
+              <div style={{ display: "flex", justifyContent: "end", gap: 10, flexWrap: "wrap" }}>
+                <button onClick={() => setIsSaveModalOpen(false)} style={{ background: "transparent", color: colors.muted, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "10px 14px", cursor: "pointer", fontFamily: "inherit", fontWeight: 700 }}>Cancel</button>
+                <button onClick={handleCreateSaveSubmit} style={{ background: colors.accent, color: "#08111d", border: `1px solid ${colors.accent}`, borderRadius: 10, padding: "10px 16px", cursor: "pointer", fontFamily: "inherit", fontWeight: 800 }}>Save {saveButtonBaseLabel}</button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
     </NotationContext.Provider>

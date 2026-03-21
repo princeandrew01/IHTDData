@@ -514,6 +514,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 5,
       "baseCost": 10
     },
@@ -1010,6 +1011,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "debuff",
+      "typeSubtype": [
+        "slow"
+      ],
       "unlockCost": 5,
       "baseCost": 10
     },
@@ -1506,6 +1511,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 5,
       "baseCost": 10
     },
@@ -2002,6 +2008,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "attackSpeed"
+      ],
       "unlockCost": 10,
       "baseCost": 10
     },
@@ -2498,6 +2508,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "damage"
+      ],
       "unlockCost": 10,
       "baseCost": 10
     },
@@ -2994,6 +3008,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "gold",
       "unlockCost": 10,
       "baseCost": 10
     },
@@ -3490,6 +3505,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 50,
       "baseCost": 10
     },
@@ -3986,6 +4002,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "debuff",
+      "typeSubtype": [
+        "stun"
+      ],
       "unlockCost": 50,
       "baseCost": 10
     },
@@ -4482,6 +4502,7 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 50,
       "baseCost": 10
     },
@@ -4978,6 +4999,7 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 100,
       "baseCost": 10
     },
@@ -5474,6 +5496,10 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "experience"
+      ],
       "unlockCost": 100,
       "baseCost": 10
     },
@@ -5970,6 +5996,10 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "experience"
+      ],
       "unlockCost": 100,
       "baseCost": 10
     },
@@ -6466,6 +6496,7 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 500,
       "baseCost": 10
     },
@@ -6962,6 +6993,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "attackSpeed"
+      ],
       "unlockCost": 500,
       "baseCost": 10
     },
@@ -7458,6 +7493,7 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 500,
       "baseCost": 10
     },
@@ -7954,6 +7990,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 1000,
       "baseCost": 10
     },
@@ -8450,6 +8487,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "debuff",
+      "typeSubtype": [
+        "confuse"
+      ],
       "unlockCost": 1000,
       "baseCost": 10
     },
@@ -8946,6 +8987,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "energy",
       "unlockCost": 1000,
       "baseCost": 10
     },
@@ -9442,6 +9484,7 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 5000,
       "baseCost": 10
     },
@@ -9938,6 +9981,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "critChance"
+      ],
       "unlockCost": 5000,
       "baseCost": 10
     },
@@ -10434,6 +10481,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 5000,
       "baseCost": 10
     },
@@ -10930,6 +10978,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "damage"
+      ],
       "unlockCost": 10000,
       "baseCost": 10
     },
@@ -11426,6 +11478,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "critDamage"
+      ],
       "unlockCost": 10000,
       "baseCost": 10
     },
@@ -11922,6 +11978,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "gold",
       "unlockCost": 10000,
       "baseCost": 10
     },
@@ -12418,6 +12475,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "multiTarget"
+      ],
       "unlockCost": 40000,
       "baseCost": 10
     },
@@ -12914,6 +12975,10 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "debuff",
+      "typeSubtype": [
+        "teleport"
+      ],
       "unlockCost": 40000,
       "baseCost": 10
     },
@@ -13410,6 +13475,10 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "experience"
+      ],
       "unlockCost": 40000,
       "baseCost": 10
     },
@@ -13906,6 +13975,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 80000,
       "baseCost": 10
     },
@@ -14402,6 +14472,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "skillCooldown"
+      ],
       "unlockCost": 80000,
       "baseCost": 10
     },
@@ -14898,6 +14972,7 @@
         "baseAmount": 550000,
         "maxLevel": 10
       },
+      "type": "gold",
       "unlockCost": 80000,
       "baseCost": 10
     },
@@ -15394,6 +15469,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "damage",
       "unlockCost": 250000,
       "baseCost": 10
     },
@@ -15890,6 +15966,10 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "splashDamage"
+      ],
       "unlockCost": 250000,
       "baseCost": 10
     },
@@ -16386,6 +16466,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "energy",
       "unlockCost": 250000,
       "baseCost": 10
     },
@@ -16882,6 +16963,12 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "damage",
+        "attackSpeed",
+        "splashDamage"
+      ],
       "unlockCost": 500000,
       "baseCost": 10
     },
@@ -17378,6 +17465,12 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "damage",
+        "attackSpeed",
+        "skillCooldown"
+      ],
       "unlockCost": 500000,
       "baseCost": 10
     },
@@ -17874,6 +17967,12 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "attackSpeed",
+        "damage",
+        "range"
+      ],
       "unlockCost": 500000,
       "baseCost": 10
     },
@@ -18370,6 +18469,11 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "superCritChance",
+        "superCritDamage"
+      ],
       "unlockCost": 2500000,
       "baseCost": 10
     },
@@ -18866,6 +18970,7 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "gold",
       "unlockCost": 2500000,
       "baseCost": 10
     },
@@ -19362,6 +19467,12 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "damage",
+        "attackSpeed",
+        "ultraCritChance"
+      ],
       "unlockCost": 2500000,
       "baseCost": 10
     },
@@ -19858,6 +19969,11 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "superCritChance",
+        "superCritDamage"
+      ],
       "unlockCost": 5000000,
       "baseCost": 10
     },
@@ -20354,6 +20470,12 @@
         "baseAmount": 25000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "critChance",
+        "superCritChance",
+        "ultraCritChance"
+      ],
       "unlockCost": 5000000,
       "baseCost": 10
     },
@@ -20850,6 +20972,10 @@
         "baseAmount": 35000,
         "maxLevel": 10
       },
+      "type": "buff",
+      "typeSubtype": [
+        "experience"
+      ],
       "unlockCost": 5000000,
       "baseCost": 10
     }
