@@ -1421,20 +1421,6 @@ export function LoadoutBuilderPage({
     }
   }, [builderMode]);
 
-  useEffect(() => {
-    const hasSubtypeType = typeFilters.some((type) => type === "buff" || type === "debuff");
-    if (!hasSubtypeType && subtypeFilters.length) {
-      setSubtypeFilters([]);
-    }
-  }, [typeFilters, subtypeFilters]);
-
-  useEffect(() => {
-    const supportsSubtype = typeFilters.some((type) => type === "buff" || type === "debuff");
-    if (!supportsSubtype && activeFilterSubtabs.effects === "subtype") {
-      setActiveFilterSubtabs((current) => ({ ...current, effects: "type" }));
-    }
-  }, [typeFilters, activeFilterSubtabs.effects]);
-
   const placementBonusDefinitionsById = useMemo(
     () => Object.fromEntries((mapsData.placementBonuses ?? []).map((bonus) => [bonus.id, bonus])),
     []
@@ -2023,11 +2009,6 @@ export function LoadoutBuilderPage({
   const mapHasSpots = Boolean(selectedMap?.spots.length);
   const placedCount = placedEntries.length;
   const totalSpotCount = selectedMap?.spots?.length ?? 10;
-  const effectSubtabs = typeFilters.some((type) => type === "buff" || type === "debuff")
-    ? FILTER_SUBTABS.effects
-    : FILTER_SUBTABS.effects.filter((subtab) => subtab.id !== "subtype");
-  const visibleSubtabs = activeFilterTab === "effects" ? effectSubtabs : FILTER_SUBTABS[activeFilterTab];
-  const activeSubtab = activeFilterSubtabs[activeFilterTab] ?? DEFAULT_FILTER_SUBTABS[activeFilterTab];
 
   function handlePlacedHeroHoverStart(spotId) {
     setHoveredMapHeroSpotId(spotId);
