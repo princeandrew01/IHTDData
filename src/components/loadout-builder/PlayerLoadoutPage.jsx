@@ -187,6 +187,59 @@ function RewardLine({ item, colors, fmt }) {
   );
 }
 
+function PremiumCard({ item, isPurchased, colors, onToggle }) {
+  const statEffects = (item.effects ?? []).filter((effect) => effect.statKey);
+  const miscEffects = (item.effects ?? []).filter((effect) => !effect.statKey);
+
+  return (
+    <div style={{ background: `linear-gradient(180deg, #20415f 0%, ${colors.header} 100%)`, border: `1px solid ${isPurchased ? colors.accent : colors.border}`, borderRadius: 14, padding: 14, boxShadow: "0 2px 6px rgba(0,0,0,0.2)", display: "grid", gap: 14 }}>
+      <div style={{ display: "grid", gap: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "start" }}>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ color: colors.text, fontWeight: 800, fontSize: 16, lineHeight: 1.2 }}>{item.name}</div>
+            <div style={{ marginTop: 4, fontSize: 13, color: colors.muted }}>{item.description || "No description provided."}</div>
+          </div>
+          <div style={{ padding: "6px 10px", borderRadius: 999, border: `1px solid ${isPurchased ? colors.accent : colors.border}`, background: isPurchased ? `${colors.accent}22` : colors.panel, color: isPurchased ? colors.accent : colors.muted, fontSize: 11, fontWeight: 900, textTransform: "uppercase", letterSpacing: "0.06em", whiteSpace: "nowrap" }}>
+            Premium
+          </div>
+        </div>
+      </div>
+
+      {statEffects.length ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800 }}>Loadout Effects</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            {statEffects.map((effect) => (
+              <div key={effect.key} style={{ padding: "8px 10px", borderRadius: 10, background: colors.panel, border: `1px solid ${colors.border}`, display: "grid", gap: 2, minWidth: 0 }}>
+                <div style={{ fontSize: 11, color: colors.muted, fontWeight: 700 }}>{effect.label}</div>
+                <div style={{ fontSize: 14, color: colors.accent, fontWeight: 900 }}>{effect.valueText}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {miscEffects.length ? (
+        <div style={{ display: "grid", gap: 8 }}>
+          <div style={{ fontSize: 11, color: colors.muted, textTransform: "uppercase", letterSpacing: "0.08em", fontWeight: 800 }}>Extra Effects</div>
+          <div style={{ display: "grid", gap: 6 }}>
+            {miscEffects.map((effect) => (
+              <div key={effect.key} style={{ display: "flex", justifyContent: "space-between", gap: 10, background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 10, padding: "8px 10px", fontSize: 13 }}>
+                <span style={{ color: colors.muted }}>{effect.label}</span>
+                <span style={{ color: colors.text, fontWeight: 700 }}>{effect.valueText}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <PurchasedToggle isPurchased={isPurchased} colors={colors} onToggle={onToggle} />
+      </div>
+    </div>
+  );
+}
+
 function IconCard({ item, isPurchased, colors, getIconUrl, fmt, onToggle, showToggle = true }) {
   return (
     <div style={{ background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`, border: `1px solid ${isPurchased ? colors.accent : colors.border}`, borderRadius: 10, padding: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.2)", display: "grid", gap: 12 }}>
@@ -254,7 +307,7 @@ function StatSummaryList({ entries, colors, fmt }) {
   const breakdown = useMemo(() => buildStatBreakdown(entries), [entries]);
 
   if (!breakdown.orderedStats.length) {
-    return <div style={{ color: colors.muted, fontSize: 13 }}>No purchased cosmetic rewards are contributing stats yet.</div>;
+    return <div style={{ color: colors.muted, fontSize: 13 }}>No player loadout bonuses are contributing stats yet.</div>;
   }
 
   return (
@@ -314,7 +367,7 @@ function PlayerStatSummaryTree({ sections, expandedParents, expandedGroups, colo
   const hasAnyStats = visibleSections.length > 0;
 
   if (!hasAnyStats) {
-    return <div style={{ color: colors.muted, fontSize: 13 }}>No purchased cosmetic rewards are contributing stats yet.</div>;
+    return <div style={{ color: colors.muted, fontSize: 13 }}>No player loadout bonuses are contributing stats yet.</div>;
   }
 
   return (
@@ -585,6 +638,18 @@ export function PlayerLoadoutPage({ colors, getIconUrl, fmt, savedLoadouts = [],
                     onToggle={(checked) => handlePurchasedChange(activeTab.key, item.id, checked)}
                     showToggle={!isAutoOwned}
                     fmt={fmt}
+                  />
+                );
+              }
+
+              if (activeTab.key === "premiums") {
+                return (
+                  <PremiumCard
+                    key={item.id}
+                    item={item}
+                    isPurchased={isPurchased}
+                    colors={colors}
+                    onToggle={(checked) => handlePurchasedChange(activeTab.key, item.id, checked)}
                   />
                 );
               }

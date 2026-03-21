@@ -101,6 +101,7 @@ export const HERO_EFFECT_KEY_MAP = Object.freeze({
 
 export const HERO_STAT_LABELS = Object.freeze({
   damage: "Damage",
+  damageMultiplier: "Damage Multiplier",
   attackSpeed: "Attack Speed",
   range: "Range",
   dps: "DPS",
@@ -120,7 +121,9 @@ export const HERO_STAT_LABELS = Object.freeze({
   skillCooldown: "Skill Cooldown",
   skillDuration: "Skill Duration",
   killGold: "Kill Gold",
+  killGoldMultiplier: "Kill Gold Multiplier",
   rankExpBonus: "Rank Exp",
+  rankExpMultiplier: "Rank Exp Multiplier",
   spellCooldown: "Spell Cooldown",
   superExpChance: "Super Exp Chance",
   superExpAmount: "Super Exp Amount",
@@ -135,7 +138,9 @@ export const HERO_STAT_LABELS = Object.freeze({
   enemySpawnSpeed: "Enemy Spawn Speed",
   enemyHp: "Enemy HP",
   prestigePower: "Prestige Power",
+  prestigePowerMultiplier: "Prestige Power Multiplier",
   battlepassExp: "Battlepass Exp",
+  battlepassExpMultiplier: "Battlepass Exp Multiplier",
   energyIncome: "Energy Income",
   bossExp: "Boss Exp",
   bossGold: "Boss Gold",
@@ -194,6 +199,14 @@ export const FLAT_HERO_STAT_KEYS = new Set([
   "powerMageSpawns",
   "trainerSpawns",
   "bossRushSkip",
+]);
+
+export const MULTIPLIER_HERO_STAT_KEYS = new Set([
+  "damageMultiplier",
+  "killGoldMultiplier",
+  "prestigePowerMultiplier",
+  "rankExpMultiplier",
+  "battlepassExpMultiplier",
 ]);
 
 const TOP_LEVEL_STAT_KEYS = new Set(["damage", "attackSpeed", "range", "dps"]);
@@ -255,6 +268,11 @@ const MAP_PERK_KEY_RULES = Object.freeze([
 
 function addBonusTotal(target, key, amount) {
   if (!key || !Number.isFinite(Number(amount))) {
+    return target;
+  }
+
+  if (MULTIPLIER_HERO_STAT_KEYS.has(key)) {
+    target[key] = (target[key] ?? 1) * Number(amount);
     return target;
   }
 
@@ -320,6 +338,10 @@ export function formatSignedHeroBonus(key, amount, fmt) {
     return String(amount ?? "-");
   }
 
+  if (MULTIPLIER_HERO_STAT_KEYS.has(key)) {
+    return `x${formatHeroStatValue(numeric, fmt)}`;
+  }
+
   const prefix = numeric > 0 ? "+" : "";
   if (FLAT_HERO_STAT_KEYS.has(key)) {
     return `${prefix}${formatHeroStatValue(numeric, fmt)}`;
@@ -358,8 +380,12 @@ function createEntry(statKey, amount, system, sourceType, sourceId, sourceLabel,
 }
 
 function getEntryValueKind(entry, statKey) {
-  if (entry?.valueType === "flat" || entry?.valueType === "percent") {
+  if (entry?.valueType === "flat" || entry?.valueType === "percent" || entry?.valueType === "multiplier") {
     return entry.valueType;
+  }
+
+  if (MULTIPLIER_HERO_STAT_KEYS.has(statKey)) {
+    return "multiplier";
   }
 
   return FLAT_HERO_STAT_KEYS.has(statKey) ? "flat" : "percent";
@@ -367,6 +393,10 @@ function getEntryValueKind(entry, statKey) {
 
 function formatBreakdownSourceLabel(sourceLabel, valueKind) {
   const baseLabel = String(sourceLabel ?? "Other");
+  if (valueKind === "multiplier") {
+    return `${baseLabel} (x)`;
+  }
+
   return `${baseLabel} (${valueKind === "flat" ? "Flat" : "%"})`;
 }
 
@@ -446,19 +476,30 @@ export function buildStatBreakdown(entries) {
     }
 
     const statKey = normalizeHeroEffectBonusKey(entry.statKey);
-    totals[statKey] = (totals[statKey] ?? 0) + Number(entry.amount);
+    const valueKind = getEntryValueKind(entry, statKey);
+
+    if (valueKind === "multiplier") {
+      totals[statKey] = (totals[statKey] ?? 1) * Number(entry.amount);
+    } else {
+      totals[statKey] = (totals[statKey] ?? 0) + Number(entry.amount);
+    }
+
     if (!byStat[statKey]) {
       byStat[statKey] = {
         statKey,
         label: formatStatLabel(statKey),
-        total: 0,
+        total: valueKind === "multiplier" ? 1 : 0,
         groupedEntries: {},
         entries: [],
       };
     }
 
-    byStat[statKey].total += Number(entry.amount);
-    const valueKind = getEntryValueKind(entry, statKey);
+    if (valueKind === "multiplier") {
+      byStat[statKey].total *= Number(entry.amount);
+    } else {
+      byStat[statKey].total += Number(entry.amount);
+    }
+
     const sourceGroup = String(entry.groupLabel ?? entry.sourceType ?? entry.sourceLabel ?? "Other");
     const aggregateKey = `${String(entry.system ?? "")}|${sourceGroup}|${valueKind}`;
     const statGroup = byStat[statKey];
@@ -467,7 +508,7 @@ export function buildStatBreakdown(entries) {
       statGroup.groupedEntries[aggregateKey] = {
         ...entry,
         statKey,
-        amount: 0,
+        amount: valueKind === "multiplier" ? 1 : 0,
         sourceId: aggregateKey,
         sourceLabel: formatBreakdownSourceLabel(sourceGroup, valueKind),
         groupLabel: sourceGroup,
@@ -476,7 +517,12 @@ export function buildStatBreakdown(entries) {
       };
     }
 
-    statGroup.groupedEntries[aggregateKey].amount += Number(entry.amount);
+    if (valueKind === "multiplier") {
+      statGroup.groupedEntries[aggregateKey].amount *= Number(entry.amount);
+    } else {
+      statGroup.groupedEntries[aggregateKey].amount += Number(entry.amount);
+    }
+
     statGroup.groupedEntries[aggregateKey].mergedEntryCount += 1;
   });
 
@@ -597,6 +643,7 @@ export function buildGlobalLoadoutStatModel({ statsLoadoutState, playerLoadoutSt
 export function buildHeroUpgradeStats(hero, bonusTotals) {
   const baseStats = hero.baseStats ?? {};
   const damageBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.damage);
+  const damageMultiplier = Number(bonusTotals.damageMultiplier) || 1;
   const attackSpeedBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.attackSpeed);
   const rangeBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.range);
   const skillCooldownBonus = sumBonusTotals(bonusTotals, HERO_STAT_BONUS_ALIASES.skillCooldown);
@@ -607,7 +654,7 @@ export function buildHeroUpgradeStats(hero, bonusTotals) {
   const adjustedBaseStats = { ...baseStats };
 
   if (typeof adjustedBaseStats.damage === "number") {
-    adjustedBaseStats.damage = adjustedBaseStats.damage * (1 + damageBonus / 100);
+    adjustedBaseStats.damage = adjustedBaseStats.damage * (1 + damageBonus / 100) * damageMultiplier;
   }
 
   if (typeof adjustedBaseStats.attackSpeed === "number") {
@@ -619,7 +666,7 @@ export function buildHeroUpgradeStats(hero, bonusTotals) {
   }
 
   if (typeof adjustedBaseStats.dps === "number") {
-    adjustedBaseStats.dps = adjustedBaseStats.dps * (1 + damageBonus / 100) * (1 + attackSpeedBonus / 100);
+    adjustedBaseStats.dps = adjustedBaseStats.dps * (1 + damageBonus / 100) * damageMultiplier * (1 + attackSpeedBonus / 100);
   }
 
   const topLevelDisplayStats = Object.entries(adjustedBaseStats).map(([key, value]) => ({
@@ -628,10 +675,19 @@ export function buildHeroUpgradeStats(hero, bonusTotals) {
     value: formatHeroStatValue(value),
     baseValue: baseStats[key],
     bonusLabel: (() => {
-      if (key === "damage" && damageBonus) return `${formatSignedHeroBonus(key, damageBonus)} from loadouts`;
+      if (key === "damage" && (damageBonus || damageMultiplier > 1)) {
+        const segments = [];
+        if (damageBonus) {
+          segments.push(formatSignedHeroBonus(key, damageBonus));
+        }
+        if (damageMultiplier > 1) {
+          segments.push(formatSignedHeroBonus("damageMultiplier", damageMultiplier));
+        }
+        return `${segments.join(" and ")} from loadouts`;
+      }
       if (key === "attackSpeed" && attackSpeedBonus) return `${formatSignedHeroBonus(key, attackSpeedBonus)} from loadouts`;
       if (key === "range" && rangeBonus) return `${formatSignedHeroBonus(key, rangeBonus)} from loadouts`;
-      if (key === "dps" && (damageBonus || attackSpeedBonus)) return "Damage and attack speed applied";
+      if (key === "dps" && (damageBonus || damageMultiplier > 1 || attackSpeedBonus)) return "Damage and attack speed applied";
       return null;
     })(),
   }));

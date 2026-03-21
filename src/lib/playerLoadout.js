@@ -1,13 +1,99 @@
 import playerBackgroundsData from "../data/player_backgrounds.json";
 import playerIconsData from "../data/player_icons.json";
+import premiumsData from "../data/premiums.json";
 import STAT_UNITS from "../data/stat_units.json";
 import { schedulePersistLoadoutRuntime } from "./loadoutRuntimeStore";
 
 export const PLAYER_LOADOUT_STATE_STORAGE_KEY = "ihtddata.playerLoadout.state.v1";
 
+const PREMIUM_GROUP_NAME = "Premiums";
+
+const PREMIUM_EFFECT_CONFIG = Object.freeze({
+  damage_multiplier: {
+    label: "Damage Multiplier",
+    statKey: "damageMultiplier",
+    valueType: "multiplier",
+    getAmount(value) {
+      return Number(value) || 1;
+    },
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+  kill_gold_multiplier: {
+    label: "Kill Gold Multiplier",
+    statKey: "killGoldMultiplier",
+    valueType: "multiplier",
+    getAmount(value) {
+      return Number(value) || 1;
+    },
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+  prestige_power_multiplier: {
+    label: "Prestige Power Multiplier",
+    statKey: "prestigePowerMultiplier",
+    valueType: "multiplier",
+    getAmount(value) {
+      return Number(value) || 1;
+    },
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+  rank_exp_multiplier: {
+    label: "Rank Exp Multiplier",
+    statKey: "rankExpMultiplier",
+    valueType: "multiplier",
+    getAmount(value) {
+      return Number(value) || 1;
+    },
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+  battlepass_exp_multiplier: {
+    label: "Battlepass Exp Multiplier",
+    statKey: "battlepassExpMultiplier",
+    valueType: "multiplier",
+    getAmount(value) {
+      return Number(value) || 1;
+    },
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+  active_play_cooldown_minutes: {
+    label: "Active Play Cooldown",
+    formatValue(value) {
+      return `${formatDecimal(value)} min`;
+    },
+  },
+  continue_wave_cost: {
+    label: "Continue Wave Cost",
+    formatValue(value) {
+      return value === 0 ? "Free" : `${formatDecimal(value)} Gems`;
+    },
+  },
+  offline_progress_limit: {
+    label: "Offline Progress Limit",
+    formatValue(value) {
+      return value === "infinite" ? "Infinite" : String(value ?? "-");
+    },
+  },
+  max_game_speed: {
+    label: "Max Game Speed",
+    formatValue(value) {
+      return formatMultiplierValue(value);
+    },
+  },
+});
+
 const RAW_PLAYER_LOADOUT_TABS = [
   { key: "icons", label: "Icons", data: playerIconsData },
   { key: "backgrounds", label: "Backgrounds", data: playerBackgroundsData },
+  { key: "premiums", label: "Premiums", data: createPremiumTabData(premiumsData) },
 ];
 
 export const PLAYER_LOADOUT_TABS = Object.freeze(
@@ -98,6 +184,70 @@ function normalizeRewardUnitLabel(value) {
 
 function snakeToCamel(value) {
   return String(value ?? "").replace(/_([a-z])/g, (_, letter) => letter.toUpperCase());
+}
+
+function formatDecimal(value) {
+  const numeric = Number(value);
+  if (!Number.isFinite(numeric)) {
+    return String(value ?? "-");
+  }
+
+  return Number.isInteger(numeric)
+    ? numeric.toString()
+    : numeric.toFixed(2).replace(/\.00$/, "").replace(/(\.\d*[1-9])0+$/, "$1");
+}
+
+function formatMultiplierValue(value) {
+  return `x${formatDecimal(value)}`;
+}
+
+function humanizeEffectKey(effectKey) {
+  return String(effectKey ?? "")
+    .replace(/_+/g, " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function buildPremiumEffect(effectKey, value) {
+  const config = PREMIUM_EFFECT_CONFIG[effectKey];
+  const amount = typeof config?.getAmount === "function" ? config.getAmount(value) : null;
+
+  return {
+    key: effectKey,
+    label: config?.label ?? humanizeEffectKey(effectKey),
+    rawValue: value,
+    valueText: typeof config?.formatValue === "function" ? config.formatValue(value) : String(value ?? "-"),
+    statKey: config?.statKey ?? null,
+    valueType: config?.valueType ?? null,
+    amount,
+  };
+}
+
+function createPremiumTabData(rawPremiumsData) {
+  return {
+    menuIcon: null,
+    label: "Premiums",
+    groups: {
+      [PREMIUM_GROUP_NAME]: (rawPremiumsData?.premiums ?? []).map((premium) => {
+        const effects = Object.entries(premium?.effects ?? {}).map(([effectKey, value]) => buildPremiumEffect(effectKey, value));
+
+        return {
+          id: premium.id,
+          name: premium.name,
+          description: premium.description,
+          effects,
+          rewardEntries: effects
+            .filter((effect) => effect.statKey && Number.isFinite(Number(effect.amount)))
+            .map((effect) => ({
+              statKey: effect.statKey,
+              amount: Number(effect.amount),
+              valueType: effect.valueType,
+              statLabel: effect.label,
+              groupLabel: premium.name,
+            })),
+        };
+      }),
+    },
+  };
 }
 
 function getDefaultSelectedTab() {
@@ -205,24 +355,38 @@ export function getPlayerLoadoutPurchasedEntries(state) {
     const purchased = normalized.purchasedByTab[tab.key] ?? {};
 
     getPlayerLoadoutItems(tab.key).forEach((item) => {
-      if (!purchased[item.id] || item.reward == null || !item.rewardUnit) {
+      if (!purchased[item.id]) {
         return;
       }
 
-      const statKey = mapPlayerRewardUnitToStatKey(item.rewardUnit);
-      if (!statKey) {
-        return;
-      }
+      const rewardEntries = Array.isArray(item.rewardEntries)
+        ? item.rewardEntries
+        : item.reward != null && item.rewardUnit
+          ? [{
+              statKey: mapPlayerRewardUnitToStatKey(item.rewardUnit),
+              amount: Number(item.reward) || 0,
+              valueType: item.reward_type ?? null,
+              statLabel: item.rewardUnit,
+              groupLabel: tab.label,
+            }]
+          : [];
 
-      entries.push({
-        statKey,
-        amount: Number(item.reward) || 0,
-        system: "playerLoadout",
-        sourceType: tab.key,
-        sourceId: item.id,
-        sourceLabel: item.name,
-        groupLabel: tab.label,
-        statLabel: item.rewardUnit,
+      rewardEntries.forEach((rewardEntry) => {
+        if (!rewardEntry?.statKey) {
+          return;
+        }
+
+        entries.push({
+          statKey: rewardEntry.statKey,
+          amount: Number(rewardEntry.amount) || 0,
+          system: "playerLoadout",
+          sourceType: tab.key,
+          sourceId: item.id,
+          sourceLabel: item.name,
+          groupLabel: rewardEntry.groupLabel ?? tab.label,
+          statLabel: rewardEntry.statLabel ?? item.rewardUnit,
+          valueType: rewardEntry.valueType ?? item.reward_type ?? null,
+        });
       });
     });
   });
@@ -232,6 +396,11 @@ export function getPlayerLoadoutPurchasedEntries(state) {
 
 export function getPlayerLoadoutBonusTotals(state) {
   return getPlayerLoadoutPurchasedEntries(state).reduce((totals, entry) => {
+    if (entry.valueType === "multiplier") {
+      totals[entry.statKey] = (totals[entry.statKey] ?? 1) * entry.amount;
+      return totals;
+    }
+
     totals[entry.statKey] = (totals[entry.statKey] ?? 0) + entry.amount;
     return totals;
   }, {});
