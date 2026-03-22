@@ -58,6 +58,7 @@ const WavePerksView = lazy(() => loadMiscViews().then((module) => ({ default: mo
 const loadCalculatorViews = () => import("./views/calculatorViews.jsx");
 const CombatStylesView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.CombatStylesView })));
 const EnemyHpView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.EnemyHpView })));
+const ResourceOptimizerView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.ResourceOptimizerView })));
 const loadAppDataViews = () => import("./views/appDataViews.jsx");
 const AllHeroesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllHeroesRoute })));
 const AllSynergiesRoute = lazy(() => loadAppDataViews().then((module) => ({ default: module.AllSynergiesRoute })));
@@ -194,6 +195,7 @@ const NAV_GROUPS = [
     label: "Simulator",
     items: [
       { key: "statSimulator", label: "Stat Simulator", menuIcon: "_attributePoints_0.png" },
+      { key: "resourceOptimizer", label: "Resource Optimizer", menuIcon: "_coin.png" },
     ],
   },
   {
@@ -4932,11 +4934,16 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
     setOpen((current) => {
       let changed = false;
       const next = { ...current };
+      let activeGroupLabel = null;
+      let activeSubmenuKey = null;
 
       for (const group of navGroups) {
-        if (group.items.some((item) => itemContainsActiveKey(item, activeKey)) && !next[group.label]) {
-          next[group.label] = true;
-          changed = true;
+        if (group.items.some((item) => itemContainsActiveKey(item, activeKey))) {
+          activeGroupLabel = group.label;
+          if (!next[group.label]) {
+            next[group.label] = true;
+            changed = true;
+          }
         }
 
         for (const item of group.items) {
@@ -4944,6 +4951,35 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
           if (item.children?.length && itemContainsActiveKey(item, activeKey) && !next[submenuKey]) {
             next[submenuKey] = true;
             changed = true;
+          }
+
+          if (item.children?.length && itemContainsActiveKey(item, activeKey)) {
+            activeSubmenuKey = submenuKey;
+          }
+        }
+      }
+
+      if (activeGroupLabel) {
+        for (const group of navGroups) {
+          if (group.label !== activeGroupLabel && next[group.label]) {
+            next[group.label] = false;
+            changed = true;
+          }
+        }
+      }
+
+      if (activeSubmenuKey) {
+        for (const group of navGroups) {
+          for (const item of group.items) {
+            if (!item.children?.length) {
+              continue;
+            }
+
+            const submenuKey = `submenu:${item.key}`;
+            if (submenuKey !== activeSubmenuKey && next[submenuKey]) {
+              next[submenuKey] = false;
+              changed = true;
+            }
           }
         }
       }
@@ -4953,7 +4989,31 @@ function Sidebar({ activeKey, onSelect, isOpen, onClose, navGroups }) {
   }, [activeKey, navGroups]);
 
   function toggleOpen(key) {
-    setOpen((prev) => ({ ...prev, [key]: !prev[key] }));
+    setOpen((prev) => {
+      if (!key.startsWith("submenu:")) {
+        const nextValue = !prev[key];
+        const next = { ...prev };
+
+        for (const group of navGroups) {
+          next[group.label] = false;
+        }
+
+        next[key] = nextValue;
+        return next;
+      }
+
+      const nextValue = !prev[key];
+      const next = { ...prev };
+
+      for (const currentKey of Object.keys(prev)) {
+        if (currentKey.startsWith("submenu:")) {
+          next[currentKey] = false;
+        }
+      }
+
+      next[key] = nextValue;
+      return next;
+    });
   }
 
   function handleSelect(key) {
@@ -5514,6 +5574,11 @@ export default function App() {
           {activeKey === "enemyHp"      && (
             <Suspense fallback={lazyFallback}>
               <EnemyHpView colors={colors} fmt={fmt} getIconUrl={getIconUrl} isMobile={isMobile} />
+            </Suspense>
+          )}
+          {activeKey === "resourceOptimizer" && (
+            <Suspense fallback={lazyFallback}>
+              <ResourceOptimizerView colors={colors} fmt={fmt} getIconUrl={getIconUrl} isMobile={isMobile} />
             </Suspense>
           )}
           {activeKey === "home"       && (
