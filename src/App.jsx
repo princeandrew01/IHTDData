@@ -518,17 +518,23 @@ function CostModal({ item, sectionFormula, onClose }) {
   const fmt = useFmt();
   const formula = item.costFormula ?? sectionFormula;
   const maxLevel = Math.max(1, item.maxLevel ?? 1);
-  const displayedMaxLevel = Math.min(maxLevel, 50);
   const isSpellFormula = formula === "spell";
   const totalCost = computeTotalCost(item, sectionFormula);
   const hasStatValue = typeof item.statAmt === "number" && Boolean(item.statKey);
   const hasBaseStat = typeof item.baseAmt === "number";
 
+  const [startLevel, setStartLevel] = useState(1);
+  const [endLevel, setEndLevel] = useState(Math.min(maxLevel, 50));
+
+  const clampedStart = Math.max(1, Math.min(startLevel || 1, maxLevel));
+  const clampedEnd = Math.max(clampedStart, Math.min(endLevel || clampedStart, maxLevel));
+
   const rows = useMemo(() => {
     const nextRows = [];
     let cumulativeCost = typeof totalCost === "bigint" ? 0n : 0;
+    let rangeCostStart = typeof totalCost === "bigint" ? 0n : 0;
 
-    for (let level = 1; level <= displayedMaxLevel; level += 1) {
+    for (let level = 1; level <= clampedEnd; level += 1) {
       let costLabel = "-";
       let cumulativeLabel = "-";
 
@@ -552,6 +558,10 @@ function CostModal({ item, sectionFormula, onClose }) {
         }
       }
 
+      if (level === clampedStart - 1) rangeCostStart = cumulativeCost;
+
+      if (level < clampedStart) continue;
+
       let bonusLabel = "-";
       if (hasStatValue) {
         const totalStatValue = isProgressiveItem(item)
@@ -563,16 +573,22 @@ function CostModal({ item, sectionFormula, onClose }) {
         bonusLabel = `${fmt(rewardValue)}${rewardUnitSym(item.rewardUnit)}`;
       }
 
-      nextRows.push({
-        level,
-        costLabel,
-        cumulativeLabel,
-        bonusLabel,
-      });
+      nextRows.push({ level, costLabel, cumulativeLabel, bonusLabel });
     }
 
-    return nextRows;
-  }, [displayedMaxLevel, fmt, formula, hasBaseStat, hasStatValue, isSpellFormula, item, sectionFormula, totalCost]);
+    const lastRow = nextRows[nextRows.length - 1];
+    let rangeCost = null;
+    if (lastRow && item.baseCost !== undefined && formula !== "none" && !isSpellFormula) {
+      const endCumulative = typeof totalCost === "bigint"
+        ? BigInt(lastRow.cumulativeLabel.replace(/[^0-9]/g, ""))
+        : null;
+      rangeCost = { start: rangeCostStart, rows: nextRows };
+    }
+
+    return { rows: nextRows, rangeCostStart };
+  }, [clampedStart, clampedEnd, fmt, formula, hasBaseStat, hasStatValue, isSpellFormula, item, sectionFormula, totalCost]);
+
+  const { rows: displayRows, rangeCostStart } = rows;
 
   const summaryStatLabel = hasStatValue
     ? formatStat(item.statAmt, item.statKey)
@@ -580,10 +596,19 @@ function CostModal({ item, sectionFormula, onClose }) {
       ? `${fmt(item.reward)}${rewardUnitSym(item.rewardUnit)}`
       : null;
 
+  const inputStyle = {
+    background: colors.panel, border: `1px solid ${colors.border}`, borderRadius: 6,
+    color: colors.text, fontSize: 13, padding: "4px 8px", width: 80, textAlign: "center",
+  };
+
   return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div onClick={(event) => event.stopPropagation()} className="modal-box" style={{ background: colors.bg, border: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)", width: "100%", maxWidth: 760, maxHeight: "88vh" }}>
-        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14 }}>
+    <div
+      onClick={onClose}
+      onWheel={e => e.stopPropagation()}
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.72)", zIndex: 400, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}
+    >
+      <div onClick={(event) => event.stopPropagation()} className="modal-box" style={{ background: colors.bg, border: `1px solid ${colors.border}`, display: "flex", flexDirection: "column", boxShadow: "0 8px 32px rgba(0,0,0,0.6)", width: "100%", maxWidth: 760, height: "88vh" }}>
+        <div style={{ padding: "16px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 14, flexShrink: 0 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12, minWidth: 0 }}>
             {item.icon ? <img src={getIconUrl(item.icon)} alt="" style={{ width: 40, height: 40, objectFit: "contain", flexShrink: 0 }} /> : null}
             <div style={{ minWidth: 0 }}>
@@ -591,7 +616,7 @@ function CostModal({ item, sectionFormula, onClose }) {
               <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 4 }}>
                 {summaryStatLabel ? <span style={{ fontSize: 12, color: colors.positive, fontWeight: 700 }}>Per level {summaryStatLabel}</span> : null}
                 {item.maxLevel != null ? <span style={{ fontSize: 12, color: colors.muted }}>Max level {fmt(item.maxLevel)}</span> : null}
-                {item.waveReq != null ? <span style={{ fontSize: 12, color: colors.accent }}>Requirement {fmt(item.waveReq)}</span> : null}
+                {item.waveReq != null && item.waveReq !== 0 ? <Badge color={colors.accent}>Unlock: Wave {item.waveReq.toLocaleString()}</Badge> : null}
                 {totalCost != null ? <span style={{ fontSize: 12, color: colors.gold }}>Total cost {fmt(totalCost)}</span> : null}
               </div>
             </div>
@@ -599,32 +624,53 @@ function CostModal({ item, sectionFormula, onClose }) {
           <button onClick={onClose} style={{ background: "none", border: "none", color: colors.muted, fontSize: 20, cursor: "pointer", lineHeight: 1, padding: 4 }}>✕</button>
         </div>
 
-        <div style={{ padding: "16px 20px", overflow: "auto", display: "grid", gap: 12 }}>
-          {displayedMaxLevel < maxLevel ? (
-            <div style={{ fontSize: 12, color: colors.muted }}>Showing the first {fmt(displayedMaxLevel)} levels of {fmt(maxLevel)}.</div>
-          ) : null}
+        <div style={{ padding: "10px 20px", borderBottom: `1px solid ${colors.border}`, display: "flex", alignItems: "center", gap: 10, flexShrink: 0, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 12, color: colors.muted, fontWeight: 600 }}>Level range</span>
+          <input
+            type="number" min={1} max={maxLevel} value={startLevel}
+            onChange={e => setStartLevel(Math.max(1, Math.min(Number(e.target.value), maxLevel)))}
+            style={inputStyle}
+          />
+          <span style={{ fontSize: 12, color: colors.muted }}>to</span>
+          <input
+            type="number" min={1} max={maxLevel} value={endLevel}
+            onChange={e => setEndLevel(Math.max(1, Math.min(Number(e.target.value), maxLevel)))}
+            style={inputStyle}
+          />
+          {maxLevel > 1 && (
+            <button
+              onClick={() => { setStartLevel(1); setEndLevel(maxLevel); }}
+              style={{ fontSize: 11, color: colors.accent, background: "none", border: `1px solid ${colors.border}`, borderRadius: 5, padding: "3px 8px", cursor: "pointer" }}
+            >
+              All {fmt(maxLevel)} levels
+            </button>
+          )}
+        </div>
 
-          <div style={{ border: `1px solid ${colors.border}`, borderRadius: 10, overflow: "hidden" }}>
-            <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-              <thead style={{ background: colors.panel, position: "sticky", top: 0 }}>
-                <tr>
-                  <th style={{ padding: "8px 12px", textAlign: "left", color: colors.muted, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Level</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", color: colors.gold, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Cost</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", color: colors.text, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Total Cost</th>
-                  <th style={{ padding: "8px 12px", textAlign: "right", color: colors.positive, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Bonus</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((row, index) => (
-                  <tr key={row.level} style={{ background: index % 2 === 0 ? "transparent" : `${colors.panel}66` }}>
-                    <td style={{ padding: "8px 12px", color: colors.accent, fontWeight: 700 }}>Level {fmt(row.level)}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: colors.gold, fontFamily: "monospace" }}>{row.costLabel}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{row.cumulativeLabel}</td>
-                    <td style={{ padding: "8px 12px", textAlign: "right", color: colors.positive, fontWeight: 700 }}>{row.bonusLabel}</td>
+        <div style={{ overflow: "auto", overscrollBehavior: "contain", flex: 1, minHeight: 0 }}>
+          <div style={{ padding: "16px 20px", display: "grid", gap: 12 }}>
+            <div style={{ border: `1px solid ${colors.border}`, borderRadius: 10, overflow: "hidden" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+                <thead style={{ background: colors.panel, position: "sticky", top: 0 }}>
+                  <tr>
+                    <th style={{ padding: "8px 12px", textAlign: "left", color: colors.muted, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Level</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right", color: colors.gold, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Cost</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right", color: colors.text, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Total Cost</th>
+                    <th style={{ padding: "8px 12px", textAlign: "right", color: colors.positive, fontWeight: 700, fontSize: 11, textTransform: "uppercase", letterSpacing: "0.06em", borderBottom: `1px solid ${colors.border}` }}>Bonus</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {displayRows.map((row, index) => (
+                    <tr key={row.level} style={{ background: index % 2 === 0 ? "transparent" : `${colors.panel}66` }}>
+                      <td style={{ padding: "8px 12px", color: colors.accent, fontWeight: 700 }}>Level {fmt(row.level)}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: colors.gold, fontFamily: "monospace" }}>{row.costLabel}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{row.cumulativeLabel}</td>
+                      <td style={{ padding: "8px 12px", textAlign: "right", color: colors.positive, fontWeight: 700 }}>{row.bonusLabel}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       </div>
@@ -5059,6 +5105,7 @@ function LegacyWavePerksView() {
 // ─────────────────────────────────────────────
 function SheetView({ sectionData, onOpen }) {
   const fmt = useFmt();
+  const [hoveredId, setHoveredId] = useState(null);
   const groups = Object.entries(sectionData?.groups ?? {});
 
   return (
@@ -5090,19 +5137,26 @@ function SheetView({ sectionData, onOpen }) {
               const costValue = item.cost ?? item.baseCost ?? null;
               const requirementValue = item.requirement ?? item.waveReq ?? null;
               const costPrefix = item.costCurrency ?? CURRENCY_LABELS[item.currency] ?? "Cost";
+              const accentColor = item.borderColor ?? item.rewardBorderColor ?? colors.accent;
+              const isHovered = hoveredId === item.id;
 
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => onOpen(item)}
+                  onMouseEnter={() => setHoveredId(item.id)}
+                  onMouseLeave={() => setHoveredId(null)}
                   style={{
                     width: "100%",
-                    background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
-                    border: `1px solid ${colors.border}`,
+                    background: isHovered
+                      ? `linear-gradient(180deg, ${accentColor}22 0%, ${colors.header} 100%)`
+                      : `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
+                    border: `1px solid ${isHovered ? accentColor + "66" : colors.border}`,
+                    borderLeft: `3px solid ${isHovered ? accentColor : accentColor + "55"}`,
                     borderRadius: 8,
                     padding: 12,
-                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+                    boxShadow: isHovered ? `0 4px 14px ${accentColor}33` : "0 2px 6px rgba(0,0,0,0.2)",
                     display: "flex",
                     gap: 12,
                     alignItems: "center",
@@ -5110,6 +5164,7 @@ function SheetView({ sectionData, onOpen }) {
                     cursor: "pointer",
                     textAlign: "left",
                     fontFamily: "inherit",
+                    transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
                   }}
                 >
                   <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, background: item.bgColor ?? item.rewardBgColor ?? colors.panel, border: `2px solid ${item.borderColor ?? item.rewardBorderColor ?? colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
@@ -5125,11 +5180,15 @@ function SheetView({ sectionData, onOpen }) {
                       </div>
                     ) : null}
 
-                    {item.maxLevel != null ? <div style={{ fontSize: 13, color: colors.muted }}>Max Level {fmt(item.maxLevel)}</div> : null}
-                    {costValue != null ? <div style={{ fontSize: 13, color: colors.muted }}>{costPrefix} {fmt(costValue)}</div> : null}
-                    {totalCost != null ? <div style={{ fontSize: 13, color: colors.muted }}>Total {costPrefix} {fmt(totalCost)}</div> : null}
-                    {requirementValue != null ? <div style={{ fontSize: 13, color: colors.muted }}>Requirement {typeof requirementValue === "number" ? fmt(requirementValue) : requirementValue}</div> : null}
+                    {item.maxLevel != null ? <div style={{ fontSize: 13, color: colors.muted }}>Max Level <span style={{ color: colors.text, fontWeight: 600 }}>{fmt(item.maxLevel)}</span></div> : null}
+                    {costValue != null ? <div style={{ fontSize: 13, color: colors.muted }}>{costPrefix} <span style={{ color: colors.gold, fontWeight: 600 }}>{fmt(costValue)}</span></div> : null}
+                    {totalCost != null ? <div style={{ fontSize: 13, color: colors.muted }}>Total {costPrefix} <span style={{ color: colors.gold, fontWeight: 700 }}>{fmt(totalCost)}</span></div> : null}
                   </div>
+                  {requirementValue != null && requirementValue !== 0 ? (
+                    <div style={{ alignSelf: "flex-start" }}>
+                      <Badge color={colors.accent}>Unlock: Wave {typeof requirementValue === "number" ? requirementValue.toLocaleString() : requirementValue}</Badge>
+                    </div>
+                  ) : null}
                 </button>
               );
             })}
