@@ -409,16 +409,12 @@ function computeTotalCost(item, sectionFormula) {
 
       case "power": {
         if (item.hasLinearMult) break;
-        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
-        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
-        const sumRange = (start, end) => (end >= start ? ((end - start + 1n) * (start + end)) / 2n : 0n);
         if (!multiCost || multiCost === 1) {
-          return baseCostBig * (sumRange(1n, breakpointOne - 1n) + 3n * sumRange(breakpointOne, breakpointTwo - 1n) + 24n * sumRange(breakpointTwo, maxLevelBig));
+          return (baseCostBig * maxLevelBig * (maxLevelBig + 1n)) / 2n;
         }
         let total = 0n;
         for (let level = 1n; level <= maxLevelBig; level += 1n) {
-          const breakpointMult = level >= breakpointTwo ? 24n : level >= breakpointOne ? 3n : 1n;
-          total += baseCostBig * level ** multiCostBig * breakpointMult;
+          total += baseCostBig * level ** multiCostBig;
         }
         return total;
       }
@@ -426,17 +422,12 @@ function computeTotalCost(item, sectionFormula) {
       case "exponential":
       case "exponential_endgame": {
         if (item.hasLinearMult) break;
-        const breakpointOne = BigInt(Math.ceil(maxLevel * 0.5));
-        const breakpointTwo = BigInt(Math.ceil(maxLevel * 0.8));
         if (!multiCost || multiCost === 1) {
-          const countOne = breakpointOne > 1n ? breakpointOne - 1n : 0n;
-          const countTwo = breakpointTwo > breakpointOne ? breakpointTwo - breakpointOne : 0n;
-          const countThree = maxLevelBig >= breakpointTwo ? maxLevelBig - breakpointTwo + 1n : 0n;
-          return baseCostBig * (countOne + 3n * countTwo + 24n * countThree);
+          return baseCostBig * maxLevelBig;
         }
         const geometric = (start, end) => end < start ? 0n : multiCostBig ** (start - 1n) * (multiCostBig ** (end - start + 1n) - 1n) / (multiCostBig - 1n);
         try {
-          return baseCostBig * (geometric(1n, breakpointOne - 1n) + 3n * geometric(breakpointOne, breakpointTwo - 1n) + 24n * geometric(breakpointTwo, maxLevelBig));
+          return baseCostBig * geometric(1n, maxLevelBig);
         } catch {
           break;
         }
@@ -461,37 +452,25 @@ function computeTotalCost(item, sectionFormula) {
       return (baseCost * maxLevel * (maxLevel + 1)) / 2;
 
     case "power": {
-      const breakpointOne = maxLevel * 0.5;
-      const breakpointTwo = maxLevel * 0.8;
       const exponent = multiCost ?? 1;
-      if (maxLevel > 10000) {
-        const integral = (start, end) => {
-          const first = (Math.pow(end, exponent + 1) - Math.pow(start, exponent + 1)) / (exponent + 1);
-          const second = 0.001 * (Math.pow(end, exponent + 2) - Math.pow(start, exponent + 2)) / (exponent + 2);
-          return first + second;
-        };
-        return baseCost * (integral(0, breakpointOne) + 3 * integral(breakpointOne, breakpointTwo) + 24 * integral(breakpointTwo, maxLevel));
+      if (exponent === 1 && !item.hasLinearMult) {
+        return baseCost * maxLevel * (maxLevel + 1) / 2;
       }
       let total = 0;
-      for (let index = 0; index < maxLevel; index += 1) {
-        const level = index + 1;
-        const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
+      for (let level = 1; level <= maxLevel; level += 1) {
         const linearMult = item.hasLinearMult && level > 1 ? 1 + level * 0.001 : 1;
-        total += baseCost * Math.pow(level, exponent) * breakpointMult * linearMult;
+        total += baseCost * Math.pow(level, exponent) * linearMult;
       }
       return total;
     }
 
     case "exponential":
     case "exponential_endgame": {
-      const breakpointOne = Math.ceil(maxLevel * 0.5);
-      const breakpointTwo = Math.ceil(maxLevel * 0.8);
       if (item.hasLinearMult) {
         let total = 0;
         for (let level = 1; level <= maxLevel; level += 1) {
-          const breakpointMult = level >= breakpointTwo ? 24 : level >= breakpointOne ? 3 : 1;
           const linearMult = level > 1 ? 1 + level * 0.001 : 1;
-          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * breakpointMult * linearMult;
+          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * linearMult;
         }
         return total;
       }
@@ -500,7 +479,7 @@ function computeTotalCost(item, sectionFormula) {
         if (!multiCost || multiCost === 1) return end - start + 1;
         return Math.pow(multiCost, start - 1) * (Math.pow(multiCost, end - start + 1) - 1) / (multiCost - 1);
       };
-      return baseCost * (geometric(1, breakpointOne - 1) + 3 * geometric(breakpointOne, breakpointTwo - 1) + 24 * geometric(breakpointTwo, maxLevel));
+      return baseCost * geometric(1, maxLevel);
     }
 
     case "capped_linear": {
@@ -5105,7 +5084,6 @@ function LegacyWavePerksView() {
 // ─────────────────────────────────────────────
 function SheetView({ sectionData, onOpen }) {
   const fmt = useFmt();
-  const [hoveredId, setHoveredId] = useState(null);
   const groups = Object.entries(sectionData?.groups ?? {});
 
   return (
@@ -5138,25 +5116,21 @@ function SheetView({ sectionData, onOpen }) {
               const requirementValue = item.requirement ?? item.waveReq ?? null;
               const costPrefix = item.costCurrency ?? CURRENCY_LABELS[item.currency] ?? "Cost";
               const accentColor = item.borderColor ?? item.rewardBorderColor ?? colors.accent;
-              const isHovered = hoveredId === item.id;
 
               return (
                 <button
                   key={item.id}
                   type="button"
                   onClick={() => onOpen(item)}
-                  onMouseEnter={() => setHoveredId(item.id)}
-                  onMouseLeave={() => setHoveredId(null)}
+                  onMouseEnter={e => e.currentTarget.style.border = `1px solid ${accentColor}`}
+                  onMouseLeave={e => e.currentTarget.style.border = `1px solid ${colors.border}`}
                   style={{
                     width: "100%",
-                    background: isHovered
-                      ? `linear-gradient(180deg, ${accentColor}22 0%, ${colors.header} 100%)`
-                      : `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
-                    border: `1px solid ${isHovered ? accentColor + "66" : colors.border}`,
-                    borderLeft: `3px solid ${isHovered ? accentColor : accentColor + "55"}`,
+                    background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`,
+                    border: `1px solid ${colors.border}`,
                     borderRadius: 8,
                     padding: 12,
-                    boxShadow: isHovered ? `0 4px 14px ${accentColor}33` : "0 2px 6px rgba(0,0,0,0.2)",
+                    boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
                     display: "flex",
                     gap: 12,
                     alignItems: "center",
@@ -5164,7 +5138,6 @@ function SheetView({ sectionData, onOpen }) {
                     cursor: "pointer",
                     textAlign: "left",
                     fontFamily: "inherit",
-                    transition: "border-color 0.15s, box-shadow 0.15s, background 0.15s",
                   }}
                 >
                   <div style={{ width: 52, height: 52, flexShrink: 0, borderRadius: 8, background: item.bgColor ?? item.rewardBgColor ?? colors.panel, border: `2px solid ${item.borderColor ?? item.rewardBorderColor ?? colors.border}`, display: "flex", alignItems: "center", justifyContent: "center", overflow: "hidden" }}>
