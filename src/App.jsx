@@ -370,6 +370,12 @@ function rewardUnitSym(rewardUnit) {
   return REWARD_UNIT_SYMBOL[rewardUnit?.toLowerCase()] ?? "";
 }
 
+function prestigeBreakpointMult(level, maxLevel) {
+  const bp1 = Math.ceil(maxLevel * 0.5);
+  const bp2 = Math.ceil(maxLevel * 0.8);
+  return level >= bp2 ? 24 : level >= bp1 ? 3 : 1;
+}
+
 function computeTotalCost(item, sectionFormula) {
   const formula = item.costFormula ?? sectionFormula;
   const { baseCost, multiCost, maxLevel, stopCostIncreaseAt } = item;
@@ -458,8 +464,9 @@ function computeTotalCost(item, sectionFormula) {
       }
       let total = 0;
       for (let level = 1; level <= maxLevel; level += 1) {
-        const linearMult = item.hasLinearMult && level > 1 ? 1 + level * 0.001 : 1;
-        total += baseCost * Math.pow(level, exponent) * linearMult;
+        const bpMult = item.hasLinearMult ? prestigeBreakpointMult(level, maxLevel) : 1;
+        const linearMult = item.hasLinearMult && maxLevel > 999 && level > 1 ? 1 + level * 0.001 : 1;
+        total += baseCost * Math.pow(level, exponent) * linearMult * bpMult;
       }
       return total;
     }
@@ -469,8 +476,9 @@ function computeTotalCost(item, sectionFormula) {
       if (item.hasLinearMult) {
         let total = 0;
         for (let level = 1; level <= maxLevel; level += 1) {
-          const linearMult = level > 1 ? 1 + level * 0.001 : 1;
-          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * linearMult;
+          const bpMult = prestigeBreakpointMult(level, maxLevel);
+          const linearMult = maxLevel > 999 && level > 1 ? 1 + level * 0.001 : 1;
+          total += baseCost * Math.pow(multiCost ?? 1, level - 1) * linearMult * bpMult;
         }
         return total;
       }
