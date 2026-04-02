@@ -1175,10 +1175,16 @@ function getImmortalBossLeagueEffects(rotationKey) {
 }
 
 function getCommunityEventSnapshot(now = Date.now()) {
+  const n = COMMUNITY_EVENT_ROTATION_ITEMS.length;
+  // COMMUNITY_EVENT_NEXT_START_MS is when enemyKills (index 2) became active
+  const elapsedWeeks = Math.floor((now - COMMUNITY_EVENT_NEXT_START_MS) / COMMUNITY_EVENT_INTERVAL_MS);
+  const currentIndex = positiveModulo(2 + elapsedWeeks, n);
+  const nextStartMs = COMMUNITY_EVENT_NEXT_START_MS + (elapsedWeeks + 1) * COMMUNITY_EVENT_INTERVAL_MS;
+
   return getUpcomingCycleSnapshot({
     items: COMMUNITY_EVENT_ROTATION_ITEMS,
-    currentIndex: 1,
-    nextStartMs: COMMUNITY_EVENT_NEXT_START_MS,
+    currentIndex,
+    nextStartMs,
     getOffsetMs: (stepsAheadFromNext) => stepsAheadFromNext * COMMUNITY_EVENT_INTERVAL_MS,
     now,
   });
