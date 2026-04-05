@@ -916,11 +916,11 @@ const ASTRAL_COLORS = {
 };
 
 const ASTRAL_BATTLEGROUND_MAP = mapsData.maps.find((map) => map.id === "astral_battleground") ?? null;
-const ASTRAL_ROTATION_INTERVAL_MS = 3 * 24 * 60 * 60 * 1000;
-const ASTRAL_ROTATION_ANCHOR_MS = new Date(2026, 2, 19, 19, 0, 0, 0).getTime();
+// Anchor: Thursday March 19, 2026 00:00 UTC — "skills" variant was active that week (Thu→Mon segment)
+const ASTRAL_ROTATION_ANCHOR_MS = Date.UTC(2026, 2, 19);
 const ASTRAL_HELPFUL_NEGATIVE_KEYS = new Set(["skillCooldown", "spellCooldown"]);
-const IMMORTAL_BOSS_NEXT_START_MS = new Date(2026, 2, 23, 18, 0, 0, 0).getTime();
-const IMMORTAL_BOSS_INTERVAL_PATTERN_MS = [4 * 24 * 60 * 60 * 1000, 3 * 24 * 60 * 60 * 1000];
+// Anchor: Saturday April 4, 2026 00:00 UTC — "none" (index 0) was active
+const IMMORTAL_BOSS_ANCHOR_MS = Date.UTC(2026, 3, 4);
 const IMMORTAL_BOSS_ROTATION_ITEMS = [
   { key: "none", label: "None", accentColor: "#7aaacf" },
   { key: "melee", label: "Melee", accentColor: "#e05555" },
@@ -996,15 +996,6 @@ function formatAstralCountdown(ms) {
   return parts.join(" ");
 }
 
-function getPatternOffsetMs(pattern, stepsAheadFromNext) {
-  let total = 0;
-
-  for (let index = 0; index < stepsAheadFromNext; index += 1) {
-    total += pattern[index % pattern.length];
-  }
-
-  return total;
-}
 
 function getUpcomingCycleSnapshot({ items, currentIndex, nextStartMs, getOffsetMs, now = Date.now() }) {
   if (!items.length) {
@@ -1119,23 +1110,48 @@ function getAstralRotationSnapshot(now = Date.now()) {
     return null;
   }
 
-  const anchorIndex = variants.findIndex((variant) => variant.enumName === "skills");
-  const baseIndex = anchorIndex >= 0 ? anchorIndex : 0;
-  const elapsedSegments = Math.floor((now - ASTRAL_ROTATION_ANCHOR_MS) / ASTRAL_ROTATION_INTERVAL_MS);
-  const currentIndex = positiveModulo(baseIndex + elapsedSegments, variants.length);
-  const currentSegmentStart = ASTRAL_ROTATION_ANCHOR_MS + elapsedSegments * ASTRAL_ROTATION_INTERVAL_MS;
-  const currentSegmentEnd = currentSegmentStart + ASTRAL_ROTATION_INTERVAL_MS;
+  const MS_PER_DAY = 86400000;
+  const MS_PER_WEEK = 7 * MS_PER_DAY;
+
+  // Anchor is a Thursday. Within each 7-day week from anchor:
+  //   Days 0-3 (Thu, Fri, Sat, Sun) = 4-day segment (Thu→Mon)
+  //   Days 4-6 (Mon, Tue, Wed)      = 3-day segment (Mon→Thu)
+  const anchorVariantIndex = variants.findIndex((variant) => variant.enumName === "skills");
+  const baseIndex = anchorVariantIndex >= 0 ? anchorVariantIndex : 0;
+
+  const elapsed = now - ASTRAL_ROTATION_ANCHOR_MS;
+  const wholeWeeks = Math.floor(elapsed / MS_PER_WEEK);
+  const dayInWeek = Math.floor(positiveModulo(elapsed, MS_PER_WEEK) / MS_PER_DAY);
+  const inMonSegment = dayInWeek >= 4;
+
+  const segmentsFromAnchor = 2 * wholeWeeks + (inMonSegment ? 1 : 0);
+  const currentIndex = positiveModulo(baseIndex + segmentsFromAnchor, variants.length);
+
+  const weekStartMs = ASTRAL_ROTATION_ANCHOR_MS + wholeWeeks * MS_PER_WEEK;
+  const currentSegmentStart = inMonSegment ? weekStartMs + 4 * MS_PER_DAY : weekStartMs;
+  const currentSegmentEnd = inMonSegment ? weekStartMs + MS_PER_WEEK : weekStartMs + 4 * MS_PER_DAY;
+
+  // Compute start/end of any segment by its absolute index from anchor
+  function segmentBounds(segNum) {
+    const w = Math.floor(segNum / 2);
+    const isMonSeg = segNum % 2 === 1;
+    const wStart = ASTRAL_ROTATION_ANCHOR_MS + w * MS_PER_WEEK;
+    const start = isMonSeg ? wStart + 4 * MS_PER_DAY : wStart;
+    const end = isMonSeg ? wStart + MS_PER_WEEK : wStart + 4 * MS_PER_DAY;
+    return { start, end };
+  }
+
   const orderedEntries = Array.from({ length: variants.length }, (_, offset) => {
     const variantIndex = (currentIndex + offset) % variants.length;
     const variant = variants[variantIndex];
     const isActive = offset === 0;
-    const nextStart = isActive ? currentSegmentStart : currentSegmentStart + offset * ASTRAL_ROTATION_INTERVAL_MS;
+    const { start: nextStart, end: nextEnd } = segmentBounds(segmentsFromAnchor + offset);
 
     return {
       variant,
       isActive,
       nextStart,
-      nextEnd: nextStart + ASTRAL_ROTATION_INTERVAL_MS,
+      nextEnd,
       timeUntilActive: Math.max(0, nextStart - now),
       timeUntilInactive: isActive ? Math.max(0, currentSegmentEnd - now) : null,
     };
@@ -1152,11 +1168,37 @@ function getAstralRotationSnapshot(now = Date.now()) {
 }
 
 function getImmortalBossRotationSnapshot(now = Date.now()) {
+  const MS_PER_DAY = 86400000;
+  const MS_PER_WEEK = 7 * MS_PER_DAY;
+  const n = IMMORTAL_BOSS_ROTATION_ITEMS.length;
+
+  // Within each 7-day week from anchor (starting Saturday):
+  //   Days 0-2 (Sat, Sun, Mon) = 3-day segment (Sat→Tue)
+  //   Days 3-6 (Tue, Wed, Thu, Fri) = 4-day segment (Tue→Sat)
+  const elapsed = now - IMMORTAL_BOSS_ANCHOR_MS;
+  const wholeWeeks = Math.floor(elapsed / MS_PER_WEEK);
+  const dayInWeek = Math.floor(positiveModulo(elapsed, MS_PER_WEEK) / MS_PER_DAY);
+  const inTueSegment = dayInWeek >= 3;
+
+  const segmentsFromAnchor = 2 * wholeWeeks + (inTueSegment ? 1 : 0);
+  const currentIndex = positiveModulo(segmentsFromAnchor, n);
+
+  const weekStartMs = IMMORTAL_BOSS_ANCHOR_MS + wholeWeeks * MS_PER_WEEK;
+  const nextStartMs = inTueSegment ? weekStartMs + MS_PER_WEEK : weekStartMs + 3 * MS_PER_DAY;
+
   return getUpcomingCycleSnapshot({
     items: IMMORTAL_BOSS_ROTATION_ITEMS,
-    currentIndex: 0,
-    nextStartMs: IMMORTAL_BOSS_NEXT_START_MS,
-    getOffsetMs: (stepsAheadFromNext) => getPatternOffsetMs(IMMORTAL_BOSS_INTERVAL_PATTERN_MS, stepsAheadFromNext),
+    currentIndex,
+    nextStartMs,
+    getOffsetMs: (stepsAheadFromNext) => {
+      let total = 0;
+      for (let i = 0; i < stepsAheadFromNext; i++) {
+        // Even segment numbers (Sat start) = 3-day gap to Tue
+        // Odd segment numbers (Tue start) = 4-day gap to Sat
+        total += (segmentsFromAnchor + 1 + i) % 2 === 0 ? 3 * MS_PER_DAY : 4 * MS_PER_DAY;
+      }
+      return total;
+    },
     now,
   });
 }
