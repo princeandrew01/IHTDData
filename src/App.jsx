@@ -45,6 +45,9 @@ import {
 import { buildActiveLoadoutScope, buildComparableLoadoutScopePayload, createComparableLoadoutScopePayload, getLoadoutScopeDisplayName, LOADOUT_RECORD_SCOPE_FULL } from "./lib/loadoutScope";
 import { readMapLoadoutBuilderMode } from "./lib/mapLoadout";
 import { costAtLevel as getUpgradeCostAtLevel } from "./lib/statsLoadout";
+import { getWeeklyBonusSnapshot, getWeeklyBonusEvents, formatEventDate } from "./lib/weeklyBonusEvents";
+import { COMMUNITY_EVENT_ITEMS, COMMUNITY_EVENT_ANCHOR_MS, COMMUNITY_EVENT_ANCHOR_INDEX, COMMUNITY_EVENT_INTERVAL_MS } from "./lib/communityEvents";
+import { IMMORTAL_BOSS_ITEMS, IMMORTAL_BOSS_ANCHOR_MS as IMMORTAL_BOSS_ANCHOR_MS_LIB } from "./lib/immortalBossSchedule";
 
 const loadSecondaryViews = () => import("./views/secondaryViews.jsx");
 const HomeView = lazy(() => loadSecondaryViews().then((module) => ({ default: module.HomeView })));
@@ -56,6 +59,9 @@ const ChallengesView = lazy(() => loadMiscViews().then((module) => ({ default: m
 const PlayerIconsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerIconsView })));
 const PlayerBackgroundsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerBackgroundsView })));
 const WavePerksView = lazy(() => loadMiscViews().then((module) => ({ default: module.WavePerksView })));
+const WeeklyEventsView = lazy(() => loadMiscViews().then((module) => ({ default: module.WeeklyEventsView })));
+const CommunityEventsView = lazy(() => loadMiscViews().then((module) => ({ default: module.CommunityEventsView })));
+const ImmortalScheduleView = lazy(() => loadMiscViews().then((module) => ({ default: module.ImmortalScheduleView })));
 const loadCalculatorViews = () => import("./views/calculatorViews.jsx");
 const CombatStylesView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.CombatStylesView })));
 const EnemyHpView = lazy(() => loadCalculatorViews().then((module) => ({ default: module.EnemyHpView })));
@@ -167,6 +173,7 @@ const NAV_GROUPS = [
     items: [
       { key: "brackets",         label: "Tournament Brackets", menuIcon: "Icon_Trophy_0.png" },
       { key: "immortalBrackets", label: "Immortal Brackets",   menuIcon: "Icon_Trophy_0.png" },
+      { key: "immortalSchedule", label: "Immortal Schedule",   menuIcon: "_clock.png" },
     ],
   },
   {
@@ -210,6 +217,8 @@ const NAV_GROUPS = [
       { key: "challenges", label: "Challenges", menuIcon: "_starBlue.png" },
       { key: "playerIcons", label: "Player Icons", menuIcon: "icon_inforound.png" },
       { key: "playerBackgrounds", label: "Player Backgrounds", menuIcon: "_prestigeBg.png" },
+      { key: "weeklyEvents", label: "Events", menuIcon: "icon_equip_hammer.png" },
+      { key: "communityEvents", label: "Community Events", menuIcon: "_allHeroes.png" },
     ],
   },
   {
@@ -920,53 +929,7 @@ const ASTRAL_BATTLEGROUND_MAP = mapsData.maps.find((map) => map.id === "astral_b
 const ASTRAL_ROTATION_ANCHOR_MS = Date.UTC(2026, 2, 19);
 const ASTRAL_HELPFUL_NEGATIVE_KEYS = new Set(["skillCooldown", "spellCooldown"]);
 // Anchor: Saturday April 4, 2026 00:00 UTC — "none" (index 0) was active
-const IMMORTAL_BOSS_ANCHOR_MS = Date.UTC(2026, 3, 4);
-const IMMORTAL_BOSS_ROTATION_ITEMS = [
-  { key: "none", label: "None", accentColor: "#7aaacf" },
-  { key: "melee", label: "Melee", accentColor: "#e05555" },
-  { key: "mage", label: "Mage", accentColor: "#7d7cff" },
-  { key: "range", label: "Range", accentColor: "#2ecc71" },
-];
-const COMMUNITY_EVENT_NEXT_START_MS = new Date(2026, 2, 29, 18, 49, 0, 0).getTime();
-const COMMUNITY_EVENT_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000;
-const COMMUNITY_EVENT_ROTATION_ITEMS = [
-  {
-    key: "killAliensShadows",
-    label: "Kill Aliens/Shadows",
-    accentColor: "#f5921e",
-    effects: [
-      { label: "Focus", value: "Defeat Alien and Shadow enemies" },
-      { label: "Typical rewards", value: "Alien Tech and Shadow Rune progress" },
-    ],
-  },
-  {
-    key: "gemsSpent",
-    label: "Gems Spent",
-    accentColor: "#33cccc",
-    effects: [
-      { label: "Focus", value: "Spend gems anywhere in the run" },
-      { label: "Best fit", value: "Large upgrade or unlock pushes" },
-    ],
-  },
-  {
-    key: "enemyKills",
-    label: "Enemy Kills",
-    accentColor: "#2ecc71",
-    effects: [
-      { label: "Focus", value: "Any enemy kill counts toward progress" },
-      { label: "Best fit", value: "High-wave farming and dense spawn maps" },
-    ],
-  },
-  {
-    key: "bpExperience",
-    label: "BP Experience",
-    accentColor: "#c58cff",
-    effects: [
-      { label: "Focus", value: "Gain battlepass experience" },
-      { label: "Best fit", value: "Battlepass quests and passive BP gain" },
-    ],
-  },
-];
+const IMMORTAL_BOSS_ANCHOR_MS = IMMORTAL_BOSS_ANCHOR_MS_LIB;
 
 function positiveModulo(value, modulus) {
   return ((value % modulus) + modulus) % modulus;
@@ -1170,7 +1133,7 @@ function getAstralRotationSnapshot(now = Date.now()) {
 function getImmortalBossRotationSnapshot(now = Date.now()) {
   const MS_PER_DAY = 86400000;
   const MS_PER_WEEK = 7 * MS_PER_DAY;
-  const n = IMMORTAL_BOSS_ROTATION_ITEMS.length;
+  const n = IMMORTAL_BOSS_ITEMS.length;
 
   // Within each 7-day week from anchor (starting Saturday):
   //   Days 0-2 (Sat, Sun, Mon) = 3-day segment (Sat→Tue)
@@ -1186,8 +1149,14 @@ function getImmortalBossRotationSnapshot(now = Date.now()) {
   const weekStartMs = IMMORTAL_BOSS_ANCHOR_MS + wholeWeeks * MS_PER_WEEK;
   const nextStartMs = inTueSegment ? weekStartMs + MS_PER_WEEK : weekStartMs + 3 * MS_PER_DAY;
 
-  return getUpcomingCycleSnapshot({
-    items: IMMORTAL_BOSS_ROTATION_ITEMS,
+  // Boss is only open for the 24-hour day it falls on (day 0 = Sat, day 3 = Tue)
+  const isBossOpen = dayInWeek === 0 || dayInWeek === 3;
+  const bossWindowEndsMs = isBossOpen
+    ? weekStartMs + (dayInWeek === 0 ? MS_PER_DAY : 4 * MS_PER_DAY)
+    : null;
+
+  const snapshot = getUpcomingCycleSnapshot({
+    items: IMMORTAL_BOSS_ITEMS,
     currentIndex,
     nextStartMs,
     getOffsetMs: (stepsAheadFromNext) => {
@@ -1201,6 +1170,8 @@ function getImmortalBossRotationSnapshot(now = Date.now()) {
     },
     now,
   });
+
+  return { ...snapshot, isBossOpen, bossWindowEndsMs };
 }
 
 function getImmortalBossLeagueEffects(rotationKey) {
@@ -1221,14 +1192,13 @@ function getImmortalBossLeagueEffects(rotationKey) {
 }
 
 function getCommunityEventSnapshot(now = Date.now()) {
-  const n = COMMUNITY_EVENT_ROTATION_ITEMS.length;
-  // COMMUNITY_EVENT_NEXT_START_MS is when enemyKills (index 2) became active
-  const elapsedWeeks = Math.floor((now - COMMUNITY_EVENT_NEXT_START_MS) / COMMUNITY_EVENT_INTERVAL_MS);
-  const currentIndex = positiveModulo(2 + elapsedWeeks, n);
-  const nextStartMs = COMMUNITY_EVENT_NEXT_START_MS + (elapsedWeeks + 1) * COMMUNITY_EVENT_INTERVAL_MS;
+  const n = COMMUNITY_EVENT_ITEMS.length;
+  const elapsedWeeks = Math.floor((now - COMMUNITY_EVENT_ANCHOR_MS) / COMMUNITY_EVENT_INTERVAL_MS);
+  const currentIndex = positiveModulo(COMMUNITY_EVENT_ANCHOR_INDEX + elapsedWeeks, n);
+  const nextStartMs = COMMUNITY_EVENT_ANCHOR_MS + (elapsedWeeks + 1) * COMMUNITY_EVENT_INTERVAL_MS;
 
   return getUpcomingCycleSnapshot({
-    items: COMMUNITY_EVENT_ROTATION_ITEMS,
+    items: COMMUNITY_EVENT_ITEMS,
     currentIndex,
     nextStartMs,
     getOffsetMs: (stepsAheadFromNext) => stepsAheadFromNext * COMMUNITY_EVENT_INTERVAL_MS,
@@ -1319,16 +1289,17 @@ function ImmortalBossRotationWidget({ isMobile, now }) {
     return null;
   }
 
-  const currentColor = rotation.currentItem.accentColor;
+  const { isBossOpen, bossWindowEndsMs } = rotation;
+  const currentColor = isBossOpen ? rotation.currentItem.accentColor : rotation.nextItem.accentColor;
 
   return (
     <HeaderRotationPopover
       isMobile={isMobile}
       title="Immortal Boss"
       accentColor={currentColor}
-      currentLabel={rotation.currentItem.label}
+      currentLabel={isBossOpen ? rotation.currentItem.label : "Closed"}
       nextLabel={rotation.nextItem.label}
-      countdownMs={rotation.timeUntilNextChange}
+      countdownMs={isBossOpen ? Math.max(0, bossWindowEndsMs - now) : rotation.timeUntilNextChange}
     >
       <div style={{ display: "grid", gap: 3, marginBottom: 12 }}>
         <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>Immortal Boss Immunity Rotation</div>
@@ -1348,27 +1319,31 @@ function ImmortalBossRotationWidget({ isMobile, now }) {
 
       <div style={{ display: "grid", gap: 12 }}>
         {rotation.orderedEntries.map((entry) => {
-          const timingLabel = entry.isActive
-            ? `Changes in ${formatAstralCountdown(entry.timeUntilInactive ?? 0)}`
-            : `Active in ${formatAstralCountdown(entry.timeUntilActive)}`;
+          const isOpenNow = entry.isActive && isBossOpen;
+          let timingLabel;
+          if (isOpenNow) {
+            timingLabel = `Closes in ${formatAstralCountdown(Math.max(0, bossWindowEndsMs - now))}`;
+          } else if (!entry.isActive) {
+            timingLabel = `Opens in ${formatAstralCountdown(entry.timeUntilActive)}`;
+          }
 
           return (
             <div
               key={entry.item.key}
               style={{
                 borderRadius: 12,
-                border: `1px solid ${entry.isActive ? `${entry.item.accentColor}88` : colors.border}`,
-                background: entry.isActive ? `${entry.item.accentColor}18` : "rgba(8, 17, 29, 0.18)",
+                border: `1px solid ${isOpenNow ? `${entry.item.accentColor}88` : colors.border}`,
+                background: isOpenNow ? `${entry.item.accentColor}18` : "rgba(8, 17, 29, 0.18)",
                 padding: 12,
               }}
             >
               <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 10 }}>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontSize: 13, fontWeight: 800, color: entry.item.accentColor }}>{entry.item.label}</div>
-                  <div style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{timingLabel}</div>
+                  {timingLabel && <div style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{timingLabel}</div>}
                 </div>
-                <div style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: entry.isActive ? entry.item.accentColor : colors.muted }}>
-                  {entry.isActive ? "Current" : "Upcoming"}
+                <div style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: isOpenNow ? entry.item.accentColor : colors.muted }}>
+                  {isOpenNow ? "Open" : entry.isActive ? "Last" : "Upcoming"}
                 </div>
               </div>
 
@@ -1437,11 +1412,88 @@ function CommunityEventRotationWidget({ isMobile, now }) {
                 </div>
               </div>
 
-              <div style={{ display: "grid", gap: 6 }}>
-                {entry.item.effects.map((effect, effectIndex) => (
-                  <div key={`${entry.item.key}-${effect.label}`} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", paddingTop: effectIndex === 0 ? 0 : 6, borderTop: effectIndex === 0 ? "none" : `1px solid ${colors.border}33` }}>
-                    <span style={{ fontSize: 12, color: colors.muted }}>{effect.label}</span>
-                    <span style={{ fontSize: 12, fontWeight: 800, color: colors.text, textAlign: "right" }}>{effect.value}</span>
+              <div style={{ fontSize: 12, color: colors.muted, lineHeight: 1.5 }}>{entry.item.goal}</div>
+            </div>
+          );
+        })}
+      </div>
+    </HeaderRotationPopover>
+  );
+}
+
+function BonusEventLabel({ bonuses, fontSize = 13, mutedColor }) {
+  const sep = mutedColor ?? "#8aa3c0";
+  return (
+    <span>
+      {bonuses.map((bonus, i) => (
+        <span key={bonus.label}>
+          {i > 0 && <span style={{ color: sep }}> & </span>}
+          <span style={{ color: bonus.color }}>{bonus.label.replace(/ Bonus$/, "")}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+function WeeklyBonusEventWidget({ isMobile, now }) {
+  const snapshot = useMemo(() => getWeeklyBonusSnapshot(now), [now]);
+  const upcomingEvents = useMemo(() => getWeeklyBonusEvents(now, now + 28 * 86400000), [now]);
+
+  const isActive = !!snapshot.activeEvent;
+  const displayed = snapshot.activeEvent ?? snapshot.nextEvent;
+
+  if (!displayed) return null;
+
+  const { event, endMs } = displayed;
+  const countdownMs = isActive
+    ? Math.max(0, endMs - now)
+    : Math.max(0, snapshot.nextEvent.startMs - now);
+
+  return (
+    <HeaderRotationPopover
+      isMobile={isMobile}
+      title="Bonus Event"
+      accentColor={event.accentColor}
+      currentLabel={isActive ? event.label : "No Active Event"}
+      nextLabel={isActive ? snapshot.nextEvent.event.label : event.label}
+      countdownMs={countdownMs}
+    >
+      <div style={{ display: "grid", gap: 3, marginBottom: 12 }}>
+        <div style={{ fontSize: 15, fontWeight: 800, color: colors.text }}>Weekly Bonus Events</div>
+        <div style={{ fontSize: 12, color: colors.muted }}>Rotating bonuses active on Wednesdays and weekends.</div>
+      </div>
+
+      <div style={{ display: "grid", gap: 10 }}>
+        {upcomingEvents.slice(0, 6).map((ev) => {
+          const evIsActive = now >= ev.startMs && now < ev.endMs;
+          const startLabel = formatEventDate(ev.startMs);
+          const endLabel = ev.type === "weekend" ? ` \u2013 ${formatEventDate(ev.endMs - 1)}` : "";
+          const dateLabel = evIsActive ? `Ends ${formatEventDate(ev.endMs)}` : `${startLabel}${endLabel}`;
+
+          return (
+            <div
+              key={ev.instanceKey}
+              style={{
+                borderRadius: 12,
+                border: `1px solid ${evIsActive ? `${ev.accentColor}88` : colors.border}`,
+                background: evIsActive ? `${ev.accentColor}18` : "rgba(8, 17, 29, 0.18)",
+                padding: 12,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 10, alignItems: "flex-start", marginBottom: 8 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: 800 }}><BonusEventLabel bonuses={ev.bonuses} mutedColor={colors.muted} /></div>
+                  <div style={{ fontSize: 11, color: colors.muted, marginTop: 2 }}>{dateLabel}</div>
+                </div>
+                <div style={{ flexShrink: 0, fontSize: 10, fontWeight: 800, letterSpacing: "0.08em", textTransform: "uppercase", color: evIsActive ? ev.accentColor : colors.muted }}>
+                  {evIsActive ? "Active" : ev.type === "wednesday" ? "Wed" : "Weekend"}
+                </div>
+              </div>
+              <div style={{ display: "grid", gap: 4 }}>
+                {ev.bonuses.map((bonus, i) => (
+                  <div key={bonus.label} style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center", paddingTop: i === 0 ? 0 : 4, borderTop: i === 0 ? "none" : `1px solid ${colors.border}33` }}>
+                    <span style={{ fontSize: 12, color: colors.muted }}>{bonus.label}</span>
+                    <span style={{ fontSize: 12, fontWeight: 800, color: bonus.color ?? colors.text }}>{bonus.value}</span>
                   </div>
                 ))}
               </div>
@@ -1473,6 +1525,7 @@ function RotationEventsBar({ isMobile }) {
       <AstralRotationWidget isMobile={isMobile} now={now} />
       <ImmortalBossRotationWidget isMobile={isMobile} now={now} />
       <CommunityEventRotationWidget isMobile={isMobile} now={now} />
+      <WeeklyBonusEventWidget isMobile={isMobile} now={now} />
     </>
   );
 
@@ -6524,6 +6577,21 @@ export default function App() {
           {activeKey === "playerBackgrounds" && (
             <Suspense fallback={lazyFallback}>
               <PlayerBackgroundsView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "weeklyEvents" && (
+            <Suspense fallback={lazyFallback}>
+              <WeeklyEventsView colors={colors} />
+            </Suspense>
+          )}
+          {activeKey === "communityEvents" && (
+            <Suspense fallback={lazyFallback}>
+              <CommunityEventsView colors={colors} />
+            </Suspense>
+          )}
+          {activeKey === "immortalSchedule" && (
+            <Suspense fallback={lazyFallback}>
+              <ImmortalScheduleView colors={colors} />
             </Suspense>
           )}
           {activeKey === "heroGoldCost" && <HeroGoldCostView />}

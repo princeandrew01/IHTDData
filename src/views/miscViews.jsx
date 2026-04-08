@@ -1,4 +1,7 @@
 import { useMemo, useState } from "react";
+import { getWeeklyBonusEvents, formatEventDate, ALL_BONUS_EVENT_DEFS } from "../lib/weeklyBonusEvents";
+import { COMMUNITY_EVENT_ITEMS, getCommunityEventsInRange } from "../lib/communityEvents";
+import { IMMORTAL_BOSS_ITEMS, getImmortalBossEventsInRange, getLeagueRows } from "../lib/immortalBossSchedule";
 
 import challengesData from "../data/challenges.json";
 import playerBgData from "../data/player_backgrounds.json";
@@ -514,6 +517,453 @@ export function WavePerksView({ colors, getIconUrl, isMobile, rarityColors, mapP
       })}
 
       {selectedPerk && <WavePerkModal item={selectedPerk} multiplier={multiplier} onClose={() => setSelectedPerk(null)} colors={colors} getIconUrl={getIconUrl} />}
+    </div>
+  );
+}
+
+function msToDateValue(ms) {
+  const d = new Date(ms);
+  const yyyy = d.getUTCFullYear();
+  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
+  const dd = String(d.getUTCDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
+}
+
+function dateValueToMs(value) {
+  const [yyyy, mm, dd] = value.split("-").map(Number);
+  return Date.UTC(yyyy, mm - 1, dd);
+}
+
+const TYPE_FILTER_OPTIONS = [
+  { value: "all", label: "Any Day" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "weekend", label: "Weekend" },
+];
+
+function BonusEventLabel({ bonuses, mutedColor }) {
+  const sep = mutedColor ?? "#8aa3c0";
+  return (
+    <span>
+      {bonuses.map((bonus, i) => (
+        <span key={bonus.label}>
+          {i > 0 && <span style={{ color: sep }}> & </span>}
+          <span style={{ color: bonus.color }}>{bonus.label.replace(/ Bonus$/, "")}</span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+export function WeeklyEventsView({ colors }) {
+  const nowMs = Date.now();
+  const todayMs = Date.UTC(
+    new Date(nowMs).getUTCFullYear(),
+    new Date(nowMs).getUTCMonth(),
+    new Date(nowMs).getUTCDate()
+  );
+
+  const [startValue, setStartValue] = useState(() => msToDateValue(todayMs));
+  const [endValue, setEndValue] = useState(() => msToDateValue(todayMs + 90 * 86400000));
+  const [typeFilter, setTypeFilter] = useState("all");
+  const [eventKeyFilter, setEventKeyFilter] = useState("all");
+
+  const events = useMemo(() => {
+    const startMs = dateValueToMs(startValue);
+    const endMs = dateValueToMs(endValue) + 86400000;
+    let all = getWeeklyBonusEvents(startMs, endMs);
+    if (typeFilter !== "all") all = all.filter((ev) => ev.type === typeFilter);
+    if (eventKeyFilter !== "all") all = all.filter((ev) => ev.key === eventKeyFilter);
+    return all;
+  }, [startValue, endValue, typeFilter, eventKeyFilter]);
+
+  const inputStyle = {
+    background: colors?.panel ?? "#0d1b2a",
+    border: `1px solid ${colors?.border ?? "#1e3a5f"}`,
+    borderRadius: 8,
+    color: colors?.text ?? "#e8eaf0",
+    padding: "6px 10px",
+    fontSize: 13,
+    fontFamily: "inherit",
+    cursor: "pointer",
+  };
+
+  const selectWrapStyle = {
+    position: "relative",
+    display: "inline-flex",
+    alignItems: "center",
+  };
+
+  const selectStyle = {
+    ...inputStyle,
+    paddingRight: 28,
+    appearance: "none",
+    backgroundImage: "none",
+  };
+
+  const chevronStyle = {
+    position: "absolute",
+    right: 8,
+    pointerEvents: "none",
+    color: colors?.muted ?? "#8aa3c0",
+    fontSize: 10,
+    lineHeight: 1,
+  };
+
+  const typeColors = {
+    wednesday: "#f5a623",
+    weekend: "#7d7cff",
+  };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors?.accent ?? "#4a9eff", letterSpacing: "0.04em", textTransform: "uppercase" }}>Events</div>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>From</span>
+          <input
+            type="date"
+            value={startValue}
+            onChange={(e) => setStartValue(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>To</span>
+          <input
+            type="date"
+            value={endValue}
+            onChange={(e) => setEndValue(e.target.value)}
+            style={inputStyle}
+          />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>Occurs On</span>
+          <div style={selectWrapStyle}>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={selectStyle}>
+              {TYPE_FILTER_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <span style={chevronStyle}>&#9660;</span>
+          </div>
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>Event Type</span>
+          <div style={selectWrapStyle}>
+            <select value={eventKeyFilter} onChange={(e) => setEventKeyFilter(e.target.value)} style={selectStyle}>
+              <option value="all">All</option>
+              {Array.from(new Map(ALL_BONUS_EVENT_DEFS.map((e) => [e.key, e])).values()).map((e) => (
+                <option key={e.key} value={e.key}>{e.label}</option>
+              ))}
+            </select>
+            <span style={chevronStyle}>&#9660;</span>
+          </div>
+        </div>
+      </div>
+
+      {events.length === 0 ? (
+        <div style={{ color: colors?.muted ?? "#8aa3c0", fontSize: 14, padding: "20px 0" }}>No events in the selected range.</div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(120px, 160px) 1fr", gap: "2px 0" }}>
+          {events.map((ev) => {
+            const typeColor = typeColors[ev.type] ?? ev.accentColor;
+            const startLabel = formatEventDate(ev.startMs);
+            const endLabel = ev.type === "weekend" ? ` \u2013 ${formatEventDate(ev.endMs - 1)}` : "";
+            const dateLabel = `${startLabel}${endLabel}`;
+            const cellBase = {
+              borderTop: `1px solid ${colors?.border ?? "#1e3a5f"}44`,
+              padding: "12px 14px",
+              background: `${ev.accentColor}0a`,
+            };
+            return [
+              <div
+                key={`${ev.instanceKey}-date`}
+                style={{
+                  ...cellBase,
+                  borderLeft: `3px solid ${ev.accentColor}`,
+                  borderRadius: "10px 0 0 10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 800, color: typeColor, textTransform: "uppercase", letterSpacing: "0.07em" }}>
+                  {ev.type === "wednesday" ? "Wednesday" : "Weekend"}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: colors?.text ?? "#e8eaf0", lineHeight: 1.3 }}>{dateLabel}</div>
+              </div>,
+              <div
+                key={`${ev.instanceKey}-detail`}
+                style={{
+                  ...cellBase,
+                  borderRadius: "0 10px 10px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 800 }}><BonusEventLabel bonuses={ev.bonuses} mutedColor={colors?.muted} /></div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: "4px 16px" }}>
+                  {ev.bonuses.map((bonus) => (
+                    <div key={bonus.label} style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0" }}>{bonus.label}</span>
+                      <span style={{ fontSize: 13, fontWeight: 800, color: bonus.color ?? colors?.text ?? "#e8eaf0" }}>{bonus.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>,
+            ];
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const IMMORTAL_TYPE_OPTIONS = [
+  { value: "all", label: "All Types" },
+  ...IMMORTAL_BOSS_ITEMS.map((item) => ({ value: item.key, label: item.label })),
+];
+
+export function ImmortalScheduleView({ colors }) {
+  const nowMs = Date.now();
+  const todayMs = Date.UTC(
+    new Date(nowMs).getUTCFullYear(),
+    new Date(nowMs).getUTCMonth(),
+    new Date(nowMs).getUTCDate()
+  );
+
+  const [startValue, setStartValue] = useState(() => msToDateValue(todayMs));
+  const [endValue, setEndValue] = useState(() => msToDateValue(todayMs + 84 * 86400000));
+  const [typeFilter, setTypeFilter] = useState("all");
+
+  const events = useMemo(() => {
+    const startMs = dateValueToMs(startValue);
+    const endMs = dateValueToMs(endValue) + 86400000;
+    const all = getImmortalBossEventsInRange(startMs, endMs);
+    if (typeFilter === "all") return all;
+    return all.filter((ev) => ev.key === typeFilter);
+  }, [startValue, endValue, typeFilter]);
+
+  const inputStyle = {
+    background: colors?.panel ?? "#0d1b2a",
+    border: `1px solid ${colors?.border ?? "#1e3a5f"}`,
+    borderRadius: 8,
+    color: colors?.text ?? "#e8eaf0",
+    padding: "6px 10px",
+    fontSize: 13,
+    fontFamily: "inherit",
+    cursor: "pointer",
+  };
+
+  const selectWrapStyle = { position: "relative", display: "inline-flex", alignItems: "center" };
+  const selectStyle = { ...inputStyle, paddingRight: 28, appearance: "none", backgroundImage: "none" };
+  const chevronStyle = { position: "absolute", right: 8, pointerEvents: "none", color: colors?.muted ?? "#8aa3c0", fontSize: 10, lineHeight: 1 };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors?.accent ?? "#4a9eff", letterSpacing: "0.04em", textTransform: "uppercase" }}>Immortal Schedule</div>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>From</span>
+          <input type="date" value={startValue} onChange={(e) => setStartValue(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>To</span>
+          <input type="date" value={endValue} onChange={(e) => setEndValue(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>Immortal Type</span>
+          <div style={selectWrapStyle}>
+            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)} style={selectStyle}>
+              {IMMORTAL_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <span style={chevronStyle}>&#9660;</span>
+          </div>
+        </div>
+      </div>
+
+      {events.length === 0 ? (
+        <div style={{ color: colors?.muted ?? "#8aa3c0", fontSize: 14, padding: "20px 0" }}>No events in the selected range.</div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(120px, 150px) 1fr", gap: "2px 0" }}>
+          {events.map((ev) => {
+            const leagueRows = getLeagueRows(ev.key);
+            const cellBase = {
+              borderTop: `1px solid ${colors?.border ?? "#1e3a5f"}44`,
+              padding: "12px 14px",
+              background: `${ev.accentColor}0a`,
+            };
+            return [
+              <div
+                key={`${ev.instanceKey}-date`}
+                style={{
+                  ...cellBase,
+                  borderLeft: `3px solid ${ev.accentColor}`,
+                  borderRadius: "10px 0 0 10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 800, color: ev.accentColor, textTransform: "uppercase", letterSpacing: "0.07em" }}>{ev.day}</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: colors?.text ?? "#e8eaf0" }}>{formatEventDate(ev.startMs)}</div>
+              </div>,
+              <div
+                key={`${ev.instanceKey}-detail`}
+                style={{
+                  ...cellBase,
+                  borderRadius: "0 10px 10px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 8,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 800, color: ev.accentColor }}>{ev.label}</div>
+                <div style={{ display: "grid", gap: 4 }}>
+                  {leagueRows.map((row) => (
+                    <div key={row.id} style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                      <span style={{ fontSize: 11, fontWeight: 800, color: row.color, flexShrink: 0, minWidth: 80 }}>{row.name}</span>
+                      <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0" }}>{row.note}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>,
+            ];
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+const COMMUNITY_EVENT_TYPE_OPTIONS = [
+  { value: "all", label: "All Events" },
+  ...COMMUNITY_EVENT_ITEMS.map((item) => ({ value: item.key, label: item.label })),
+];
+
+export function CommunityEventsView({ colors }) {
+  const nowMs = Date.now();
+  const todayMs = Date.UTC(
+    new Date(nowMs).getUTCFullYear(),
+    new Date(nowMs).getUTCMonth(),
+    new Date(nowMs).getUTCDate()
+  );
+
+  const [startValue, setStartValue] = useState(() => msToDateValue(todayMs));
+  const [endValue, setEndValue] = useState(() => msToDateValue(todayMs + 84 * 86400000)); // 12 weeks
+  const [eventKeyFilter, setEventKeyFilter] = useState("all");
+
+  const events = useMemo(() => {
+    const startMs = dateValueToMs(startValue);
+    const endMs = dateValueToMs(endValue) + 86400000;
+    const all = getCommunityEventsInRange(startMs, endMs);
+    if (eventKeyFilter === "all") return all;
+    return all.filter((ev) => ev.key === eventKeyFilter);
+  }, [startValue, endValue, eventKeyFilter]);
+
+  const inputStyle = {
+    background: colors?.panel ?? "#0d1b2a",
+    border: `1px solid ${colors?.border ?? "#1e3a5f"}`,
+    borderRadius: 8,
+    color: colors?.text ?? "#e8eaf0",
+    padding: "6px 10px",
+    fontSize: 13,
+    fontFamily: "inherit",
+    cursor: "pointer",
+  };
+
+  const selectWrapStyle = { position: "relative", display: "inline-flex", alignItems: "center" };
+  const selectStyle = { ...inputStyle, paddingRight: 28, appearance: "none", backgroundImage: "none" };
+  const chevronStyle = { position: "absolute", right: 8, pointerEvents: "none", color: colors?.muted ?? "#8aa3c0", fontSize: 10, lineHeight: 1 };
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors?.accent ?? "#4a9eff", letterSpacing: "0.04em", textTransform: "uppercase" }}>Community Events</div>
+      </div>
+
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 12, marginBottom: 20, alignItems: "center" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>From</span>
+          <input type="date" value={startValue} onChange={(e) => setStartValue(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>To</span>
+          <input type="date" value={endValue} onChange={(e) => setEndValue(e.target.value)} style={inputStyle} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <span style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", fontWeight: 600 }}>Event Type</span>
+          <div style={selectWrapStyle}>
+            <select value={eventKeyFilter} onChange={(e) => setEventKeyFilter(e.target.value)} style={selectStyle}>
+              {COMMUNITY_EVENT_TYPE_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <span style={chevronStyle}>&#9660;</span>
+          </div>
+        </div>
+      </div>
+
+      {events.length === 0 ? (
+        <div style={{ color: colors?.muted ?? "#8aa3c0", fontSize: 14, padding: "20px 0" }}>No events in the selected range.</div>
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "minmax(140px, 180px) 1fr", gap: "2px 0" }}>
+          {events.map((ev) => {
+            const startLabel = formatEventDate(ev.startMs);
+            const endLabel = formatEventDate(ev.endMs - 1);
+            const cellBase = {
+              borderTop: `1px solid ${colors?.border ?? "#1e3a5f"}44`,
+              padding: "12px 14px",
+              background: `${ev.accentColor}0a`,
+            };
+            return [
+              <div
+                key={`${ev.instanceKey}-date`}
+                style={{
+                  ...cellBase,
+                  borderLeft: `3px solid ${ev.accentColor}`,
+                  borderRadius: "10px 0 0 10px",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 4,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 11, fontWeight: 800, color: ev.accentColor, textTransform: "uppercase", letterSpacing: "0.07em" }}>Weekly</div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: colors?.text ?? "#e8eaf0", lineHeight: 1.3 }}>{startLabel}</div>
+                <div style={{ fontSize: 11, color: colors?.muted ?? "#8aa3c0" }}>{`\u2013 ${endLabel}`}</div>
+              </div>,
+              <div
+                key={`${ev.instanceKey}-detail`}
+                style={{
+                  ...cellBase,
+                  borderRadius: "0 10px 10px 0",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 6,
+                  justifyContent: "center",
+                }}
+              >
+                <div style={{ fontSize: 14, fontWeight: 800, color: ev.accentColor }}>{ev.label}</div>
+                <div style={{ fontSize: 12, color: colors?.muted ?? "#8aa3c0", lineHeight: 1.5 }}>{ev.goal}</div>
+              </div>,
+            ];
+          })}
+        </div>
+      )}
     </div>
   );
 }
