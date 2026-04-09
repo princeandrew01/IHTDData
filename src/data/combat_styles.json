@@ -418,7 +418,7 @@
         },
         {
           "stat": "skillCooldown",
-          "amount": 50,
+          "amount": -50,
           "isPercent": true,
           "isGlobal": false
         }
