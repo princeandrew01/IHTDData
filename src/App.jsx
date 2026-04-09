@@ -45,7 +45,7 @@ import {
 import { buildActiveLoadoutScope, buildComparableLoadoutScopePayload, createComparableLoadoutScopePayload, getLoadoutScopeDisplayName, LOADOUT_RECORD_SCOPE_FULL } from "./lib/loadoutScope";
 import { readMapLoadoutBuilderMode } from "./lib/mapLoadout";
 import { costAtLevel as getUpgradeCostAtLevel } from "./lib/statsLoadout";
-import { getWeeklyBonusSnapshot, getWeeklyBonusEvents, formatEventDate } from "./lib/weeklyBonusEvents";
+import { getWeeklyBonusEvents, formatEventDate } from "./lib/weeklyBonusEvents";
 import { COMMUNITY_EVENT_ITEMS, COMMUNITY_EVENT_ANCHOR_MS, COMMUNITY_EVENT_ANCHOR_INDEX, COMMUNITY_EVENT_INTERVAL_MS } from "./lib/communityEvents";
 import { IMMORTAL_BOSS_ITEMS, IMMORTAL_BOSS_ANCHOR_MS as IMMORTAL_BOSS_ANCHOR_MS_LIB } from "./lib/immortalBossSchedule";
 
@@ -1436,18 +1436,21 @@ function BonusEventLabel({ bonuses, fontSize = 13, mutedColor }) {
 }
 
 function WeeklyBonusEventWidget({ isMobile, now }) {
-  const snapshot = useMemo(() => getWeeklyBonusSnapshot(now), [now]);
   const upcomingEvents = useMemo(() => getWeeklyBonusEvents(now, now + 28 * 86400000), [now]);
 
-  const isActive = !!snapshot.activeEvent;
-  const displayed = snapshot.activeEvent ?? snapshot.nextEvent;
+  const activeEvent = upcomingEvents.find(ev => now >= ev.startMs && now < ev.endMs) ?? null;
+  const nextEvent = upcomingEvents.find(ev => ev.startMs > now) ?? null;
+
+  const isActive = !!activeEvent;
+  const displayed = activeEvent ?? nextEvent;
 
   if (!displayed) return null;
 
-  const { event, endMs } = displayed;
+  const { endMs } = displayed;
+  const event = displayed;
   const countdownMs = isActive
     ? Math.max(0, endMs - now)
-    : Math.max(0, snapshot.nextEvent.startMs - now);
+    : Math.max(0, nextEvent.startMs - now);
 
   return (
     <HeaderRotationPopover
@@ -1455,7 +1458,7 @@ function WeeklyBonusEventWidget({ isMobile, now }) {
       title="Bonus Event"
       accentColor={event.accentColor}
       currentLabel={isActive ? event.label : "No Active Event"}
-      nextLabel={isActive ? snapshot.nextEvent.event.label : event.label}
+      nextLabel={isActive ? (nextEvent?.label ?? "") : event.label}
       countdownMs={countdownMs}
     >
       <div style={{ display: "grid", gap: 3, marginBottom: 12 }}>
