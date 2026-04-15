@@ -35,7 +35,7 @@ export const WED_BONUS_EVENTS = [
   },
 ];
 
-// Order: damage → synergy → rank (avoids back-to-back synergy & milestone with the Wed cycle)
+// Order: damage → rank (Synergy & Milestone is Wednesday-only)
 export const WEEKEND_BONUS_EVENTS = [
   {
     key: "damage_gold",
@@ -44,15 +44,6 @@ export const WEEKEND_BONUS_EVENTS = [
     bonuses: [
       { label: "Damage", value: "2x", color: "#e05555" },
       { label: "Kill Gold", value: "2x", color: "#f0c040" },
-    ],
-  },
-  {
-    key: "synergy_milestone",
-    label: "Synergy & Milestone Bonus",
-    accentColor: "#6dde6d",
-    bonuses: [
-      { label: "Synergy Bonus", value: "+10%", color: "#6dde6d" },
-      { label: "Milestone Bonus", value: "+25%", color: "#f5a623" },
     ],
   },
   {
