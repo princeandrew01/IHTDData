@@ -2822,7 +2822,7 @@ function MapModal({ map, onClose, mapPerkMult = 1 }) {
                               <td style={{ padding: "4px 8px", color: colors.accent, fontWeight: 600 }}>{r.level}</td>
                               <td style={{ padding: "4px 8px", textAlign: "right", color: colors.gold, fontFamily: "monospace" }}>{r.cost}</td>
                               <td style={{ padding: "4px 8px", textAlign: "right", color: colors.text, fontFamily: "monospace" }}>{r.cumulative}</td>
-                              <td style={{ padding: "4px 8px", textAlign: "right", color: b.statAmt < 0 ? "#e05555" : colors.positive, fontWeight: 600 }}>{b.statAmt < 0 ? "" : "+"}{r.bonus}{unit}</td>
+                              <td style={{ padding: "4px 8px", textAlign: "right", color: (b.statAmt < 0 && !["skillCd","skillCooldown","spellCd","spellCooldown"].includes(b.statKey)) ? "#e05555" : colors.positive, fontWeight: 600 }}>{b.statAmt < 0 ? "" : "+"}{r.bonus}{unit}</td>
                             </tr>
                           ))}
                         </tbody>
