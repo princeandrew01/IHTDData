@@ -28,13 +28,16 @@ function getHomeSections(colors, isAdmin) {
         { key: "rankExp", label: "Rank Exp", icon: "_killExp.png", desc: "Experience per rank level" },
         { key: "attributes", label: "Attributes", icon: "_attributePoints_0.png", desc: "Personal and global attribute costs" },
         { key: "combatStyles", label: "Combat Styles", icon: "icon_scale.png", desc: "Combat style bonuses and rank requirements" },
+        { key: "masteries", label: "Masteries", icon: "_mastery_2.png", desc: "Hero mastery bonuses and progression" },
       ],
     },
     {
-      group: "Tournament",
+      group: "PvP",
       color: colors.gold,
       items: [
-        { key: "brackets", label: "Brackets", icon: "Icon_Trophy_0.png", desc: "Trophy rewards by tier and placement" },
+        { key: "brackets", label: "Tournament Brackets", icon: "Icon_Trophy_0.png", desc: "Trophy rewards by tier and placement" },
+        { key: "immortalBrackets", label: "Immortal Brackets", icon: "Icon_Trophy_0.png", desc: "Immortal league bracket rewards" },
+        { key: "immortalSchedule", label: "Immortal Schedule", icon: "_clock.png", desc: "Immortal Boss event schedule" },
       ],
     },
     {
@@ -50,10 +53,13 @@ function getHomeSections(colors, isAdmin) {
       color: "#68d391",
       items: [
         { key: "statsHub", label: "Stats Hub", icon: "_attributePoints_0.png", desc: "Review global and hero-specific loadout stat breakdowns" },
-        { key: "loadoutBuilderPlacement", label: "Map Loadouts", icon: "tower2.png", desc: "Plan hero placements on authored map nodes" },
+        { key: "loadoutBuilderPlacement", label: "Placement Loadout", icon: "tower2.png", desc: "Plan hero placements on authored map nodes" },
+        { key: "loadoutBuilderPerks", label: "Map Perks Loadout", icon: "_starEmpty_0.png", desc: "Plan map perk selections per node" },
+        { key: "loadoutBuilderSpell", label: "Spell Loadout", icon: "_energy.png", desc: "Plan spell selections per node" },
         { key: "heroLoadout", label: "Hero Loadout", icon: "_heroHelm.png", desc: "Build and save focused hero equipment and stat plans" },
         { key: "statsLoadout", label: "Upgrades Loadout", icon: "_heroes.png", desc: "Track purchased upgrade levels and preview stat gains by tab" },
         { key: "playerLoadout", label: "Player Loadout", icon: "_background.png", desc: "Track purchased player icons and backgrounds as global stats" },
+        { key: "saves", label: "Saves", icon: "Icon_Trophy_0.png", desc: "Manage saved loadouts" },
       ],
     },
     {
@@ -73,6 +79,9 @@ function getHomeSections(colors, isAdmin) {
         { key: "challenges", label: "Challenges", icon: "_starBlue.png", desc: "Challenge requirements and permanent rewards" },
         { key: "playerIcons", label: "Player Icons", icon: "icon_inforound.png", desc: "Unlock costs and rewards for player icons" },
         { key: "playerBackgrounds", label: "Player Backgrounds", icon: "_prestigeBg.png", desc: "Background unlock requirements and rewards" },
+        { key: "playerFonts", label: "Fonts", icon: "_pencil.svg", desc: "Unlock requirements and rewards for player name styles" },
+        { key: "weeklyEvents", label: "Events", icon: "icon_equip_hammer.png", desc: "Weekly bonus event schedule" },
+        { key: "communityEvents", label: "Community Events", icon: "_allHeroes.png", desc: "Community event schedule and rewards" },
       ],
     },
     {
@@ -81,6 +90,9 @@ function getHomeSections(colors, isAdmin) {
       items: [
         { key: "rankRequired", label: "Rank Required", icon: "_attributePoints_0.png", desc: "Min rank needed for your attribute levels" },
         { key: "enemyHp", label: "Enemy HP", icon: "_bosses.png", desc: "Enemy HP by wave with player reductions" },
+        { key: "heroGoldCost", label: "Hero Gold Cost", icon: "_gold.png", desc: "Gold cost to level a hero to a target rank" },
+        { key: "ultimusTokens", label: "Ultimus Tokens", icon: "ultimusBoss.png", desc: "Ultimus token income from all sources" },
+        { key: "runeCalc", label: "Rune", icon: "_rune_2.png", desc: "Rune upgrade cost and value calculator" },
       ],
     },
     {
@@ -112,7 +124,7 @@ export function HomeView({ colors, getIconUrl, onNavigate, isMobile, isAdmin }) 
           Idle Hero TD
         </div>
         <div style={{ fontSize: 16, fontWeight: 700, color: colors.text, marginBottom: 4 }}>Game Data Reference</div>
-        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>by Asingh · Twilkey · Datum47 · Game Version 15.04</div>
+        <div style={{ fontSize: 13, color: colors.muted, marginBottom: 20 }}>by Asingh · Twilkey · Datum47 · Game Version 16.03</div>
         <p style={{ fontSize: 14, color: colors.muted, lineHeight: 1.7, maxWidth: 560, margin: "0 auto 12px" }}>
           A comprehensive reference tool for Idle Hero TD - covering upgrade costs, hero stats, synergies, milestones, mastery exp, map perks, tournament brackets, and battlepass exp. Use the sidebar to navigate between sections.
         </p>
