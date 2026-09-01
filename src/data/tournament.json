@@ -241,9 +241,9 @@
         "id": "progressive_rank_exp",
         "name": "Progressive Rank Exp",
         "statKey": "progressive_rank_exp",
-        "formulaType": "progressive",
         "waveReq": 10000,
         "statAmt": 3,
+        "statFormula": "arithmetic",
         "maxLevel": 999,
         "baseCost": 100000,
         "multCost": 1,
@@ -337,7 +337,7 @@
         "name": "Ultimus Cooldown",
         "statKey": "ultimus_cooldown",
         "waveReq": 5000,
-        "statAmt": 2,
+        "statAmt": -2,
         "maxLevel": 10,
         "baseCost": 25000,
         "multCost": 2,
@@ -448,6 +448,18 @@
         "icon": "_archmage.png",
         "bgColor": "#002249",
         "borderColor": "#004080"
+      }
+    ],
+    "Other": [
+      {
+        "id": "auto_upgrade_times",
+        "name": "Auto Upgrade Times",
+        "statKey": "auto_upgrade_times",
+        "waveReq": 1500,
+        "statAmt": 1,
+        "maxLevel": 10,
+        "baseCost": 7500,
+        "multCost": 3
       }
     ]
   }

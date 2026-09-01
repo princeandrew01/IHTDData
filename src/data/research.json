@@ -114,9 +114,9 @@
         "borderColor": "#E16400"
       },
       {
-        "id": "synergy_effects",
-        "name": "Synergy Effects",
-        "statKey": "synergy_effects",
+        "id": "synergy_bonus",
+        "name": "Synergy Bonus",
+        "statKey": "synergy_bonus",
         "waveReq": 400,
         "statAmt": 1,
         "maxLevel": 5,
@@ -227,7 +227,7 @@
         "statAmt": 1,
         "maxLevel": 999999,
         "baseCost": 25.0,
-        "multCost": 2.0,
+        "multCost": 1.6,
         "icon": "_exp.png",
         "bgColor": "#0A6899",
         "borderColor": "#19AFFF"
@@ -408,7 +408,7 @@
         "name": "Goblin Hoarder Cooldown",
         "statKey": "goblin_hoarder_cooldown",
         "waveReq": 0,
-        "statAmt": 3,
+        "statAmt": -3,
         "maxLevel": 15,
         "baseCost": 25.0,
         "multCost": 3.0,
@@ -421,7 +421,7 @@
         "name": "Power Mage Cooldown",
         "statKey": "power_mage_cooldown",
         "waveReq": 250,
-        "statAmt": 3,
+        "statAmt": -3,
         "maxLevel": 15,
         "baseCost": 100.0,
         "multCost": 3.0,
@@ -434,7 +434,7 @@
         "name": "Training Dummy Cooldown",
         "statKey": "training_dummy_cooldown",
         "waveReq": 500,
-        "statAmt": 3,
+        "statAmt": -3,
         "maxLevel": 15,
         "baseCost": 1000.0,
         "multCost": 3.0,
@@ -526,7 +526,7 @@
         "id": "max_game_speed",
         "name": "Max Game Speed",
         "statKey": "max_game_speed",
-        "waveReq": 1000,
+        "waveReq": 0,
         "statAmt": 1,
         "maxLevel": 1,
         "baseCost": 50000.0,
@@ -558,8 +558,8 @@
         "baseCost": 15000000.0,
         "multCost": 1.0,
         "icon": "icon_arrow_shaped_26.png",
-        "bgColor": "#00234B",
-        "borderColor": "#003A74"
+        "bgColor": "#00244C",
+        "borderColor": "#004080"
       }
     ]
   }

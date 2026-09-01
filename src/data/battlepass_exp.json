@@ -1,7 +1,7 @@
 {
-  "note": "Exp required to complete a given battlepass level. Formula from HHLGFMHFAEO(level) in DDACKPKBCIF.cs line 4561. Each scaling threshold is applied cumulatively using OFFHLNIICAN (round-half-up).",
+  "note": "Exp required to complete a given battlepass level. Formula from GlobalMethods.getPlayerLevelExpReq(currLevel). Each scaling threshold multiplies the running total (roundFloatToInt at the end, not per-step).",
   "costFormula": "battlepass_exp",
-  "formula": "base = 50 * level * level; if level > 35: base = round_half_up(base * (1 + (level - 35) * 0.05)); if level > 50: base = round_half_up(base * (1 + (level - 50) * 0.05)); if level > 75: base = round_half_up(base * (1 + (level - 75) * 0.05)); if level > 100: base = round_half_up(base * (1 + (level - 100) * 0.05))",
+  "formula": "base = 50 * level * level; if level > 35: base *= (1 + (level - 35) * 0.05); if level > 50: base *= (1 + (level - 50) * 0.05); if level > 75: base *= (1 + (level - 75) * 0.05); if level > 100: base *= (1 + (level - 100) * 0.05); if level > 125: base *= (1 + (level - 125) * 0.05); result = round_half_up(base)",
   "baseMultiplier": 50,
   "scalingThresholds": [
     {
@@ -18,6 +18,10 @@
     },
     {
       "level": 100,
+      "rate": 0.05
+    },
+    {
+      "level": 125,
       "rate": 0.05
     }
   ],

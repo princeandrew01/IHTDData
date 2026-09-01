@@ -276,12 +276,13 @@ function battpassExpForLevel(lvl) {
   const roundHalfUp = (value) => Math.floor(value + 0.5);
   let base = 50 * lvl * lvl;
 
-  if (lvl > 35) base = roundHalfUp(base * (1 + (lvl - 35) * 0.05));
-  if (lvl > 50) base = roundHalfUp(base * (1 + (lvl - 50) * 0.05));
-  if (lvl > 75) base = roundHalfUp(base * (1 + (lvl - 75) * 0.05));
-  if (lvl > 100) base = roundHalfUp(base * (1 + (lvl - 100) * 0.05));
+  if (lvl > 35) base *= (1 + (lvl - 35) * 0.05);
+  if (lvl > 50) base *= (1 + (lvl - 50) * 0.05);
+  if (lvl > 75) base *= (1 + (lvl - 75) * 0.05);
+  if (lvl > 100) base *= (1 + (lvl - 100) * 0.05);
+  if (lvl > 125) base *= (1 + (lvl - 125) * 0.05);
 
-  return base;
+  return roundHalfUp(base);
 }
 
 export function BattlepassExpView({ colors, fmt }) {

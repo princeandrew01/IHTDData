@@ -3,7 +3,6 @@
   "costFormula": "power",
   "formulaNote": "cost = baseCost * pow(level, multCost) * breakpointMult * linearMult. level = new level being purchased (1-indexed). breakpointMult: x3 if level >= ceil(maxLevel*0.5), x8 additional if level >= ceil(maxLevel*0.8) (cumulative x24). linearMult: x(1 + level*0.001) if maxLevel > 999 and level > 1.",
   "note": "5 upgrades override to exponential_endgame formula — see per-item costFormula field. exponential_endgame: cost = baseCost * pow(multCost, level-1) with same breakpointMult and linearMult applied.",
-  "hasLinearMult": true,
   "canCalculateCost": true,
   "isTree": false,
   "menuOrder": 5,
@@ -29,7 +28,7 @@
         "name": "Skill Cooldown",
         "statKey": "skill_cooldown",
         "waveReq": 0,
-        "statAmt": 2,
+        "statAmt": -2,
         "maxLevel": 15,
         "baseCost": 2500.0,
         "multCost": 4.0,
@@ -55,7 +54,7 @@
         "name": "Spell Cooldown",
         "statKey": "spell_cooldown",
         "waveReq": 0,
-        "statAmt": 2,
+        "statAmt": -2,
         "maxLevel": 15,
         "baseCost": 5000.0,
         "multCost": 4.0,
@@ -181,9 +180,9 @@
         "borderColor": "#FF0000"
       },
       {
-        "id": "ad_ultra_crit_damage",
-        "name": "Ad + Ultra Crit Damage",
-        "statKey": "ad_ultra_crit_damage",
+        "id": "apb_ultra_crit_damage",
+        "name": "APB Ultra Crit Damage",
+        "statKey": "apb_ultra_crit_damage",
         "waveReq": 10000,
         "statAmt": 5,
         "maxLevel": 5,
@@ -194,9 +193,9 @@
         "borderColor": "#C20000"
       },
       {
-        "id": "ad_ultra_crit_chance",
-        "name": "Ad + Ultra Crit Chance",
-        "statKey": "ad_ultra_crit_chance",
+        "id": "apb_ultra_crit_chance",
+        "name": "APB Ultra Crit Chance",
+        "statKey": "apb_ultra_crit_chance",
         "waveReq": 10000,
         "statAmt": 1,
         "maxLevel": 5,
@@ -229,7 +228,7 @@
         "baseCost": 1e+52,
         "multCost": 2.0,
         "costFormula": "exponential_endgame",
-        "formulaNote": "cost = baseCost * pow(multCost, level - 1)",
+        "formulaNote": "cost = baseCost * pow(multCost, level - 1) * breakpointMult * linearMult",
         "icon": "_dps.png",
         "bgColor": "#960000",
         "borderColor": "#FF0000"
@@ -244,7 +243,7 @@
         "baseCost": 1e+72,
         "multCost": 8.0,
         "costFormula": "exponential_endgame",
-        "formulaNote": "cost = baseCost * pow(multCost, level - 1)",
+        "formulaNote": "cost = baseCost * pow(multCost, level - 1) * breakpointMult * linearMult",
         "icon": "_skillPower_2.png",
         "bgColor": "#00A1A1",
         "borderColor": "#00FFFF"
@@ -272,7 +271,7 @@
         "statAmt": 1,
         "maxLevel": 999999,
         "baseCost": 1500.0,
-        "multCost": 7.5,
+        "multCost": 6.0,
         "icon": "_exp.png",
         "bgColor": "#0A6899",
         "borderColor": "#19AFFF"
@@ -283,7 +282,7 @@
         "statKey": "energy_income",
         "waveReq": 0,
         "statAmt": 1,
-        "maxLevel": 5,
+        "maxLevel": 10,
         "baseCost": 5000.0,
         "multCost": 6.0,
         "icon": "_energy2.png",
@@ -408,9 +407,9 @@
         "borderColor": "#FFFF00"
       },
       {
-        "id": "ad_ultra_gold_amount",
-        "name": "Ad + Ultra Gold Amount",
-        "statKey": "ad_ultra_gold_amount",
+        "id": "apb_ultra_gold_amount",
+        "name": "APB Ultra Gold Amount",
+        "statKey": "apb_ultra_gold_amount",
         "waveReq": 10000,
         "statAmt": 5,
         "maxLevel": 5,
@@ -421,9 +420,9 @@
         "borderColor": "#DDDD10"
       },
       {
-        "id": "ad_ultra_gold_chance",
-        "name": "Ad + Ultra Gold Chance",
-        "statKey": "ad_ultra_gold_chance",
+        "id": "apb_ultra_gold_chance",
+        "name": "APB Ultra Gold Chance",
+        "statKey": "apb_ultra_gold_chance",
         "waveReq": 10000,
         "statAmt": 1,
         "maxLevel": 5,
@@ -443,7 +442,7 @@
         "baseCost": 1e+40,
         "multCost": 8.0,
         "costFormula": "exponential_endgame",
-        "formulaNote": "cost = baseCost * pow(multCost, level - 1)",
+        "formulaNote": "cost = baseCost * pow(multCost, level - 1) * breakpointMult * linearMult",
         "icon": "_energy2.png",
         "bgColor": "#00A300",
         "borderColor": "#00FF00"
@@ -458,7 +457,7 @@
         "baseCost": 1e+40,
         "multCost": 10.0,
         "costFormula": "exponential_endgame",
-        "formulaNote": "cost = baseCost * pow(multCost, level - 1)",
+        "formulaNote": "cost = baseCost * pow(multCost, level - 1) * breakpointMult * linearMult",
         "icon": "_exp.png",
         "bgColor": "#0A689A",
         "borderColor": "#1395D9"
@@ -486,7 +485,7 @@
         "baseCost": 1e+52,
         "multCost": 2.0,
         "costFormula": "exponential_endgame",
-        "formulaNote": "cost = baseCost * pow(multCost, level - 1)",
+        "formulaNote": "cost = baseCost * pow(multCost, level - 1) * breakpointMult * linearMult",
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00"
@@ -671,8 +670,8 @@
         "waveReq": 100,
         "statAmt": 1,
         "maxLevel": 1,
-        "baseCost": 25000.0,
-        "multCost": 5.0,
+        "baseCost": 416.667,
+        "multCost": 1.0,
         "icon": "_gameSpeed.png",
         "bgColor": "#4B994B",
         "borderColor": "#80FF80"
@@ -704,9 +703,9 @@
         "borderColor": "#00C800"
       },
       {
-        "id": "ad_bonus_reward",
-        "name": "Ad Bonus Reward",
-        "statKey": "ad_bonus_reward",
+        "id": "active_play_bonus_reward",
+        "name": "Active Play Bonus Reward",
+        "statKey": "active_play_bonus_reward",
         "waveReq": 10000,
         "statAmt": 5,
         "maxLevel": 10,

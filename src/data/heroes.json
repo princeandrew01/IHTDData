@@ -20,6 +20,134 @@
       }
     ]
   },
+  "unlockCostTiers": [
+    {
+      "tier": 1,
+      "cost": 5,
+      "heroes": [
+        "militia",
+        "apprentice",
+        "scout"
+      ]
+    },
+    {
+      "tier": 2,
+      "cost": 10,
+      "heroes": [
+        "viking",
+        "druid",
+        "hunter"
+      ]
+    },
+    {
+      "tier": 3,
+      "cost": 50,
+      "heroes": [
+        "ninja",
+        "sorcerer",
+        "forester"
+      ]
+    },
+    {
+      "tier": 4,
+      "cost": 100,
+      "heroes": [
+        "assassin",
+        "witch",
+        "archer"
+      ]
+    },
+    {
+      "tier": 5,
+      "cost": 500,
+      "heroes": [
+        "peacekeeper",
+        "wizard",
+        "ranger"
+      ]
+    },
+    {
+      "tier": 6,
+      "cost": 1000,
+      "heroes": [
+        "samurai",
+        "elementalist",
+        "arbalest"
+      ]
+    },
+    {
+      "tier": 7,
+      "cost": 5000,
+      "heroes": [
+        "paladin",
+        "battlemage",
+        "sniper"
+      ]
+    },
+    {
+      "tier": 8,
+      "cost": 10000,
+      "heroes": [
+        "gladiator",
+        "spelldancer",
+        "rogue"
+      ]
+    },
+    {
+      "tier": 9,
+      "cost": 40000,
+      "heroes": [
+        "berserker",
+        "skymage",
+        "ballista"
+      ]
+    },
+    {
+      "tier": 10,
+      "cost": 80000,
+      "heroes": [
+        "chieftan",
+        "warlock",
+        "crusader"
+      ]
+    },
+    {
+      "tier": 11,
+      "cost": 250000,
+      "heroes": [
+        "champion",
+        "templar",
+        "captain"
+      ]
+    },
+    {
+      "tier": 12,
+      "cost": 500000,
+      "heroes": [
+        "warlord",
+        "necromancer",
+        "warden"
+      ]
+    },
+    {
+      "tier": 13,
+      "cost": 2500000,
+      "heroes": [
+        "praetorian",
+        "sovereign",
+        "deadeye"
+      ]
+    },
+    {
+      "tier": 14,
+      "cost": 5000000,
+      "heroes": [
+        "titan",
+        "dicemaster",
+        "veteran"
+      ]
+    }
+  ],
   "heroes": [
     {
       "id": "militia",
@@ -329,8 +457,8 @@
           "hero1": "gladiator",
           "hero2": null,
           "hero3": null,
-          "amount": 16.0,
-          "description": "+16% Crit Chance",
+          "amount": 35.0,
+          "description": "+35% Crit Chance",
           "icon": "_critChance2.png",
           "bgColor": "#994B00",
           "borderColor": "#FF8000"
@@ -515,7 +643,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 1
     },
     {
       "id": "apprentice",
@@ -587,8 +716,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -778,7 +907,7 @@
           "hero2": "hunter",
           "hero3": null,
           "amount": -4.0,
-          "description": "+4% Skill Cooldown",
+          "description": "-4% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -1011,7 +1140,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 1
     },
     {
       "id": "scout",
@@ -1095,8 +1225,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -1507,7 +1637,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 1
     },
     {
       "id": "viking",
@@ -2003,7 +2134,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 2
     },
     {
       "id": "druid",
@@ -2231,8 +2363,8 @@
           "type": "superCritDmg",
           "name": "Super Crit Damage",
           "scope": "personal",
-          "amount": 150.0,
-          "description": "+150% Super Crit Damage",
+          "amount": 350.0,
+          "description": "+350% Super Crit Damage",
           "icon": "_critDmgSuper.png",
           "bgColor": "#843800",
           "borderColor": "#E16400"
@@ -2265,8 +2397,8 @@
           "hero1": "apprentice",
           "hero2": "hunter",
           "hero3": null,
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -2499,7 +2631,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 2
     },
     {
       "id": "hunter",
@@ -2643,8 +2776,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 5.0,
-          "description": "+5 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -2809,8 +2942,8 @@
           "hero1": "viking",
           "hero2": null,
           "hero3": null,
-          "amount": 7.0,
-          "description": "+7 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -2995,7 +3128,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 2
     },
     {
       "id": "ninja",
@@ -3091,8 +3225,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 6.0,
-          "description": "+6 Rank Exp",
+          "amount": 12.0,
+          "description": "+12 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -3103,8 +3237,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 4.0,
+          "description": "+4 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -3449,8 +3583,8 @@
           "hero1": "assassin",
           "hero2": "rogue",
           "hero3": null,
-          "amount": 34.0,
-          "description": "+34% Super Gold Chance",
+          "amount": 14.0,
+          "description": "+14% Super Gold Chance",
           "icon": "_goldSuper.png",
           "bgColor": "#8E8D04",
           "borderColor": "#E9E90C"
@@ -3491,7 +3625,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 3
     },
     {
       "id": "sorcerer",
@@ -3987,7 +4122,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 3
     },
     {
       "id": "forester",
@@ -4483,7 +4619,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 3
     },
     {
       "id": "assassin",
@@ -4746,7 +4883,7 @@
           "hero2": "archer",
           "hero3": null,
           "amount": -10.0,
-          "description": "+10% Skill Cooldown",
+          "description": "-10% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -4979,7 +5116,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 4
     },
     {
       "id": "witch",
@@ -5012,26 +5150,26 @@
         {
           "milestone": 1,
           "requirement": 25,
-          "type": "attSpeed",
-          "name": "Attack Speed",
-          "scope": "global",
-          "amount": 2.0,
-          "description": "+2% Attack Speed",
-          "icon": "_attSpeed.png",
-          "bgColor": "#009B00",
-          "borderColor": "#00FF00"
+          "type": "damage",
+          "name": "Damage",
+          "scope": "personal",
+          "amount": 10.0,
+          "description": "+10% Damage",
+          "icon": "_dps.png",
+          "bgColor": "#960000",
+          "borderColor": "#FF0000"
         },
         {
           "milestone": 2,
           "requirement": 75,
-          "type": "critChance",
-          "name": "Crit Chance",
+          "type": "killExp",
+          "name": "Rank Exp",
           "scope": "global",
-          "amount": 1.0,
-          "description": "+1% Crit Chance",
-          "icon": "_critChance2.png",
-          "bgColor": "#994B00",
-          "borderColor": "#FF8000"
+          "amount": 2.0,
+          "description": "+2 Rank Exp",
+          "icon": "_exp.png",
+          "bgColor": "#0A6899",
+          "borderColor": "#19AFFF"
         },
         {
           "milestone": 3,
@@ -5048,129 +5186,45 @@
         {
           "milestone": 4,
           "requirement": 250,
-          "type": "damage",
-          "name": "Damage",
-          "scope": "personal",
-          "amount": 40.0,
-          "description": "+40% Damage",
-          "icon": "_dps.png",
-          "bgColor": "#960000",
-          "borderColor": "#FF0000"
-        },
-        {
-          "milestone": 5,
-          "requirement": 500,
-          "type": "skillDuration",
-          "name": "Skill Duration",
-          "scope": "personal",
-          "amount": 2.0,
-          "description": "+2 Skill Duration",
-          "icon": "_skillDuration.png",
-          "bgColor": "#00E4E4",
-          "borderColor": "#00FEFE"
-        },
-        {
-          "milestone": 6,
-          "requirement": 750,
           "type": "killGold",
           "name": "Kill Gold",
           "scope": "personal",
-          "amount": 60.0,
-          "description": "+60% Kill Gold",
+          "amount": 40.0,
+          "description": "+40% Kill Gold",
           "icon": "_coin.png",
           "bgColor": "#999900",
           "borderColor": "#FFFF00"
         },
         {
-          "milestone": 7,
-          "requirement": 1000,
-          "type": "critDmg",
-          "name": "Crit Damage",
-          "scope": "personal",
-          "amount": 70.0,
-          "description": "+70% Crit Damage",
-          "icon": "_critDmg_2.png",
-          "bgColor": "#994B00",
-          "borderColor": "#FF8000"
-        },
-        {
-          "milestone": 8,
-          "requirement": 1500,
-          "type": "skillDuration",
-          "name": "Skill Duration",
-          "scope": "personal",
-          "amount": 6.0,
-          "description": "+6 Skill Duration",
-          "icon": "_skillDuration.png",
-          "bgColor": "#00E4E4",
-          "borderColor": "#00FEFE"
-        },
-        {
-          "milestone": 9,
-          "requirement": 2000,
-          "type": "expSuperChance",
-          "name": "Super Exp Chance",
-          "scope": "global",
-          "amount": 4.0,
-          "description": "+4% Super Exp Chance",
-          "icon": "_expSuper.png",
-          "bgColor": "#0B5F8C",
-          "borderColor": "#199FE7"
-        },
-        {
-          "milestone": 10,
-          "requirement": 2500,
+          "milestone": 5,
+          "requirement": 500,
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 8.0,
-          "description": "+8 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
         },
         {
-          "milestone": 11,
-          "requirement": 3000,
-          "type": "goldUltraChance",
-          "name": "Ultra Gold Chance",
+          "milestone": 6,
+          "requirement": 750,
+          "type": "critDmg",
+          "name": "Crit Damage",
           "scope": "global",
-          "amount": 1.0,
-          "description": "+1% Ultra Gold Chance",
-          "icon": "_goldUltra.png",
-          "bgColor": "#848305",
-          "borderColor": "#DDDD10"
+          "amount": 18.0,
+          "description": "+18% Crit Damage",
+          "icon": "_critDmg_2.png",
+          "bgColor": "#994B00",
+          "borderColor": "#FF8000"
         },
         {
-          "milestone": 12,
-          "requirement": 3500,
-          "type": "damage",
-          "name": "Damage",
-          "scope": "global",
-          "amount": 42.0,
-          "description": "+42% Damage",
-          "icon": "_dps.png",
-          "bgColor": "#960000",
-          "borderColor": "#FF0000"
-        },
-        {
-          "milestone": 13,
-          "requirement": 4000,
-          "type": "ultraCritChance",
-          "name": "Ultra Crit Chance",
-          "scope": "personal",
-          "amount": 8.0,
-          "description": "+8% Ultra Crit Chance",
-          "icon": "_critChanceUltra.png",
-          "bgColor": "#770000",
-          "borderColor": "#C80000"
-        },
-        {
-          "milestone": 14,
-          "requirement": 5000,
+          "milestone": 7,
+          "requirement": 1000,
           "type": "skillPower",
           "name": "Skill Power",
-          "scope": "global",
+          "scope": "personal",
           "amount": 4.0,
           "description": "+4 Skill Power",
           "icon": "_skillPower_2.png",
@@ -5178,23 +5232,23 @@
           "borderColor": "#00DEE0"
         },
         {
-          "milestone": 15,
-          "requirement": 6000,
-          "type": "goldUltraAmount",
-          "name": "Ultra Gold Amount",
-          "scope": "personal",
-          "amount": 100.0,
-          "description": "+100% Ultra Gold Amount",
-          "icon": "_goldUltra.png",
-          "bgColor": "#848305",
-          "borderColor": "#DDDD10"
+          "milestone": 8,
+          "requirement": 1500,
+          "type": "skillCd",
+          "name": "Skill Cooldown",
+          "scope": "global",
+          "amount": -8.0,
+          "description": "-8% Skill Cooldown",
+          "icon": "_skillCd.png",
+          "bgColor": "#009F9F",
+          "borderColor": "#00FFFF"
         },
         {
-          "milestone": 16,
-          "requirement": 7500,
+          "milestone": 9,
+          "requirement": 2000,
           "type": "superCritChance",
           "name": "Super Crit Chance",
-          "scope": "global",
+          "scope": "personal",
           "amount": 12.0,
           "description": "+12% Super Crit Chance",
           "icon": "_critChanceSuper.png",
@@ -5202,16 +5256,100 @@
           "borderColor": "#E16400"
         },
         {
+          "milestone": 10,
+          "requirement": 2500,
+          "type": "attSpeed",
+          "name": "Attack Speed",
+          "scope": "global",
+          "amount": 20.0,
+          "description": "+20% Attack Speed",
+          "icon": "_attSpeed.png",
+          "bgColor": "#009B00",
+          "borderColor": "#00FF00"
+        },
+        {
+          "milestone": 11,
+          "requirement": 3000,
+          "type": "damage",
+          "name": "Damage",
+          "scope": "global",
+          "amount": 36.0,
+          "description": "+36% Damage",
+          "icon": "_dps.png",
+          "bgColor": "#960000",
+          "borderColor": "#FF0000"
+        },
+        {
+          "milestone": 12,
+          "requirement": 3500,
+          "type": "energyIncome",
+          "name": "Energy Income",
+          "scope": "global",
+          "amount": 4.0,
+          "description": "+4 Energy Income",
+          "icon": "_energy2.png",
+          "bgColor": "#00A300",
+          "borderColor": "#00FF00"
+        },
+        {
+          "milestone": 13,
+          "requirement": 4000,
+          "type": "goldUltraAmount",
+          "name": "Ultra Gold Amount",
+          "scope": "personal",
+          "amount": 175.0,
+          "description": "+175% Ultra Gold Amount",
+          "icon": "_goldUltra.png",
+          "bgColor": "#848305",
+          "borderColor": "#DDDD10"
+        },
+        {
+          "milestone": 14,
+          "requirement": 5000,
+          "type": "skillPower",
+          "name": "Skill Power",
+          "scope": "personal",
+          "amount": 15.0,
+          "description": "+15 Skill Power",
+          "icon": "_skillPower_2.png",
+          "bgColor": "#009F9F",
+          "borderColor": "#00DEE0"
+        },
+        {
+          "milestone": 15,
+          "requirement": 6000,
+          "type": "expSuperAmount",
+          "name": "Super Exp Amount",
+          "scope": "global",
+          "amount": 15.0,
+          "description": "+15% Super Exp Amount",
+          "icon": "_expSuper.png",
+          "bgColor": "#0B5F8C",
+          "borderColor": "#199FE7"
+        },
+        {
+          "milestone": 16,
+          "requirement": 7500,
+          "type": "instantSkillChance",
+          "name": "Instant Skill Chance",
+          "scope": "personal",
+          "amount": 10.0,
+          "description": "+10% Instant Skill Chance",
+          "icon": "_spellCd.png",
+          "bgColor": "#007879",
+          "borderColor": "#00C8C8"
+        },
+        {
           "milestone": 17,
           "requirement": 10000,
-          "type": "ultraCritDmg",
-          "name": "Ultra Crit Damage",
+          "type": "expUltraAmount",
+          "name": "Ultra Exp Amount",
           "scope": "global",
-          "amount": 150.0,
-          "description": "+150% Ultra Crit Damage",
-          "icon": "_critDmgUltra.png",
-          "bgColor": "#770000",
-          "borderColor": "#C80000"
+          "amount": 40.0,
+          "description": "+40% Ultra Exp Amount",
+          "icon": "_expUltra.png",
+          "bgColor": "#00517F",
+          "borderColor": "#008DD9"
         }
       ],
       "synergies": [
@@ -5475,7 +5613,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 4
     },
     {
       "id": "archer",
@@ -5559,8 +5698,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -5583,8 +5722,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 4.0,
+          "description": "+4 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -5971,7 +6110,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 4
     },
     {
       "id": "peacekeeper",
@@ -6091,8 +6231,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -6467,7 +6607,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 5
     },
     {
       "id": "wizard",
@@ -6587,8 +6728,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -6963,7 +7104,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 5
     },
     {
       "id": "ranger",
@@ -7023,8 +7165,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -7047,8 +7189,8 @@
           "type": "killGold",
           "name": "Kill Gold",
           "scope": "global",
-          "amount": 35.0,
-          "description": "+35% Kill Gold",
+          "amount": 15.0,
+          "description": "+15% Kill Gold",
           "icon": "_coin.png",
           "bgColor": "#999900",
           "borderColor": "#FFFF00"
@@ -7459,7 +7601,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 5
     },
     {
       "id": "samurai",
@@ -7955,7 +8098,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 6
     },
     {
       "id": "elementalist",
@@ -8451,7 +8595,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 6
     },
     {
       "id": "arbalest",
@@ -8523,8 +8668,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -8571,8 +8716,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -8698,7 +8843,7 @@
           "hero2": null,
           "hero3": null,
           "amount": -2.0,
-          "description": "+2% Skill Cooldown",
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -8947,7 +9092,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 6
     },
     {
       "id": "paladin",
@@ -9019,8 +9165,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -9443,7 +9589,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 7
     },
     {
       "id": "battlemage",
@@ -9539,8 +9686,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 6.0,
-          "description": "+6 Rank Exp",
+          "amount": 12.0,
+          "description": "+12 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -9721,8 +9868,8 @@
           "hero1": "wizard",
           "hero2": null,
           "hero3": null,
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -9770,7 +9917,7 @@
           "hero2": "warden",
           "hero3": null,
           "amount": -30.0,
-          "description": "+30% Skill Cooldown",
+          "description": "-30% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -9939,7 +10086,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 7
     },
     {
       "id": "sniper",
@@ -10023,8 +10171,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 5.0,
-          "description": "+5 Rank Exp",
+          "amount": 8.0,
+          "description": "+8 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -10265,8 +10413,8 @@
           "hero1": "chieftan",
           "hero2": "arbalest",
           "hero3": null,
-          "amount": 100.0,
-          "description": "+100% Kill Gold",
+          "amount": 250.0,
+          "description": "+250% Kill Gold",
           "icon": "_coin.png",
           "bgColor": "#999900",
           "borderColor": "#FFFF00"
@@ -10435,7 +10583,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 7
     },
     {
       "id": "gladiator",
@@ -10873,8 +11022,8 @@
           "hero1": "samurai",
           "hero2": null,
           "hero3": null,
-          "amount": 35.0,
-          "description": "+35% Super Energy Amount",
+          "amount": 15.0,
+          "description": "+15% Super Energy Amount",
           "icon": "_energy_2.png",
           "bgColor": "#048B04",
           "borderColor": "#0CE70C"
@@ -10931,7 +11080,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 8
     },
     {
       "id": "spelldancer",
@@ -11257,8 +11407,8 @@
           "hero1": "assassin",
           "hero2": "apprentice",
           "hero3": null,
-          "amount": 10.0,
-          "description": "+10 Skill Power",
+          "amount": 12.0,
+          "description": "+12 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -11427,7 +11577,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 8
     },
     {
       "id": "rogue",
@@ -11559,8 +11710,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 4.0,
-          "description": "+4 Skill Power",
+          "amount": 6.0,
+          "description": "+6 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -11923,7 +12074,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 8
     },
     {
       "id": "berserker",
@@ -12067,8 +12219,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 5.0,
-          "description": "+5 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -12419,7 +12571,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 9
     },
     {
       "id": "skymage",
@@ -12479,8 +12632,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -12539,8 +12692,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -12915,7 +13068,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 9
     },
     {
       "id": "ballista",
@@ -13059,8 +13213,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 5.0,
-          "description": "+5 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -13095,8 +13249,8 @@
           "type": "ultraCritDmg",
           "name": "Ultra Crit Damage",
           "scope": "personal",
-          "amount": 50.0,
-          "description": "+50% Ultra Crit Damage",
+          "amount": 175.0,
+          "description": "+175% Ultra Crit Damage",
           "icon": "_critDmgUltra.png",
           "bgColor": "#770000",
           "borderColor": "#C80000"
@@ -13178,7 +13332,7 @@
           "hero2": "chieftan",
           "hero3": null,
           "amount": -4.0,
-          "description": "+4% Skill Cooldown",
+          "description": "-4% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13225,8 +13379,8 @@
           "hero1": "scout",
           "hero2": null,
           "hero3": null,
-          "amount": 7.0,
-          "description": "+7 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -13411,7 +13565,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 9
     },
     {
       "id": "chieftan",
@@ -13471,8 +13626,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -13495,8 +13650,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 5.0,
-          "description": "+5 Rank Exp",
+          "amount": 8.0,
+          "description": "+8 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -13658,7 +13813,7 @@
           "hero2": null,
           "hero3": null,
           "amount": -2.0,
-          "description": "+2% Skill Cooldown",
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13898,7 +14053,7 @@
           "hero2": "elementalist",
           "hero3": "ranger",
           "amount": -20.0,
-          "description": "+20% Skill Cooldown",
+          "description": "-20% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -13907,7 +14062,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 10
     },
     {
       "id": "warlock",
@@ -14039,8 +14195,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 4.0,
-          "description": "+4 Skill Power",
+          "amount": 6.0,
+          "description": "+6 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -14403,7 +14559,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 10
     },
     {
       "id": "crusader",
@@ -14650,7 +14807,7 @@
           "hero2": null,
           "hero3": null,
           "amount": -2.0,
-          "description": "+2% Skill Cooldown",
+          "description": "-2% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -14745,8 +14902,8 @@
           "hero1": "sovereign",
           "hero2": null,
           "hero3": null,
-          "amount": 10.0,
-          "description": "+10 Skill Power",
+          "amount": 12.0,
+          "description": "+12 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -14899,7 +15056,8 @@
       "masteryExp": {
         "baseAmount": 550000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 10
     },
     {
       "id": "champion",
@@ -15019,8 +15177,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -15079,8 +15237,8 @@
           "type": "goldUltraChance",
           "name": "Ultra Gold Chance",
           "scope": "global",
-          "amount": 8.0,
-          "description": "+8% Ultra Gold Chance",
+          "amount": 3.0,
+          "description": "+3% Ultra Gold Chance",
           "icon": "_goldUltra.png",
           "bgColor": "#848305",
           "borderColor": "#DDDD10"
@@ -15194,7 +15352,7 @@
           "hero2": "rogue",
           "hero3": null,
           "amount": -20.0,
-          "description": "+20% Skill Cooldown",
+          "description": "-20% Skill Cooldown",
           "icon": "_skillCd.png",
           "bgColor": "#009F9F",
           "borderColor": "#00FFFF"
@@ -15395,7 +15553,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 11
     },
     {
       "id": "templar",
@@ -15467,8 +15626,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 1.0,
-          "description": "+1 Skill Power",
+          "amount": 2.0,
+          "description": "+2 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -15479,8 +15638,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 5.0,
-          "description": "+5 Rank Exp",
+          "amount": 8.0,
+          "description": "+8 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -15891,7 +16050,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 11
     },
     {
       "id": "captain",
@@ -15975,8 +16135,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -15999,8 +16159,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 8.0,
-          "description": "+8 Rank Exp",
+          "amount": 15.0,
+          "description": "+15 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -16153,8 +16313,8 @@
           "hero1": "warlord",
           "hero2": "necromancer",
           "hero3": null,
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -16169,8 +16329,8 @@
           "hero1": "forester",
           "hero2": null,
           "hero3": null,
-          "amount": 4.0,
-          "description": "+4 Skill Duration",
+          "amount": 5.0,
+          "description": "+5 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -16387,7 +16547,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 11
     },
     {
       "id": "warlord",
@@ -16495,8 +16656,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 8.0,
-          "description": "+8 Rank Exp",
+          "amount": 15.0,
+          "description": "+15 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -16507,8 +16668,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -16649,8 +16810,8 @@
           "hero1": "necromancer",
           "hero2": "captain",
           "hero3": null,
-          "amount": 2.0,
-          "description": "+2 Skill Duration",
+          "amount": 3.0,
+          "description": "+3 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -16883,7 +17044,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 12
     },
     {
       "id": "necromancer",
@@ -16979,8 +17141,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 6.0,
-          "description": "+6 Rank Exp",
+          "amount": 12.0,
+          "description": "+12 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -16991,8 +17153,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 4.0,
+          "description": "+4 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -17075,8 +17237,8 @@
           "type": "goldUltraAmount",
           "name": "Ultra Gold Amount",
           "scope": "personal",
-          "amount": 75.0,
-          "description": "+75% Ultra Gold Amount",
+          "amount": 200.0,
+          "description": "+200% Ultra Gold Amount",
           "icon": "_goldUltra.png",
           "bgColor": "#848305",
           "borderColor": "#DDDD10"
@@ -17145,8 +17307,8 @@
           "hero1": "warlord",
           "hero2": "captain",
           "hero3": null,
-          "amount": 2.0,
-          "description": "+2 Skill Duration",
+          "amount": 3.0,
+          "description": "+3 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -17379,7 +17541,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 12
     },
     {
       "id": "warden",
@@ -17875,7 +18038,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 12
     },
     {
       "id": "praetorian",
@@ -17947,8 +18111,8 @@
           "type": "killExp",
           "name": "Rank Exp",
           "scope": "global",
-          "amount": 4.0,
-          "description": "+4 Rank Exp",
+          "amount": 5.0,
+          "description": "+5 Rank Exp",
           "icon": "_exp.png",
           "bgColor": "#0A6899",
           "borderColor": "#19AFFF"
@@ -18007,8 +18171,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 4.0,
-          "description": "+4 Skill Power",
+          "amount": 6.0,
+          "description": "+6 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -18185,8 +18349,8 @@
           "hero1": "dicemaster",
           "hero2": null,
           "hero3": null,
-          "amount": 7.0,
-          "description": "+7 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -18371,7 +18535,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 13
     },
     {
       "id": "sovereign",
@@ -18681,8 +18846,8 @@
           "hero1": "warlock",
           "hero2": null,
           "hero3": null,
-          "amount": 7.0,
-          "description": "+7 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -18867,7 +19032,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 13
     },
     {
       "id": "deadeye",
@@ -18975,8 +19141,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 4.0,
+          "description": "+4 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -19145,8 +19311,8 @@
           "hero1": "templar",
           "hero2": null,
           "hero3": null,
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -19363,7 +19529,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 13
     },
     {
       "id": "titan",
@@ -19447,8 +19614,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 2.0,
-          "description": "+2 Skill Power",
+          "amount": 3.0,
+          "description": "+3 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -19609,8 +19776,8 @@
           "hero1": "veteran",
           "hero2": null,
           "hero3": null,
-          "amount": 1.0,
-          "description": "+1 Skill Duration",
+          "amount": 2.0,
+          "description": "+2 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -19737,8 +19904,8 @@
           "hero1": "warlord",
           "hero2": null,
           "hero3": null,
-          "amount": 10.0,
-          "description": "+10 Skill Power",
+          "amount": 12.0,
+          "description": "+12 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -19859,7 +20026,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 14
     },
     {
       "id": "dicemaster",
@@ -20003,8 +20171,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 5.0,
-          "description": "+5 Skill Power",
+          "amount": 8.0,
+          "description": "+8 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -20137,8 +20305,8 @@
           "hero1": "ranger",
           "hero2": null,
           "hero3": null,
-          "amount": 4.0,
-          "description": "+4 Skill Duration",
+          "amount": 5.0,
+          "description": "+5 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -20355,7 +20523,8 @@
       "masteryExp": {
         "baseAmount": 25000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 14
     },
     {
       "id": "veteran",
@@ -20475,8 +20644,8 @@
           "type": "skillPower",
           "name": "Skill Power",
           "scope": "personal",
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -20601,8 +20770,8 @@
           "hero1": "titan",
           "hero2": null,
           "hero3": null,
-          "amount": 1.0,
-          "description": "+1 Skill Duration",
+          "amount": 2.0,
+          "description": "+2 Skill Duration",
           "icon": "_skillDuration.png",
           "bgColor": "#00E4E4",
           "borderColor": "#00FEFE"
@@ -20633,8 +20802,8 @@
           "hero1": "berserker",
           "hero2": null,
           "hero3": null,
-          "amount": 3.0,
-          "description": "+3 Skill Power",
+          "amount": 5.0,
+          "description": "+5 Skill Power",
           "icon": "_skillPower_2.png",
           "bgColor": "#009F9F",
           "borderColor": "#00DEE0"
@@ -20851,7 +21020,8 @@
       "masteryExp": {
         "baseAmount": 35000,
         "maxLevel": 10
-      }
+      },
+      "unlockTier": 14
     }
   ]
 }

@@ -17,6 +17,10 @@ function useIsMobile() {
 
 const RARITY_ORDER = ["Common", "Uncommon", "Rare", "Epic", "Legendary", "Mythic", "Supreme"];
 
+// Militia and Apprentice start unlocked — their 1st copy is free. 2nd/3rd copy costs
+// still derive from the hero's normal unlockCost. Display-only; not reflected in the data file.
+const FREE_FIRST_COPY_HERO_IDS = new Set(["militia", "apprentice"]);
+
 const RARITY_COLORS = {
   Common: { bg: "#3a3a3a", border: "#c0bfc0", text: "#d8d8d8" },
   Uncommon: { bg: "#1a3a1a", border: "#4dd44d", text: "#80e880" },
@@ -468,6 +472,17 @@ function HeroCard({ hero, onClick, colors, Badge, getIconUrl }) {
             {hero.baseStats.damage !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>DMG <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.damage}</span></span>}
             {hero.baseStats.attackSpeed !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>SPD <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.attackSpeed}s</span></span>}
             {hero.baseStats.range !== undefined && <span style={{ fontSize: 11, color: colors.muted }}>RNG <span style={{ color: colors.gold, fontWeight: 700 }}>{hero.baseStats.range}</span></span>}
+          </div>
+        )}
+        {hero.unlockCost !== undefined && (
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
+            <img src={getIconUrl("_energy.png")} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+            <span style={{ fontSize: 13, color: colors.muted }}>Unlock: </span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: colors.positive }}>{(FREE_FIRST_COPY_HERO_IDS.has(hero.id) ? 0 : hero.unlockCost).toLocaleString()}</span>
+            <span style={{ fontSize: 13, color: colors.muted }}>·</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: colors.positive }}>{(hero.unlockCost * 3).toLocaleString()}</span>
+            <span style={{ fontSize: 13, color: colors.muted }}>·</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: colors.positive }}>{(hero.unlockCost * 9).toLocaleString()}</span>
           </div>
         )}
       </div>

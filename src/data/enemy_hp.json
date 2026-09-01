@@ -1,5 +1,5 @@
 {
-  "note": "Calculation order: (1) Simulate per-wave: hp = round((hp + 4) * num17), where num17 = baseRate * waveRangeScale * num12 + 1. (2) Multiply by enemyMultiplier for the enemy type. (3) Apply enemy_hp post-multiplier (BKDLELOLPOC): hp *= (1 - researchLevels*0.03) * (1 - techLevels*0.03) * (1 - runeLevels*0.03) * (1 - 0.05*wavePerkEffect*wavePerkLevels) * (0.9 if lbIconGems3 IAP owned). Tech base max=15, extended to 25 by Supreme Tech enemy_hp_max upgrade (same 3% rate).",
+  "note": "Calculation order, verified against real Enemy.cs/GameManager.cs source: (1) Simulate per-wave: hp = round((hp + 4) * num17), where num17 = baseRate * waveRangeScale * num12 + 1. (2) Multiply by enemyMultiplier for the enemy type (Enemy.cs spawnEnemy()). (3) Apply enemy_hp post-multiplier (GlobalMethods.getEnemyHpPermEffect()): hp *= (1 - researchLevels*0.03) * (1 - techLevels*0.03) * (1 - runeLevels*0.03) * (1 - 0.05*wavePerkEffect*wavePerkLevels) * (0.9 if lbIconGems3 IAP owned). Tech base max=15, extended to 25 by Supreme Tech enemy_hp_max upgrade (same 3% rate).",
   "startHp": 10,
   "moduloRates": {
     "mod10": 0.25,
@@ -49,7 +49,7 @@
     }
   ],
   "enemyMultipliers": {
-    "note": "Applied to baseEnemyHp_big before BKDLELOLPOC() reduction. Source: Enemy.cs spawnEnemy(). runeBoss and techBoss use separate HP systems not based on baseEnemyHp_big. pvpBoss (Immortal Boss) uses int.MaxValue.",
+    "note": "Applied to baseEnemyHp_big before the enemy_hp post-multiplier. Source: Enemy.cs spawnEnemy(). runeBoss and techBoss use separate HP systems not based on baseEnemyHp_big. pvpBoss (Immortal Boss) uses int.MaxValue.",
     "normal_evo1": 1.0,
     "normal_evo2": 1.5,
     "normal_evo3": 2.0,

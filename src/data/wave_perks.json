@@ -3,7 +3,7 @@
   "parentMenuName": "Upgrades",
   "menuIcon": "_wavePerkWaves2.png",
   "label": "Wave Perks",
-  "note": "Wave perks are randomly offered every N waves (N decreases with Wave Perk Waves upgrades). Each perk can be stacked up to its max stacks.",
+  "note": "Wave perks are randomly offered every N waves (N decreases with Wave Perk Waves upgrades). Each perk can be stacked up to maxStacks times.",
   "groups": {
     "Common": [
       {
@@ -42,14 +42,14 @@
         "statAmt": 15,
         "maxStacks": 999,
         "rarity": "Common",
-        "icon": "_critDmg_2.png",
+        "icon": "_critDmg.png",
         "bgColor": "#843800",
         "borderColor": "#E16400"
       },
       {
         "id": "enemyHp",
         "name": "Enemy HP",
-        "statAmt": -5,
+        "statAmt": 5,
         "maxStacks": 5,
         "rarity": "Common",
         "icon": "_enemyHp.png",
@@ -131,7 +131,7 @@
       {
         "id": "skillCd",
         "name": "Skill Cooldown",
-        "statAmt": 5,
+        "statAmt": -5,
         "maxStacks": 3,
         "rarity": "Uncommon",
         "icon": "_skillCd.png",
@@ -141,7 +141,7 @@
       {
         "id": "spellCd",
         "name": "Spell Cooldown",
-        "statAmt": 5,
+        "statAmt": -5,
         "maxStacks": 3,
         "rarity": "Uncommon",
         "icon": "_skillDuration.png",

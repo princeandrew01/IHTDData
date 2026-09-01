@@ -2,7 +2,7 @@
   "label": "Technology",
   "costFormula": "power",
   "formulaNote": "cost = baseCost * pow(level + 1, multCost)",
-  "note": "Tech uses a tree structure in-game. waveReq=0 means no wave lock (gated by tree prerequisites instead). Wave Perk Rerolls (8000) and Supreme Shadow Chance (15000) have explicit wave locks.",
+  "note": "Tech uses a tree structure in-game. waveReq=0 means no wave lock (gated by tree prerequisites instead). Wave Perk Rerolls (8000) and Supreme Shadow Chance (15000) have explicit wave locks. unlockRequirements is the real in-game unlock gate (from binary prevReqCell1/2/3 + prevReqLevel1/2/3) and may list more than one requirement; parent/treeRow (from grouping_config) model the single-parent visual grid layout separately.",
   "canCalculateCost": true,
   "isTree": true,
   "menuOrder": 6,
@@ -35,6 +35,12 @@
         "baseCost": 2,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_i",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_enemyHp.png",
         "bgColor": "#4C0000",
         "borderColor": "#800000",
@@ -46,11 +52,17 @@
         "name": "Skill Cooldown",
         "statKey": "skill_cooldown",
         "waveReq": 0,
-        "statAmt": 2,
+        "statAmt": -2,
         "maxLevel": 15,
         "baseCost": 2,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_i",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_skillCd.png",
         "bgColor": "#009F9F",
         "borderColor": "#00FFFF",
@@ -67,6 +79,12 @@
         "baseCost": 2,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_i",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00",
@@ -78,11 +96,17 @@
         "name": "Spell Cooldown",
         "statKey": "spell_cooldown",
         "waveReq": 0,
-        "statAmt": 2,
+        "statAmt": -2,
         "maxLevel": 15,
         "baseCost": 3,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "skill_cooldown",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_spellCd.png",
         "bgColor": "#007879",
         "borderColor": "#00C5C8",
@@ -99,6 +123,12 @@
         "baseCost": 4,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "kill_gold_i",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_planet.png",
         "bgColor": "#6E00A2",
         "borderColor": "#AF00FF",
@@ -115,6 +145,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "enemy_hp",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_attSpeed.png",
         "bgColor": "#009B00",
         "borderColor": "#00FF00",
@@ -131,6 +167,12 @@
         "baseCost": 4,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "kill_gold_i",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_exp.png",
         "bgColor": "#0A6899",
         "borderColor": "#19AFFF",
@@ -147,6 +189,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "enemy_hp",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_critChance2.png",
         "bgColor": "#994B00",
         "borderColor": "#FF8000",
@@ -163,6 +211,12 @@
         "baseCost": 3,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "attack_speed",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_range_2.png",
         "bgColor": "#9F9E00",
         "borderColor": "#FFFF00",
@@ -179,6 +233,12 @@
         "baseCost": 3,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "spell_cooldown",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_skillDuration.png",
         "bgColor": "#00E4E4",
         "borderColor": "#00FEFE",
@@ -195,6 +255,12 @@
         "baseCost": 4,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "rank_exp",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_trainerExp2.png",
         "bgColor": "#005987",
         "borderColor": "#0096E1",
@@ -211,6 +277,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "crit_chance",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_critDmg_2.png",
         "bgColor": "#994B00",
         "borderColor": "#FF8000",
@@ -227,6 +299,12 @@
         "baseCost": 4,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "prestige_power_i",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_hoarderGold.png",
         "bgColor": "#878600",
         "borderColor": "#DEDE00",
@@ -243,6 +321,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "crit_damage",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_bossDmg.png",
         "bgColor": "#730000",
         "borderColor": "#AF0000",
@@ -259,6 +343,12 @@
         "baseCost": 3,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "skill_duration",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_skillDuration.png",
         "bgColor": "#007575",
         "borderColor": "#00C8C8",
@@ -275,6 +365,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "training_dummy_exp",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_bossExp.png",
         "bgColor": "#005A89",
         "borderColor": "#0096E1",
@@ -291,6 +387,12 @@
         "baseCost": 5,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "range",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_rune.png",
         "bgColor": "#473875",
         "borderColor": "#7D62C6",
@@ -307,6 +409,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "goblin_hoarder_gold",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_coinBoss.png",
         "bgColor": "#858500",
         "borderColor": "#DEDE00",
@@ -323,6 +431,16 @@
         "baseCost": 50,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "boss_gold",
+            "levelRequired": 3
+          },
+          {
+            "id": "boss_exp",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00",
@@ -335,10 +453,16 @@
         "statKey": "energy_income",
         "waveReq": 0,
         "statAmt": 1,
-        "maxLevel": 8,
+        "maxLevel": 10,
         "baseCost": 50,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "spell_duration",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_energy2.png",
         "bgColor": "#00A300",
         "borderColor": "#00FF00",
@@ -355,6 +479,16 @@
         "baseCost": 50,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "rune_rarity_chance",
+            "levelRequired": 3
+          },
+          {
+            "id": "boss_damage",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_dps.png",
         "bgColor": "#960000",
         "borderColor": "#FF0000",
@@ -371,6 +505,20 @@
         "baseCost": 500,
         "multCost": 1,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_ii",
+            "levelRequired": 2
+          },
+          {
+            "id": "energy_income_i",
+            "levelRequired": 2
+          },
+          {
+            "id": "kill_gold_ii",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_gameSpeed.png",
         "bgColor": "#4B994B",
         "borderColor": "#80FF80",
@@ -393,15 +541,21 @@
         "treeRow": 8
       },
       {
-        "id": "synergy_effects",
-        "name": "Synergy Effects",
-        "statKey": "synergy_effects",
+        "id": "synergy_bonus",
+        "name": "Synergy Bonus",
+        "statKey": "synergy_bonus",
         "waveReq": 0,
         "statAmt": 1,
         "maxLevel": 5,
         "baseCost": 1000,
         "multCost": 2,
         "tree": "Tech",
+        "unlockRequirements": [
+          {
+            "id": "max_game_speed",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_synergy.png",
         "bgColor": "#009F00",
         "borderColor": "#00FF00",
@@ -480,6 +634,12 @@
         "baseCost": 1,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_i_bonus",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00",
@@ -496,6 +656,12 @@
         "baseCost": 2,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "golden_goblin_chance",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_coinBoss.png",
         "bgColor": "#858500",
         "borderColor": "#DEDE00",
@@ -512,6 +678,12 @@
         "baseCost": 2,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "prestige_power_ii",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_exp.png",
         "bgColor": "#4C0000",
         "borderColor": "#800000",
@@ -528,6 +700,12 @@
         "baseCost": 1,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "kill_gold_i_bonus",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_planet.png",
         "bgColor": "#6E00A2",
         "borderColor": "#AF00FF",
@@ -544,6 +722,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "enemy_shield_reduction",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_prestigePower_2.png",
         "bgColor": "#490000",
         "borderColor": "#800000",
@@ -560,6 +744,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "boss_gold_max",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_boss.png",
         "bgColor": "#790000",
         "borderColor": "#C80000",
@@ -576,6 +766,12 @@
         "baseCost": 1,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "prestige_i_bonus",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_exp.png",
         "bgColor": "#0A6899",
         "borderColor": "#19AFFF",
@@ -592,6 +788,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "golden_mage_chance",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_energy2.png",
         "bgColor": "#00A300",
         "borderColor": "#00FF00",
@@ -602,13 +804,19 @@
         "id": "progressive_rank_exp",
         "name": "Progressive Rank Exp",
         "statKey": "progressive_rank_exp",
-        "formulaType": "progressive",
         "waveReq": 0,
         "statAmt": 100,
+        "statFormula": "arithmetic",
         "maxLevel": 999,
         "baseCost": 1,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "enemy_weakness_bonus",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_exp.png",
         "bgColor": "#0B6B9F",
         "borderColor": "#19AFFF",
@@ -625,6 +833,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "rank_exp_bonus",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_enemyHp.png",
         "bgColor": "#4C0000",
         "borderColor": "#800000",
@@ -641,6 +855,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "energy_income_ii",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_boss.png",
         "bgColor": "#790000",
         "borderColor": "#C80000",
@@ -657,6 +877,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "progressive_rank_exp",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_token_2.png",
         "bgColor": "#1A1A9B",
         "borderColor": "#3232FF",
@@ -673,6 +899,12 @@
         "baseCost": 1,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "enemy_hp_max",
+            "levelRequired": 2
+          }
+        ],
         "icon": "_critDmg_2.png",
         "bgColor": "#994B00",
         "borderColor": "#FF8000",
@@ -689,6 +921,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "golden_trainer_chance",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_bossExp.png",
         "bgColor": "#005A89",
         "borderColor": "#0096E1",
@@ -705,6 +943,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "ultimus_tokens",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_trophy.png",
         "bgColor": "#956E12",
         "borderColor": "#F9BA26",
@@ -721,6 +965,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "boss_exp_max",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_dps.png",
         "bgColor": "#960000",
         "borderColor": "#FF0000",
@@ -737,6 +987,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "crit_damage_max",
+            "levelRequired": 5
+          }
+        ],
         "icon": "_dps.png",
         "bgColor": "#960000",
         "borderColor": "#FF0000",
@@ -753,6 +1009,12 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "tournament_trophies",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_gameSpeedHud.png",
         "bgColor": "#69009C",
         "borderColor": "#AF00FF",
@@ -769,6 +1031,12 @@
         "baseCost": 3,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_ii_bonus",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00",
@@ -785,6 +1053,12 @@
         "baseCost": 8,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "intro_skip",
+            "levelRequired": 3
+          }
+        ],
         "icon": "_gameSpeedHud.png",
         "bgColor": "#107B10",
         "borderColor": "#21C821",
@@ -801,11 +1075,47 @@
         "baseCost": 5,
         "multCost": 1,
         "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "damage_iii",
+            "levelRequired": 1
+          }
+        ],
         "icon": "_coin.png",
         "bgColor": "#999900",
         "borderColor": "#FFFF00",
         "parent": "damage_iii",
         "treeRow": 8
+      },
+      {
+        "id": "milestone_bonus",
+        "name": "Milestone Bonus",
+        "statKey": "milestone_bonus",
+        "waveReq": 0,
+        "statAmt": 5,
+        "maxLevel": 10,
+        "baseCost": 15,
+        "multCost": 2,
+        "tree": "Supreme Tech",
+        "unlockRequirements": [
+          {
+            "id": "kill_gold_ii_bonus",
+            "levelRequired": 1
+          },
+          {
+            "id": "kill_gold_iii",
+            "levelRequired": 1
+          },
+          {
+            "id": "boss_rush_waves",
+            "levelRequired": 1
+          }
+        ],
+        "icon": "_star.png",
+        "bgColor": "#A09F00",
+        "borderColor": "#FFFF00",
+        "parent": "boss_rush_waves",
+        "treeRow": 9
       }
     ]
   }

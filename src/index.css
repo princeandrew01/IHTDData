@@ -436,3 +436,51 @@ body { margin: 0; padding: 0; }
     transform: rotate(360deg);
   }
 }
+
+@font-face {
+  font-family: "Maplestory OTF";
+  src: url("./fonts/Maplestory-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Anglodavek";
+  src: url("./fonts/Anglodavek-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Marker Felt";
+  src: url("./fonts/Marker Felt.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Trattatello";
+  src: url("./fonts/Trattatello/Trattatello.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Papyrus";
+  src: url("./fonts/papyrus.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Brush Script MT";
+  src: url("./fonts/BrushScriptStd.otf") format("opentype");
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}

@@ -88,8 +88,8 @@
         "name": "Energy Income",
         "statKey": "energy_income",
         "waveReq": 0,
-        "statAmt": 1,
-        "maxLevel": 8,
+        "statAmt": 2,
+        "maxLevel": 10,
         "baseCost": 1000,
         "icon": "_energy2.png",
         "bgColor": "#00A300",
@@ -99,9 +99,9 @@
         "id": "progressive_rank_exp",
         "name": "Progressive Rank Exp",
         "statKey": "progressive_rank_exp",
-        "formulaType": "progressive",
         "waveReq": 0,
         "statAmt": 5,
+        "statFormula": "arithmetic",
         "maxLevel": 999999,
         "baseCost": 250,
         "icon": "_exp.png",
@@ -163,7 +163,7 @@
         "name": "Ultimus Cooldown",
         "statKey": "ultimus_cooldown",
         "waveReq": 5000,
-        "statAmt": 3,
+        "statAmt": -3,
         "maxLevel": 10,
         "baseCost": 500,
         "icon": "_skillCd.png",
@@ -185,9 +185,9 @@
     ],
     "Progress": [
       {
-        "id": "active_play_reward",
-        "name": "Active Play Reward",
-        "statKey": "active_play_reward",
+        "id": "active_play_bonus_reward",
+        "name": "Active Play Bonus Reward",
+        "statKey": "active_play_bonus_reward",
         "waveReq": 0,
         "statAmt": 10,
         "maxLevel": 10,
@@ -197,9 +197,9 @@
         "borderColor": "#FF00FF"
       },
       {
-        "id": "active_play_duration",
-        "name": "Active Play Duration",
-        "statKey": "active_play_duration",
+        "id": "active_play_bonus_duration",
+        "name": "Active Play Bonus Duration",
+        "statKey": "active_play_bonus_duration",
         "waveReq": 0,
         "statAmt": 10,
         "maxLevel": 10,
@@ -243,6 +243,30 @@
         "icon": "_gameSpeed.png",
         "bgColor": "#4B994B",
         "borderColor": "#80FF80"
+      },
+      {
+        "id": "offline_resource_types",
+        "name": "Offline Resource Types",
+        "statKey": "offline_resource_types",
+        "waveReq": 250,
+        "statAmt": 0,
+        "maxLevel": 4,
+        "baseCost": 500,
+        "icon": "_chest.png",
+        "bgColor": "#9F009F",
+        "borderColor": "#FF00FF"
+      },
+      {
+        "id": "offline_rewards",
+        "name": "Offline Rewards",
+        "statKey": "offline_rewards",
+        "waveReq": 250,
+        "statAmt": 10,
+        "maxLevel": 10,
+        "baseCost": 500,
+        "icon": "_moneyBag.png",
+        "bgColor": "#9F009F",
+        "borderColor": "#FF00FF"
       }
     ]
   }

@@ -6,6 +6,7 @@ import { IMMORTAL_BOSS_ITEMS, getImmortalBossEventsInRange, getLeagueRows } from
 import challengesData from "../data/challenges.json";
 import playerBgData from "../data/player_backgrounds.json";
 import playerIconsData from "../data/player_icons.json";
+import playerFontsData from "../data/player_fonts.json";
 import STAT_UNITS from "../data/stat_units.json";
 import wavePerksData from "../data/wave_perks.json";
 
@@ -15,6 +16,28 @@ const REWARD_UNIT_SYMBOL = Object.fromEntries(
 
 function rewardUnitSym(rewardUnit) {
   return REWARD_UNIT_SYMBOL[rewardUnit?.toLowerCase()] ?? "";
+}
+
+// Blends two hex colors together, then lightens the result toward white — used to build
+// a highlight tone that sits between a gradient's top and bottom color.
+function gradientHighlight(hexA, hexB, lightenAmount = 0.55) {
+  const parse = (hex) => {
+    const clean = hex.replace("#", "");
+    return {
+      r: parseInt(clean.slice(0, 2), 16),
+      g: parseInt(clean.slice(2, 4), 16),
+      b: parseInt(clean.slice(4, 6), 16),
+      a: clean.length >= 8 ? clean.slice(6, 8) : "FF",
+    };
+  };
+  const a = parse(hexA);
+  const b = parse(hexB);
+  const toHex = (c) => Math.round(c).toString(16).padStart(2, "0").toUpperCase();
+  const lighten = (c) => c + (255 - c) * lightenAmount;
+  const r = lighten((a.r + b.r) / 2);
+  const g = lighten((a.g + b.g) / 2);
+  const bl = lighten((a.b + b.b) / 2);
+  return `#${toHex(r)}${toHex(g)}${toHex(bl)}${a.a}`;
 }
 
 function bannerStyle(colors) {
@@ -154,6 +177,61 @@ export function PlayerBackgroundsView({ colors, getIconUrl }) {
                     )}
                   </div>
                 </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+export function FontsView({ colors, getIconUrl }) {
+  const sectionBanner = bannerStyle(colors);
+
+  return (
+    <div>
+      <div style={{ marginBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        <img src={getIconUrl("_pencil.svg")} alt="" style={{ width: 32, height: 32, objectFit: "contain" }} />
+        <div style={{ fontSize: 22, fontWeight: 900, color: colors.accent, letterSpacing: "0.04em", textTransform: "uppercase" }}>Styles</div>
+      </div>
+      {Object.entries(playerFontsData.groups).map(([groupName, items]) => (
+        <div key={groupName} style={{ marginBottom: 32 }}>
+          <div style={sectionBanner}>
+            <span style={{ fontSize: 14, fontWeight: 800, color: colors.bannerText, letterSpacing: "0.12em", textTransform: "uppercase", textShadow: "0 1px 4px rgba(0,0,0,0.6)" }}>{groupName}</span>
+          </div>
+          <div className="card-grid">
+            {items.map((item) => (
+              <div key={item.id} style={{ background: `linear-gradient(180deg, #2a5c96 0%, ${colors.header} 100%)`, border: `1px solid ${colors.border}`, borderRadius: 8, padding: 12, boxShadow: "0 2px 6px rgba(0,0,0,0.2)" }}>
+                {item.fontFamily ? (
+                  <div style={{ fontFamily: `"${item.fontFamily}", sans-serif`, fontSize: 26, color: colors.text, marginBottom: 6, lineHeight: 1.2, textShadow: "0 3px 7px rgba(0,0,0,0.85)" }}>Asingh</div>
+                ) : (
+                  <div style={{
+                    fontSize: 26, fontWeight: 700, marginBottom: 6, lineHeight: 1.2,
+                    textShadow: "0 3px 7px rgba(0,0,0,0.85)",
+                    ...(item.isGradient
+                      ? {
+                          backgroundImage: `linear-gradient(180deg, ${item.gradientTop} 0%, ${gradientHighlight(item.gradientTop, item.gradientBottom)} 50%, ${item.gradientBottom} 100%)`,
+                          WebkitBackgroundClip: "text",
+                          backgroundClip: "text",
+                          color: "transparent",
+                        }
+                      : { color: item.color }),
+                  }}>Asingh</div>
+                )}
+                <div style={{ fontSize: 13, color: colors.muted, marginBottom: 2, whiteSpace: "pre-line" }}>
+                  Req <span style={{ color: colors.gold, fontWeight: 700 }}>{item.requirementDesc ?? (item.requirement != null ? item.requirement.toLocaleString() : "None")}</span>
+                </div>
+                {item.requirementDescGuess && (
+                  <div style={{ fontSize: 12, color: colors.muted, fontStyle: "italic", marginBottom: 2 }}>
+                    Description: {item.requirementDescGuess}
+                  </div>
+                )}
+                {item.rewardUnit && (
+                  <div style={{ fontSize: 13, color: colors.muted }}>
+                    Reward <span style={{ color: item.reward < 0 ? colors.positive : colors.accent, fontWeight: 700 }}>{item.reward > 0 ? "+" : ""}{item.reward}{rewardUnitSym(item.rewardUnit)}</span> {item.rewardUnit}
+                  </div>
+                )}
               </div>
             ))}
           </div>

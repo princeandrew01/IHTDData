@@ -61,7 +61,7 @@
         "id": "hero_level_cost",
         "name": "Hero Level Cost",
         "statKey": "hero_level_cost",
-        "statAmt": 0.5,
+        "statAmt": 5,
         "maxLevel": 10,
         "baseCost": 3,
         "stopCostIncreaseAt": 5,
@@ -70,9 +70,9 @@
         "borderColor": "#FFFF00"
       },
       {
-        "id": "milestone_effects",
-        "name": "Milestone Effects",
-        "statKey": "milestone_effects",
+        "id": "milestone_bonus",
+        "name": "Milestone Bonus",
+        "statKey": "milestone_bonus",
         "statAmt": 5,
         "maxLevel": 5,
         "baseCost": 3,

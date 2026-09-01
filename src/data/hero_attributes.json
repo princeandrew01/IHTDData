@@ -102,7 +102,7 @@
       "scope": "personal",
       "rankReq": 0,
       "baseCost": 3,
-      "statAmt": 3,
+      "statAmt": -3,
       "maxLevel": 10,
       "statKey": "skillCd",
       "icon": "_skillCd.png",
@@ -387,10 +387,10 @@
       "statAmt": 1,
       "maxLevel": 999999,
       "statKey": "progressiveRankExp",
-      "formulaType": "progressive",
       "icon": "_exp.png",
       "bgColor": "#0A6899",
-      "borderColor": "#19AFFF"
+      "borderColor": "#19AFFF",
+      "notes": "special formula: stat=level*(level+1)/2; affects all heroes"
     },
     {
       "id": "energyIncome",

@@ -58,6 +58,7 @@ const loadMiscViews = () => import("./views/miscViews.jsx");
 const ChallengesView = lazy(() => loadMiscViews().then((module) => ({ default: module.ChallengesView })));
 const PlayerIconsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerIconsView })));
 const PlayerBackgroundsView = lazy(() => loadMiscViews().then((module) => ({ default: module.PlayerBackgroundsView })));
+const FontsView = lazy(() => loadMiscViews().then((module) => ({ default: module.FontsView })));
 const WavePerksView = lazy(() => loadMiscViews().then((module) => ({ default: module.WavePerksView })));
 const WeeklyEventsView = lazy(() => loadMiscViews().then((module) => ({ default: module.WeeklyEventsView })));
 const CommunityEventsView = lazy(() => loadMiscViews().then((module) => ({ default: module.CommunityEventsView })));
@@ -217,6 +218,7 @@ const NAV_GROUPS = [
       { key: "challenges", label: "Challenges", menuIcon: "_starBlue.png" },
       { key: "playerIcons", label: "Player Icons", menuIcon: "icon_inforound.png" },
       { key: "playerBackgrounds", label: "Player Backgrounds", menuIcon: "_prestigeBg.png" },
+      { key: "playerFonts", label: "Fonts", menuIcon: "_pencil.svg" },
       { key: "weeklyEvents", label: "Events", menuIcon: "icon_equip_hammer.png" },
       { key: "communityEvents", label: "Community Events", menuIcon: "_allHeroes.png" },
     ],
@@ -866,20 +868,24 @@ function RankExpView() {
 // ─────────────────────────────────────────────
 function formatStat(statAmt, statKey) {
   const info = STAT_UNITS[statKey];
-  if (!info) return `+${statAmt}`;
-  const { unit, negate } = info;
-  const sign = negate ? "−" : "+";
-  if (unit === "%") return `${sign}${statAmt}%`;
-  if (unit === "x") return `×${statAmt}`;
-  return `${sign}${statAmt} ${unit}`;
+  const unit = info?.unit ?? "";
+  const negate = info?.negate ?? false;
+  const amt = negate ? -statAmt : statAmt;
+  const sign = amt < 0 ? "−" : "+";
+  const abs = Math.abs(amt);
+  if (!info) return `${sign}${abs}`;
+  if (unit === "%") return `${sign}${abs}%`;
+  if (unit === "x") return `×${abs}`;
+  return `${sign}${abs} ${unit}`;
 }
 
 function formatStatTotal(totalAmt, statKey, fmt) {
   const info = STAT_UNITS[statKey];
   const unit = info?.unit ?? "";
   const negate = info?.negate ?? false;
-  const formatted = fmt(totalAmt);
-  const sign = negate ? "−" : "+";
+  const amt = negate ? -totalAmt : totalAmt;
+  const formatted = fmt(Math.abs(amt));
+  const sign = amt < 0 ? "−" : "+";
   if (unit === "%") return `${sign}${formatted}%`;
   if (unit === "x") return `×${formatted}`;
   if (unit) return `${sign}${formatted} ${unit}`;
@@ -887,7 +893,7 @@ function formatStatTotal(totalAmt, statKey, fmt) {
 }
 
 function isProgressiveItem(item) {
-  return item.formulaType === "progressive";
+  return item.formulaType === "progressive" || item.statFormula === "arithmetic";
 }
 
 // Total stat at level N for a progressive item: statAmt × N × (N+1) / 2
@@ -2151,6 +2157,12 @@ function HeroCard({ hero, onClick }) {
         {hero.unlockCost !== undefined && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 6 }}>
             <img src={getIconUrl("_energy.png")} alt="" style={{ width: 16, height: 16, objectFit: "contain" }} />
+            {hero.unlockTier !== undefined && (
+              <>
+                <span style={{ fontSize: 13, color: colors.muted }}>Tier {hero.unlockTier}</span>
+                <span style={{ fontSize: 13, color: colors.muted }}>·</span>
+              </>
+            )}
             <span style={{ fontSize: 13, color: colors.muted }}>Unlock: </span>
             <span style={{ fontSize: 13, fontWeight: 700, color: colors.positive }}>{fmt(hero.unlockCost)}</span>
             <span style={{ fontSize: 13, color: colors.muted }}>·</span>
@@ -6580,6 +6592,11 @@ export default function App() {
           {activeKey === "playerBackgrounds" && (
             <Suspense fallback={lazyFallback}>
               <PlayerBackgroundsView colors={colors} getIconUrl={getIconUrl} />
+            </Suspense>
+          )}
+          {activeKey === "playerFonts" && (
+            <Suspense fallback={lazyFallback}>
+              <FontsView colors={colors} getIconUrl={getIconUrl} />
             </Suspense>
           )}
           {activeKey === "weeklyEvents" && (

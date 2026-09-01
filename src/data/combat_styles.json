@@ -50,7 +50,7 @@
         },
         {
           "stat": "skillCooldown",
-          "amount": 25,
+          "amount": -25,
           "isPercent": true,
           "isGlobal": false
         }
@@ -250,7 +250,7 @@
         },
         {
           "stat": "skillCooldown",
-          "amount": 40,
+          "amount": -40,
           "isPercent": true,
           "isGlobal": false
         }
